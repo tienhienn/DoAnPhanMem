@@ -1,0 +1,105 @@
+# ==============================
+# NODE MODULES
+# ==============================
+node_modules/
+
+# ==============================
+# LOCK FILES (QUAN TRỌNG - GIỮ LẠI)
+# ==============================
+# KHÔNG IGNORE các file này!
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# ==============================
+# BUILD / DIST
+# ==============================
+dist/
+build/
+.out/
+.next/
+web-build/
+
+# ==============================
+# ENV FILES (BẢO MẬT)
+# ==============================
+.env
+.env.*
+!.env.example
+
+# ==============================
+# LOG FILES
+# ==============================
+logs/
+*.log
+
+# ==============================
+# OS FILES
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# VS CODE
+# ==============================
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# ==============================
+# KIRO
+# ==============================
+.kiro/
+kiro.log
+
+# ==============================
+# REACT
+# ==============================
+coverage/
+
+# ==============================
+# REACT NATIVE
+# ==============================
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.keystore
+*.jks
+
+# iOS
+ios/build/
+ios/Pods/
+ios/*.xcworkspace
+ios/*.xcuserdata
+ios/*.xcuserstate
+
+# Expo
+.expo/
+.expo-shared/
+
+# ==============================
+# CACHE
+# ==============================
+.cache/
+.tmp/
+.temp/
+
+# ==============================
+# DATABASE (LOCAL ONLY)
+# ==============================
+*.sqlite
+*.db
+
+# ==============================
+# TYPESCRIPT
+# ==============================
+*.tsbuildinfo
+
+# ==============================
+# MISC
+# ==============================
+*.swp
+*.swo

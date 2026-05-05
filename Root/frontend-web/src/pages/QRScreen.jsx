@@ -1,20 +1,20 @@
 /**
  * QRScreen - Màn hình hiển thị mã QR điểm danh
  *
- * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7
+ * Requirements: 6.1, 6.2, 6.3
  */
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Navigate } from "react-router-dom";
-import { useAppContext } from "../context/AppContext";
+import { useParams, useNavigate } from "react-router-dom";
+import apiClient from "../utils/apiClient";
 import QRDisplay from "../components/qr/QRDisplay";
-import { generateQRValue } from "../utils/qrHelpers";
 
 /**
  * Format ngày giờ sang tiếng Việt
  * Ví dụ: "Thứ Hai, 15 tháng 9, 2025 lúc 08:00"
  */
 function formatDateTime(isoString) {
+  if (!isoString) return "";
   const date = new Date(isoString);
   return date.toLocaleString("vi-VN", {
     weekday: "long",
@@ -29,18 +29,51 @@ function formatDateTime(isoString) {
 export default function QRScreen() {
   const { id: eventId } = useParams();
   const navigate = useNavigate();
-  const { events, currentStudent, getRegistrationStatus } = useAppContext();
 
-  // State cho Wake Lock fallback message (Requirement 5.5)
+  // State cho QR data từ API
+  const [qrData, setQrData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // State cho Wake Lock fallback message
   const [showFallbackMessage, setShowFallbackMessage] = useState(false);
 
-  // Tìm sự kiện theo eventId
-  const event = events.find((e) => e.id === eventId);
+  // Fetch QR data từ API
+  useEffect(() => {
+    let cancelled = false;
 
-  // Lấy trạng thái đăng ký
-  const registrationStatus = event ? getRegistrationStatus(eventId) : null;
+    async function fetchQR() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await apiClient.get(`/api/events/${eventId}/qr`);
+        if (!cancelled) {
+          setQrData(response.data.data);
+        }
+      } catch (err) {
+        if (cancelled) return;
+        const status = err.response?.status;
+        if (status === 403) {
+          // Chưa đăng ký hoặc chưa được duyệt → redirect về trang chi tiết
+          navigate(`/events/${eventId}`, { replace: true });
+          return;
+        }
+        if (status === 404) {
+          // Sự kiện không tồn tại → redirect về trang chủ
+          navigate("/", { replace: true });
+          return;
+        }
+        setError(err.response?.data?.error?.message || "Không thể tải mã QR");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
 
-  // Wake Lock API - giữ màn hình sáng khi ở trang QR (Requirement 5.4)
+    fetchQR();
+    return () => { cancelled = true; };
+  }, [eventId, navigate]);
+
+  // Wake Lock API - giữ màn hình sáng khi ở trang QR
   useEffect(() => {
     let wakeLock = null;
 
@@ -48,7 +81,7 @@ export default function QRScreen() {
       if ("wakeLock" in navigator) {
         try {
           wakeLock = await navigator.wakeLock.request("screen");
-        } catch (err) {
+        } catch {
           setShowFallbackMessage(true);
         }
       } else {
@@ -63,18 +96,38 @@ export default function QRScreen() {
     };
   }, []);
 
-  // Nếu không tìm thấy sự kiện → redirect về trang chủ (Requirement 5.1)
-  if (!event) {
-    return <Navigate to="/" replace />;
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"
+            role="status"
+            aria-label="Đang tải..."
+          />
+          <p className="text-sm text-slate-500">Đang tải mã QR...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Nếu chưa đăng ký → redirect về trang chi tiết sự kiện (Requirement 5.1)
-  if (registrationStatus === "unregistered") {
-    return <Navigate to={`/events/${eventId}`} replace />;
+  // Error state (không phải 403/404 vì đã redirect)
+  if (error || !qrData) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 text-center">
+        <p className="text-base font-semibold text-slate-700 mb-2">Đã xảy ra lỗi</p>
+        <p className="text-sm text-slate-500 mb-4">{error || "Không thể tải mã QR"}</p>
+        <button
+          type="button"
+          onClick={() => navigate(`/events/${eventId}`)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+        >
+          Quay lại sự kiện
+        </button>
+      </div>
+    );
   }
-
-  // Tạo giá trị QR từ mã sinh viên và mã sự kiện (Requirement 5.2)
-  const qrValue = generateQRValue(currentStudent.studentId, event.id);
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -106,7 +159,7 @@ export default function QRScreen() {
 
       {/* Nội dung chính - căn giữa màn hình */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:px-6">
-        {/* Fallback message khi Wake Lock không được hỗ trợ (Requirement 5.5) */}
+        {/* Fallback message khi Wake Lock không được hỗ trợ */}
         {showFallbackMessage && (
           <div
             className="mb-5 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700"
@@ -138,49 +191,49 @@ export default function QRScreen() {
               Mã QR Điểm Danh
             </p>
             <h1 className="text-base font-bold text-white leading-snug line-clamp-2">
-              {event.name}
+              {qrData.tenSK}
             </h1>
           </div>
 
-          {/* Mã QR - nền trắng, độ tương phản cao (Requirement 5.7) */}
+          {/* Mã QR - nền trắng, độ tương phản cao */}
           <div className="flex items-center justify-center py-6 px-4 bg-white">
-            <QRDisplay value={qrValue} size={280} />
+            <QRDisplay value={qrData.qrValue} size={280} />
           </div>
 
           {/* Divider */}
           <div className="mx-5 border-t border-dashed border-slate-200" />
 
-          {/* Thông tin sinh viên và sự kiện (Requirement 5.3) */}
+          {/* Thông tin sinh viên và sự kiện */}
           <div className="px-5 py-5 space-y-3">
             {/* Tên sinh viên */}
             <InfoRow
               label="Sinh viên"
-              value={currentStudent.fullName}
+              value={qrData.hoTen}
               bold
             />
 
             {/* Mã số sinh viên */}
             <InfoRow
               label="Mã số sinh viên"
-              value={currentStudent.studentId}
+              value={qrData.maSV}
               mono
             />
 
             {/* Tên sự kiện */}
             <InfoRow
               label="Sự kiện"
-              value={event.name}
+              value={qrData.tenSK}
             />
 
             {/* Ngày giờ sự kiện */}
             <InfoRow
               label="Thời gian"
-              value={formatDateTime(event.startDateTime)}
+              value={formatDateTime(qrData.thoiGianBatDau)}
             />
           </div>
         </div>
 
-        {/* Nút Quay Lại ở dưới (Requirement 5.6) */}
+        {/* Nút Quay Lại ở dưới */}
         <button
           type="button"
           onClick={() => navigate(`/events/${eventId}`)}
@@ -211,10 +264,6 @@ export default function QRScreen() {
 
 /**
  * Hàng thông tin với label và giá trị
- * @param {string} label
- * @param {string} value
- * @param {boolean} [bold] - In đậm giá trị
- * @param {boolean} [mono] - Font monospace cho mã số
  */
 function InfoRow({ label, value, bold = false, mono = false }) {
   return (

@@ -10,7 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// TODO: app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', require('./routes/auth'));
 // TODO: app.use('/api/events', require('./routes/events'));
 // TODO: app.use('/api/students', require('./routes/students'));
 

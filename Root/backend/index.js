@@ -11,8 +11,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', require('./routes/auth'));
-// TODO: app.use('/api/events', require('./routes/events'));
-// TODO: app.use('/api/students', require('./routes/students'));
+app.use('/api/events', require('./routes/events'));
+app.use('/api/students', require('./routes/students'));
 
 // 404 handler — phải đặt sau tất cả routes
 app.use((req, res) => {

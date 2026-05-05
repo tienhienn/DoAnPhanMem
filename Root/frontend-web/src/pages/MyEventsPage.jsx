@@ -2,11 +2,12 @@
  * MyEventsPage - Trang "Sự Kiện Của Tôi"
  * Hiển thị danh sách sự kiện mà sinh viên đã đăng ký
  *
- * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
+ * Requirements: 7.1, 7.2, 7.3
  */
 
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppContext } from "../context/AppContext";
+import apiClient from "../utils/apiClient";
 import Badge from "../components/ui/Badge";
 
 /**
@@ -14,6 +15,7 @@ import Badge from "../components/ui/Badge";
  * Ví dụ: "Thứ Hai, 15 tháng 9, 2025 lúc 08:00"
  */
 function formatDateTime(isoString) {
+  if (!isoString) return "";
   const date = new Date(isoString);
   return date.toLocaleString("vi-VN", {
     weekday: "long",
@@ -27,9 +29,37 @@ function formatDateTime(isoString) {
 
 export default function MyEventsPage() {
   const navigate = useNavigate();
-  const { getRegisteredEvents, getRegistrationStatus } = useAppContext();
 
-  const registeredEvents = getRegisteredEvents();
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchMyEvents() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await apiClient.get("/api/students/me/events");
+        if (!cancelled) {
+          setEvents(response.data.data ?? []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err.response?.data?.error?.message ||
+              "Không thể tải danh sách sự kiện đã đăng ký"
+          );
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    fetchMyEvents();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -41,28 +71,71 @@ export default function MyEventsPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-        {registeredEvents.length === 0 ? (
-          /* Empty state */
-          <EmptyState onExplore={() => navigate("/")} />
-        ) : (
-          /* Danh sách sự kiện đã đăng ký */
-          <ul className="space-y-3" aria-label="Danh sách sự kiện đã đăng ký">
-            {registeredEvents.map((event) => {
-              const status = getRegistrationStatus(event.id);
-              return (
-                <EventItem
-                  key={event.id}
-                  event={event}
-                  status={status}
-                  onViewDetail={() => navigate(`/events/${event.id}`)}
-                  onViewQR={(e) => {
-                    e.stopPropagation();
-                    navigate(`/events/${event.id}/qr`);
-                  }}
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-3">
+              <div
+                className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"
+                role="status"
+                aria-label="Đang tải..."
+              />
+              <p className="text-sm text-slate-500">Đang tải sự kiện của bạn...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {!isLoading && error && (
+          <div
+            className="flex flex-col items-center justify-center py-20 text-center"
+            role="alert"
+          >
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+              <svg
+                className="h-8 w-8 text-red-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
                 />
-              );
-            })}
-          </ul>
+              </svg>
+            </div>
+            <p className="text-base font-semibold text-slate-700 mb-1">
+              Không thể tải sự kiện
+            </p>
+            <p className="text-sm text-slate-400">{error}</p>
+          </div>
+        )}
+
+        {/* Content */}
+        {!isLoading && !error && (
+          events.length === 0 ? (
+            <EmptyState onExplore={() => navigate("/")} />
+          ) : (
+            <ul className="space-y-3" aria-label="Danh sách sự kiện đã đăng ký">
+              {events.map((event) => {
+                const maSK = event.maSK.trim();
+                return (
+                  <EventItem
+                    key={maSK}
+                    event={event}
+                    onViewDetail={() => navigate(`/events/${maSK}`)}
+                    onViewQR={(e) => {
+                      e.stopPropagation();
+                      navigate(`/events/${maSK}/qr`);
+                    }}
+                  />
+                );
+              })}
+            </ul>
+          )
         )}
       </main>
     </div>
@@ -74,58 +147,59 @@ export default function MyEventsPage() {
 /**
  * EventItem - Một item trong danh sách sự kiện đã đăng ký
  *
- * Hiển thị: thumbnail, tên sự kiện, tên CLB, ngày giờ, badge trạng thái, nút QR
+ * Hiển thị: colored dot, tên sự kiện, tên CLB, ngày giờ, badge trạng thái, nút QR
  */
-function EventItem({ event, status, onViewDetail, onViewQR }) {
+function EventItem({ event, onViewDetail, onViewQR }) {
+  const tenSK = event.tenSK;
+  const tenCLB = event.tenCLB;
+  const thoiGianBatDau = event.thoiGianBatDau;
+  const trangThaiDangKy = event.trangThaiDangKy;
+
   return (
     <li>
       <button
         type="button"
         onClick={onViewDetail}
         className="w-full text-left bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-indigo-100 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        aria-label={`Xem chi tiết sự kiện ${event.name}`}
+        aria-label={`Xem chi tiết sự kiện ${tenSK}`}
       >
         <div className="flex items-stretch gap-0">
-          {/* Thumbnail */}
-          <div className="shrink-0 w-24 sm:w-32">
-            <img
-              src={event.imageUrl}
-              alt={event.name}
-              className="w-full h-full object-cover"
-              style={{ minHeight: "96px" }}
-            />
-          </div>
+          {/* Colored dot / accent bar thay cho thumbnail */}
+          <div
+            className="shrink-0 w-2 bg-gradient-to-b from-indigo-500 to-blue-600"
+            aria-hidden="true"
+          />
 
           {/* Nội dung */}
           <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col justify-between gap-2">
             <div className="space-y-1">
               {/* Tên câu lạc bộ */}
               <p className="text-xs font-medium text-indigo-600 truncate">
-                {event.clubName}
+                {tenCLB}
               </p>
 
               {/* Tên sự kiện */}
               <h2 className="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug">
-                {event.name}
+                {tenSK}
               </h2>
 
               {/* Ngày giờ */}
               <p className="text-xs text-slate-500 flex items-center gap-1">
                 <CalendarIcon />
-                <span className="truncate">{formatDateTime(event.startDateTime)}</span>
+                <span className="truncate">{formatDateTime(thoiGianBatDau)}</span>
               </p>
             </div>
 
             {/* Badge trạng thái + nút QR */}
             <div className="flex items-center justify-between gap-2">
-              <StatusBadge status={status} />
+              <StatusBadge trangThaiDangKy={trangThaiDangKy} />
 
               {/* Nút Xem Mã QR */}
               <button
                 type="button"
                 onClick={onViewQR}
                 className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-colors border border-indigo-100"
-                aria-label={`Xem mã QR sự kiện ${event.name}`}
+                aria-label={`Xem mã QR sự kiện ${tenSK}`}
               >
                 <QRIcon />
                 Xem Mã QR
@@ -139,12 +213,12 @@ function EventItem({ event, status, onViewDetail, onViewQR }) {
 }
 
 /**
- * StatusBadge - Badge trạng thái đăng ký
- * "registered" → Badge type="registered" text "Đã đăng ký"
- * "attended"   → Badge type="attended"   text "Đã điểm danh"
+ * StatusBadge - Badge trạng thái đăng ký dựa trên trangThaiDangKy từ API
+ * "da_diem_danh" → Badge type="attended" text "Đã điểm danh"
+ * còn lại → Badge type="registered" text "Đã đăng ký"
  */
-function StatusBadge({ status }) {
-  if (status === "attended") {
+function StatusBadge({ trangThaiDangKy }) {
+  if (trangThaiDangKy === "da_diem_danh") {
     return <Badge type="attended">Đã điểm danh</Badge>;
   }
   return <Badge type="registered">Đã đăng ký</Badge>;

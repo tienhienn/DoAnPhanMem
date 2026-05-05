@@ -1,12 +1,12 @@
 /**
  * EventDetailPage - Trang chi tiết sự kiện
  *
- * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 4.4
+ * Requirements: 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 5.1
  */
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAppContext } from "../context/AppContext";
+import apiClient from "../utils/apiClient";
 import Modal from "../components/ui/Modal";
 import Toast from "../components/ui/Toast";
 import { getActionButtons } from "../utils/eventHelpers";
@@ -16,6 +16,7 @@ import { getActionButtons } from "../utils/eventHelpers";
  * Ví dụ: "Thứ Hai, 15 tháng 9, 2025 lúc 08:00"
  */
 function formatDateTime(isoString) {
+  if (!isoString) return "";
   const date = new Date(isoString);
   return date.toLocaleString("vi-VN", {
     weekday: "long",
@@ -27,11 +28,30 @@ function formatDateTime(isoString) {
   });
 }
 
+/**
+ * Map trangThaiDangKy từ API sang registrationStatus nội bộ.
+ *
+ * @param {string|null} trangThaiDangKy
+ * @returns {"registered"|"attended"|"unregistered"}
+ */
+function mapRegistrationStatus(trangThaiDangKy) {
+  if (trangThaiDangKy === "da_duyet" || trangThaiDangKy === "cho_duyet") {
+    return "registered";
+  }
+  if (trangThaiDangKy === "da_diem_danh") {
+    return "attended";
+  }
+  return "unregistered";
+}
+
 export default function EventDetailPage() {
   const { id: eventId } = useParams();
   const navigate = useNavigate();
-  const { events, getRegistrationStatus, registerEvent, cancelRegistration } =
-    useAppContext();
+
+  // Local state cho event data
+  const [event, setEvent] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Modal state
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
@@ -40,43 +60,118 @@ export default function EventDetailPage() {
   // Toast state
   const [toast, setToast] = useState(null); // { message, type }
 
-  // Tìm sự kiện theo eventId
-  const event = events.find((e) => e.id === eventId);
+  // Fetch chi tiết sự kiện từ API
+  const fetchEvent = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.get(`/api/events/${eventId}`);
+      setEvent(response.data.data);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setError("not_found");
+      } else {
+        setError(err.response?.data?.error?.message || "Không thể tải thông tin sự kiện");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [eventId]);
 
-  // Nếu không tìm thấy sự kiện → hiển thị trang 404
-  if (!event) {
-    return <NotFoundPage onGoHome={() => navigate("/")} />;
-  }
-
-  const registrationStatus = getRegistrationStatus(eventId);
-  const availableSlots = event.maxCapacity - event.registeredCount;
-  const actionButtons = getActionButtons(event, registrationStatus);
+  useEffect(() => {
+    fetchEvent();
+  }, [fetchEvent]);
 
   // Xử lý xác nhận đăng ký
-  function handleConfirmRegister() {
+  async function handleConfirmRegister() {
     setRegisterModalOpen(false);
     try {
-      registerEvent(eventId);
+      await apiClient.post(`/api/events/${eventId}/register`);
       setToast({ message: "Đăng ký thành công!", type: "success" });
+      await fetchEvent(); // Refresh để cập nhật trangThaiDangKy và soNguoiDaDangKy
     } catch (err) {
-      setToast({
-        message: err.message || "Sự kiện đã hết chỗ, không thể đăng ký",
-        type: "error",
-      });
+      const message =
+        err.response?.data?.error?.message || "Sự kiện đã hết chỗ, không thể đăng ký";
+      setToast({ message, type: "error" });
     }
   }
 
   // Xử lý xác nhận hủy đăng ký
-  function handleConfirmCancel() {
+  async function handleConfirmCancel() {
     setCancelModalOpen(false);
-    cancelRegistration(eventId);
-    setToast({ message: "Đã hủy đăng ký thành công", type: "success" });
+    try {
+      await apiClient.delete(`/api/events/${eventId}/register`);
+      setToast({ message: "Đã hủy đăng ký thành công", type: "success" });
+      await fetchEvent(); // Refresh để cập nhật trangThaiDangKy
+    } catch (err) {
+      const message =
+        err.response?.data?.error?.message || "Không thể hủy đăng ký";
+      setToast({ message, type: "error" });
+    }
   }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"
+            role="status"
+            aria-label="Đang tải..."
+          />
+          <p className="text-sm text-slate-500">Đang tải thông tin sự kiện...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not found hoặc lỗi
+  if (error === "not_found" || !event) {
+    return <NotFoundPage onGoHome={() => navigate("/")} />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 text-center">
+        <p className="text-base font-semibold text-slate-700 mb-2">Đã xảy ra lỗi</p>
+        <p className="text-sm text-slate-500 mb-4">{error}</p>
+        <button
+          type="button"
+          onClick={fetchEvent}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
+  // Map trangThaiDangKy → registrationStatus
+  const registrationStatus = mapRegistrationStatus(event.trangThaiDangKy);
+
+  // Dùng field API trực tiếp
+  const tenSK = event.tenSK;
+  const tenCLB = event.tenCLB;
+  const moTa = event.moTa;
+  const thoiGianBatDau = event.thoiGianBatDau;
+  const thoiGianKetThuc = event.thoiGianKetThuc;
+  const diaDiem = event.diaDiem;
+  const soNguoiToiDa = event.soNguoiToiDa;
+  const soNguoiDaDangKy = event.soNguoiDaDangKy;
+
+  const availableSlots = soNguoiToiDa - soNguoiDaDangKy;
+
+  // getActionButtons nhận event với field chuẩn (maxCapacity, registeredCount)
+  const actionButtons = getActionButtons(
+    { maxCapacity: soNguoiToiDa, registeredCount: soNguoiDaDangKy },
+    registrationStatus
+  );
 
   // Tính phần trăm đã đăng ký cho progress bar
   const registeredPercent = Math.min(
     100,
-    Math.round((event.registeredCount / event.maxCapacity) * 100)
+    Math.round((soNguoiDaDangKy / soNguoiToiDa) * 100)
   );
 
   return (
@@ -108,25 +203,34 @@ export default function EventDetailPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pb-10 sm:px-6">
-        {/* Hình ảnh đại diện */}
+        {/* Gradient placeholder thay cho imageUrl */}
         <div className="mt-4 rounded-2xl overflow-hidden shadow-sm">
-          <img
-            src={event.imageUrl}
-            alt={event.name}
-            className="w-full h-56 object-cover sm:h-72"
-          />
+          <div
+            className="w-full h-56 sm:h-72 bg-gradient-to-br from-indigo-500 via-blue-500 to-purple-600 flex items-center justify-center"
+            aria-hidden="true"
+          >
+            <svg
+              className="w-20 h-20 text-white/30"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
         </div>
 
         {/* Nội dung chính */}
         <div className="mt-6 space-y-6">
           {/* Tên sự kiện và câu lạc bộ */}
           <div>
-            <p className="text-sm font-medium text-indigo-600 mb-1">
-              {event.clubName}
-            </p>
-            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-              {event.name}
-            </h1>
+            <p className="text-sm font-medium text-indigo-600 mb-1">{tenCLB}</p>
+            <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{tenSK}</h1>
           </div>
 
           {/* Thông tin chi tiết */}
@@ -135,21 +239,21 @@ export default function EventDetailPage() {
             <InfoRow
               icon={<CalendarIcon />}
               label="Bắt đầu"
-              value={formatDateTime(event.startDateTime)}
+              value={formatDateTime(thoiGianBatDau)}
             />
 
             {/* Ngày giờ kết thúc */}
             <InfoRow
               icon={<CalendarIcon />}
               label="Kết thúc"
-              value={formatDateTime(event.endDateTime)}
+              value={formatDateTime(thoiGianKetThuc)}
             />
 
             {/* Địa điểm */}
             <InfoRow
               icon={<LocationIcon />}
               label="Địa điểm"
-              value={event.location}
+              value={diaDiem}
             />
 
             {/* Số lượng chỗ */}
@@ -163,7 +267,7 @@ export default function EventDetailPage() {
                 </p>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm text-slate-700">
-                    {event.registeredCount}/{event.maxCapacity} đã đăng ký
+                    {soNguoiDaDangKy}/{soNguoiToiDa} đã đăng ký
                   </span>
                   <span
                     className={`text-sm font-semibold ${
@@ -183,10 +287,10 @@ export default function EventDetailPage() {
                 <div
                   className="w-full bg-slate-100 rounded-full h-2"
                   role="progressbar"
-                  aria-valuenow={event.registeredCount}
+                  aria-valuenow={soNguoiDaDangKy}
                   aria-valuemin={0}
-                  aria-valuemax={event.maxCapacity}
-                  aria-label={`${event.registeredCount} trên ${event.maxCapacity} chỗ đã đăng ký`}
+                  aria-valuemax={soNguoiToiDa}
+                  aria-label={`${soNguoiDaDangKy} trên ${soNguoiToiDa} chỗ đã đăng ký`}
                 >
                   <div
                     className={`h-2 rounded-full transition-all ${
@@ -209,7 +313,7 @@ export default function EventDetailPage() {
               Mô tả sự kiện
             </h2>
             <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-              {event.description}
+              {moTa}
             </p>
           </div>
 
@@ -228,7 +332,7 @@ export default function EventDetailPage() {
       <Modal
         isOpen={registerModalOpen}
         title="Xác nhận đăng ký"
-        message={`Bạn muốn đăng ký tham gia sự kiện "${event.name}" do ${event.clubName} tổ chức vào ${formatDateTime(event.startDateTime)}?`}
+        message={`Bạn muốn đăng ký tham gia sự kiện "${tenSK}" do ${tenCLB} tổ chức vào ${formatDateTime(thoiGianBatDau)}?`}
         confirmLabel="Xác Nhận"
         cancelLabel="Hủy"
         onConfirm={handleConfirmRegister}

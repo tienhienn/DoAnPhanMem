@@ -22,6 +22,50 @@ import {
  * - onSave: function(formData, action) - Callback khi lưu (action: 'draft' | 'submit')
  */
 
+// Input Field Component - Tách ra ngoài để tránh re-render không cần thiết
+const InputField = ({
+  icon: Icon,
+  label,
+  name,
+  type = "text",
+  placeholder,
+  min,
+  step,
+  value,
+  onChange,
+  error,
+}) => {
+  const hasError = !!error;
+  return (
+    <div>
+      <label className="flex items-center gap-2 text-sm font-semibold text-slate-800 mb-2">
+        {Icon && <Icon className="w-4 h-4 text-blue-600" />}
+        {label} <span className="text-rose-500">*</span>
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        min={min}
+        step={step}
+        className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
+          hasError
+            ? "border-rose-500 focus:ring-2 focus:ring-rose-100 focus:border-rose-500 bg-rose-50"
+            : "border-slate-300 focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+        }`}
+      />
+      {hasError && (
+        <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
+          <FiAlertCircle className="w-3 h-3" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+};
+
 export default function EventFormModal({ isOpen, event, onClose, onSave }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -35,19 +79,24 @@ export default function EventFormModal({ isOpen, event, onClose, onSave }) {
   const [errors, setErrors] = useState({});
 
   // Cập nhật form khi event thay đổi
+  // This effect intentionally updates state in response to modal opening/event changes
   useEffect(() => {
-    if (event) {
-      setFormData(event);
-    } else {
-      setFormData({
-        name: "",
-        startTime: "",
-        endTime: "",
-        location: "",
-        quota: "",
-        points: "",
-        description: "",
-      });
+    if (isOpen) {
+      if (event) {
+        setFormData(event);
+        setErrors({});
+      } else {
+        setFormData({
+          name: "",
+          startTime: "",
+          endTime: "",
+          location: "",
+          quota: "",
+          points: "",
+          description: "",
+        });
+        setErrors({});
+      }
     }
   }, [event, isOpen]);
 
@@ -121,46 +170,6 @@ export default function EventFormModal({ isOpen, event, onClose, onSave }) {
 
   if (!isOpen) return null;
 
-  const InputField = ({
-    icon: Icon,
-    label,
-    name,
-    type = "text",
-    placeholder,
-    min,
-    step,
-  }) => {
-    const hasError = !!errors[name];
-    return (
-      <div>
-        <label className="flex items-center gap-2 text-sm font-semibold text-slate-800 mb-2">
-          {Icon && <Icon className="w-4 h-4 text-blue-600" />}
-          {label} <span className="text-rose-500">*</span>
-        </label>
-        <input
-          type={type}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          placeholder={placeholder}
-          min={min}
-          step={step}
-          className={`w-full px-4 py-2.5 border rounded-lg outline-none transition-all ${
-            hasError
-              ? "border-rose-500 focus:ring-2 focus:ring-rose-100 focus:border-rose-500 bg-rose-50"
-              : "border-slate-300 focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
-          }`}
-        />
-        {hasError && (
-          <p className="text-xs text-rose-600 mt-1 flex items-center gap-1">
-            <FiAlertCircle className="w-3 h-3" />
-            {errors[name]}
-          </p>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -212,6 +221,9 @@ export default function EventFormModal({ isOpen, event, onClose, onSave }) {
                 label="Tên sự kiện"
                 name="name"
                 placeholder="VD: Hội thảo Python Advanced"
+                value={formData.name}
+                onChange={handleChange}
+                error={errors.name}
               />
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-semibold text-slate-800 mb-2">
@@ -266,6 +278,9 @@ export default function EventFormModal({ isOpen, event, onClose, onSave }) {
                 label="Địa điểm"
                 name="location"
                 placeholder="VD: Phòng A101, Tòa A"
+                value={formData.location}
+                onChange={handleChange}
+                error={errors.location}
               />
             </div>
           </div>
@@ -289,6 +304,9 @@ export default function EventFormModal({ isOpen, event, onClose, onSave }) {
                 type="number"
                 placeholder="Số lượng"
                 min="1"
+                value={formData.quota}
+                onChange={handleChange}
+                error={errors.quota}
               />
               <InputField
                 icon={FiAward}
@@ -298,6 +316,9 @@ export default function EventFormModal({ isOpen, event, onClose, onSave }) {
                 placeholder="Số điểm"
                 step="0.5"
                 min="0"
+                value={formData.points}
+                onChange={handleChange}
+                error={errors.points}
               />
             </div>
           </div>

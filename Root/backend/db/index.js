@@ -1,25 +1,58 @@
+const sql = require("mssql");
 require('dotenv').config();
-const sql = require('mssql');
 
-const dbConfig = {
-  server: process.env.DB_SERVER, // e.g. 'DESKTOP-A45O3KR\\CONGKIET'
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  options: {
-    encrypt: false,               // tắt TLS cho môi trường local
-    trustServerCertificate: true,
-    enableArithAbort: true,
-  },
+// Cấu hình kết nối SQL Server
+const config = {
+  server: process.env.DB_SERVER || "localhost",
+  database: process.env.DB_NAME || "QUANLYCLB_UTE",
+  user: process.env.DB_USER || "sa",
+  password: process.env.DB_PASSWORD || "12345", // Giữ nguyên mật khẩu bạn đã sửa đúng
+  connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "5000"), // Đưa timeout ra ngoài root
   pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
+    min: parseInt(process.env.DB_POOL_MIN || "1"),
+    max: parseInt(process.env.DB_POOL_MAX || "10"),
+    idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || "30000"),
+    // Đã xóa connectionTimeoutMillis ở trong này
+  },
+  options: {
+    encrypt: process.env.DB_ENCRYPT === "true" || false,
+    trustServerCertificate: process.env.DB_TRUST_CERT === "true" || true,
+    enableKeepAlive: true,
   },
 };
 
-/** @type {sql.ConnectionPool | null} */
 let pool = null;
+
+/**
+ * Khởi tạo connection pool
+ */
+const initPool = async () => {
+  try {
+    pool = new sql.ConnectionPool(config);
+    await pool.connect();
+    console.log("✓ Database connection pool initialized successfully");
+
+    // Event handlers
+    pool.on("error", (err) => {
+      console.error("❌ Database pool error:", err);
+    });
+
+    return pool;
+  } catch (err) {
+    console.error("❌ Failed to initialize database connection pool:", err);
+    process.exit(1);
+  }
+};
+
+/**
+ * Đóng connection pool
+ */
+const closePool = async () => {
+  if (pool) {
+    await pool.close();
+    console.log("✓ Database connection pool closed");
+  }
+};
 
 /**
  * Trả về connection pool đã kết nối (lazy initialization).
@@ -54,4 +87,10 @@ async function connectDB() {
   }
 }
 
-module.exports = { getPool, connectDB };
+module.exports = {
+  sql,
+  initPool,
+  getPool,
+  closePool,
+  connectDB
+};

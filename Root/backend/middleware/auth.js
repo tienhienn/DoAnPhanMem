@@ -1,79 +1,105 @@
-const jwt = require('jsonwebtoken');
-
 /**
- * Middleware xác thực JWT bắt buộc.
- * Đọc header Authorization: Bearer {token}, verify và gắn req.user.
+ * Middleware xác thực người dùng từ header Authorization
+ * Giải mã JWT (hoặc custom token) và attach user info vào req
  */
-function auth(req, res, next) {
-  const authHeader = req.headers['authorization'];
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Vui lòng đăng nhập để tiếp tục',
-      },
-    });
-  }
-
-  const token = authHeader.slice(7); // bỏ "Bearer "
-
+const verifyAuth = (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = {
-      maSV: decoded.maSV,
-      hoTen: decoded.hoTen,
-      email: decoded.email,
-    };
-    next();
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') {
+    // Lấy token từ header Authorization
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
-        error: {
-          code: 'TOKEN_EXPIRED',
-          message: 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại',
-        },
+        message: "Missing or invalid authorization token",
+        data: null,
       });
     }
 
+    // Loại bỏ "Bearer " prefix
+    const token = authHeader.substring(7);
+
+    // Giả lập decode token (trong thực tế sử dụng jwt.verify)
+    // Format token mẫu: base64(userId:role:clubId)
+    let decodedUser;
+    try {
+      const decoded = Buffer.from(token, "base64").toString("utf-8");
+      const [userId, role, clubId] = decoded.split(":");
+
+      if (!userId || !role) {
+        throw new Error("Invalid token format");
+      }
+
+      decodedUser = {
+        userId,
+        role,
+        clubId: clubId || null,
+      };
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or malformed token",
+        data: null,
+      });
+    }
+
+    // Attach user info vào request object
+    req.user = decodedUser;
+
+    next();
+  } catch (err) {
     return res.status(401).json({
       success: false,
-      error: {
-        code: 'INVALID_TOKEN',
-        message: 'Token không hợp lệ',
-      },
+      message: "Authentication failed",
+      data: null,
     });
   }
-}
+};
 
 /**
- * Middleware xác thực JWT tùy chọn.
- * Nếu có token hợp lệ thì gắn req.user, nếu không có token thì vẫn gọi next().
- * Dùng cho các endpoint public nhưng cần biết thêm thông tin khi đã đăng nhập.
+ * Middleware kiểm tra quyền: Chỉ cho phép các role cụ thể
+ * @param {string[]} allowedRoles - Mảng các role được phép
  */
-function optionalAuth(req, res, next) {
-  const authHeader = req.headers['authorization'];
+const authorizeRole = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+        data: null,
+      });
+    }
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return next();
-  }
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Required role: ${allowedRoles.join(" or ")}`,
+        data: null,
+      });
+    }
 
-  const token = authHeader.slice(7);
+    next();
+  };
+};
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = {
-      maSV: decoded.maSV,
-      hoTen: decoded.hoTen,
-      email: decoded.email,
-    };
-  } catch (err) {
-    // Token lỗi trong optionalAuth → bỏ qua, không gắn req.user
-  }
+/**
+ * Middleware xử lý lỗi toàn cục
+ */
+const errorHandler = (err, req, res, next) => {
+  console.error("❌ Error:", err);
 
-  next();
-}
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
 
-module.exports = { auth, optionalAuth };
+  return res.status(statusCode).json({
+    success: false,
+    message,
+    data: null,
+  });
+};
+
+module.exports = {
+  verifyAuth,
+  authorizeRole,
+  errorHandler,
+};

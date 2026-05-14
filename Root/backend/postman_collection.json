@@ -1,0 +1,222 @@
+{
+  "info": {
+    "name": "Admin Event Management API",
+    "description": "API Collection for Club Event Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "health"]
+        }
+      }
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get Events List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer U0cyMTAwMDAwMDE6QkNOOkNMQjAwMDAwMDAxIgo=",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/admin/events?page=1&limit=10&status=draft&search=",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "admin", "events"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "draft"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer U0MyMTAwMDAwMDE6QkNOOkNMQjAwMDAwMDAxIgo=",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/admin/events/SK260000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "admin", "events", "SK260000001"]
+            }
+          }
+        },
+        {
+          "name": "Create Event (BCN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer U0MyMTAwMDAwMDE6QkNOOkNMQjAwMDAwMDAxIgo=",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Workshop: Nhập môn ReactJS\",\n  \"description\": \"Buổi workshop thực hành xây dựng ứng dụng web với ReactJS dành cho sinh viên mới bắt đầu\",\n  \"startTime\": \"2026-06-10T08:00:00Z\",\n  \"endTime\": \"2026-06-10T11:30:00Z\",\n  \"location\": \"Phòng Lab 201 - Nhà A\",\n  \"quota\": 40,\n  \"points\": 1.5,\n  \"costEstimate\": 0,\n  \"eventType\": \"Workshop\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/admin/events",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "admin", "events"]
+            }
+          }
+        },
+        {
+          "name": "Update Event (BCN)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer U0MyMTAwMDAwMDE6QkNOOkNMQjAwMDAwMDAxIgo=",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Workshop: Nhập môn ReactJS - Updated\",\n  \"description\": \"Updated description\",\n  \"startTime\": \"2026-06-10T09:00:00Z\",\n  \"endTime\": \"2026-06-10T12:00:00Z\",\n  \"location\": \"Phòng Lab 202 - Nhà A\",\n  \"quota\": 50,\n  \"points\": 2.0,\n  \"costEstimate\": 1000000,\n  \"eventType\": \"Workshop\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/admin/events/SK260000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "admin", "events", "SK260000001"]
+            }
+          }
+        },
+        {
+          "name": "Delete Event (BCN)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer U0MyMTAwMDAwMDE6QkNOOkNMQjAwMDAwMDAxIgo=",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/admin/events/SK260000001",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "admin", "events", "SK260000001"]
+            }
+          }
+        },
+        {
+          "name": "Review Event - Approve (KHOA)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer Q0IwMDAwMDAwMDE6S0hPQTpudWxsIgo=",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"feedback\": null\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/admin/events/SK260000001/review",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "admin", "events", "SK260000001", "review"]
+            }
+          }
+        },
+        {
+          "name": "Review Event - Reject (CTSV)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer Q0IwMDAwMDAwMDI6Q1RTVJBOV3VsbCIgo=",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"rejected\",\n  \"feedback\": \"Sự kiện không phù hợp với các tiêu chí của trường\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/admin/events/SK260000001/review",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "admin", "events", "SK260000001", "review"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

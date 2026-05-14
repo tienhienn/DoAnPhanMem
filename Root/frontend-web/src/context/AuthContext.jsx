@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * AuthContext - Quản lý xác thực người dùng
  * Requirements: 0.2, 0.7, 0.8, 0.9
@@ -12,7 +13,7 @@ export const AuthContext = createContext(null);
 /**
  * Giải mã JWT payload từ token string.
  * @param {string} token
- * @returns {{ maSV: string, hoTen: string, email: string, exp: number } | null}
+ * @returns {{ maSV: string, hoTen: string, email: string, role?: string, exp: number } | null}
  */
 function parseJwt(token) {
   try {
@@ -44,7 +45,9 @@ export function AuthProvider({ children }) {
     if (savedToken) {
       const payload = parseJwt(savedToken);
       if (payload && payload.exp * 1000 > Date.now()) {
-        setUser({ maSV: payload.maSV, hoTen: payload.hoTen, email: payload.email });
+        // LƯU: payload có thể chứa role => gắn vào user
+        /* eslint-disable-next-line react-hooks/set-state-in-effect */
+        setUser({ maSV: payload.maSV, hoTen: payload.hoTen, email: payload.email, role: payload.role });
         setToken(savedToken);
       } else {
         localStorage.removeItem('token');
@@ -63,10 +66,11 @@ export function AuthProvider({ children }) {
    */
   async function login(email, password) {
     const response = await apiClient.post('/api/auth/login', { email, password });
-    const { token: newToken, maSV, hoTen, email: userEmail } = response.data.data;
+    const { token: newToken, maSV, hoTen, email: userEmail, role } = response.data.data;
     localStorage.setItem('token', newToken);
     setToken(newToken);
-    setUser({ maSV, hoTen, email: userEmail });
+    // LƯU: lưu role vào user để các component có thể kiểm tra quyền
+    setUser({ maSV, hoTen, email: userEmail, role });
     navigate('/');
   }
 

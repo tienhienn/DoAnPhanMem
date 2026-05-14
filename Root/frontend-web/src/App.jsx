@@ -14,7 +14,6 @@ import EventListPage from "./pages/EventListPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import QRScreen from "./pages/QRScreen";
 import MyEventsPage from "./pages/MyEventsPage";
-import StatisticsPage from "./pages/StatisticsPage";
 import EventManagementPage from "./pages/EventManagementPage";
 
 // export default function App() {
@@ -48,7 +47,6 @@ export default function App() {
                 <Route path="/" element={<EventListPage />} />
                 <Route path="/events/:id" element={<EventDetailPage />} />
                 <Route path="/events/:id/qr" element={<QRScreen />} />
-                <Route path="/events/:id/statistics" element={<StatisticsPage />} />
                 <Route path="/my-events" element={<MyEventsPage />} />
               </Route>
             </Route>

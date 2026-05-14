@@ -8,6 +8,9 @@ const { errorHandler } = require("./middleware/auth");
 // Import routes
 const adminEventsRoutes = require("./routes/adminEvents");
 
+const { connectDB } = require('./db/index');
+const errorHandler = require('./middleware/errorHandler');
+
 const app = express();
 
 // Middleware
@@ -37,6 +40,24 @@ app.use((req, res) => {
 });
 
 // Global Error Handler
+app.use(errorHandler);
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/events', require('./routes/events'));
+app.use('/api/students', require('./routes/students'));
+
+// 404 handler — phải đặt sau tất cả routes
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      code: 'NOT_FOUND',
+      message: 'Endpoint không tồn tại',
+    },
+  });
+});
+
+// Global error handler — phải đặt cuối cùng
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;

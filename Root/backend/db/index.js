@@ -1,4 +1,5 @@
 const sql = require("mssql");
+require('dotenv').config();
 
 // Cấu hình kết nối SQL Server
 const config = {
@@ -44,16 +45,6 @@ const initPool = async () => {
 };
 
 /**
- * Lấy connection pool
- */
-const getPool = () => {
-  if (!pool) {
-    throw new Error("Database pool not initialized. Call initPool() first.");
-  }
-  return pool;
-};
-
-/**
  * Đóng connection pool
  */
 const closePool = async () => {
@@ -63,9 +54,43 @@ const closePool = async () => {
   }
 };
 
+/**
+ * Trả về connection pool đã kết nối (lazy initialization).
+ * Chỉ tạo pool mới nếu chưa có hoặc pool đã đóng.
+ * @returns {Promise<sql.ConnectionPool>}
+ */
+async function getPool() {
+  if (pool && pool.connected) {
+    return pool;
+  }
+
+  try {
+    pool = await new sql.ConnectionPool(dbConfig).connect();
+    return pool;
+  } catch (err) {
+    pool = null;
+    throw new Error(`Không thể kết nối database: ${err.message}`);
+  }
+}
+
+/**
+ * Khởi tạo kết nối database khi server khởi động.
+ * Log kết quả thành công hoặc thất bại.
+ */
+async function connectDB() {
+  try {
+    await getPool();
+    console.log(`[DB] Kết nối SQL Server thành công: ${process.env.DB_SERVER} / ${process.env.DB_NAME}`);
+  } catch (err) {
+    console.error(`[DB] Kết nối SQL Server thất bại: ${err.message}`);
+    throw err;
+  }
+}
+
 module.exports = {
   sql,
   initPool,
   getPool,
   closePool,
+  connectDB
 };

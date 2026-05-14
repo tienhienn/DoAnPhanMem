@@ -1,12 +1,12 @@
 /**
  * NavBar - Responsive navigation bar
- * - Desktop (≥1024px / lg): fixed top, logo + nav links + student info
- * - Mobile (<1024px): fixed bottom, icon + label
- * Requirements: 7.1, 7.2, 7.3, 7.5
+ * - Desktop (≥1024px / lg): fixed top, logo + nav links + student info + logout
+ * - Mobile (<1024px): fixed bottom, icon + label + logout
+ * Requirements: 7.1, 7.2, 7.3, 7.5, 0.4, 0.5, 0.6, 0.7
  */
 
 import { NavLink, useLocation } from "react-router-dom";
-import { useAppContext } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 
 // Calendar icon (SVG inline)
 function CalendarIcon({ className }) {
@@ -69,6 +69,27 @@ function UserIcon({ className }) {
   );
 }
 
+// Logout icon
+function LogoutIcon({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  );
+}
+
 const navItems = [
   {
     label: "Sự Kiện",
@@ -83,7 +104,7 @@ const navItems = [
 ];
 
 export default function NavBar() {
-  const { currentStudent } = useAppContext();
+  const { user, logout } = useAuth();
   const location = useLocation();
 
   /**
@@ -138,17 +159,27 @@ export default function NavBar() {
           })}
         </div>
 
-        {/* Student Info — right */}
+        {/* Student Info + Logout — right */}
         <div className="flex items-center gap-3 min-w-[160px] justify-end">
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
             <UserIcon className="w-4 h-4 text-indigo-600" />
           </div>
           <div className="text-right leading-tight">
             <p className="text-sm font-semibold text-slate-800 truncate max-w-[140px]">
-              {currentStudent.fullName}
+              {user?.hoTen}
             </p>
-            <p className="text-xs text-slate-400">{currentStudent.studentId}</p>
+            <p className="text-xs text-slate-400">{user?.maSV}</p>
           </div>
+          {/* Nút đăng xuất desktop */}
+          <button
+            onClick={logout}
+            title="Đăng xuất"
+            className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all duration-150"
+            aria-label="Đăng xuất"
+          >
+            <LogoutIcon className="w-4 h-4" />
+            <span className="hidden xl:inline">Đăng xuất</span>
+          </button>
         </div>
       </nav>
 
@@ -185,6 +216,16 @@ export default function NavBar() {
             </NavLink>
           );
         })}
+
+        {/* Nút đăng xuất mobile */}
+        <button
+          onClick={logout}
+          className="relative flex-1 flex flex-col items-center justify-center gap-1 text-xs font-medium text-slate-400 hover:text-red-500 transition-colors duration-150"
+          aria-label="Đăng xuất"
+        >
+          <LogoutIcon className="w-5 h-5" />
+          <span>Đăng xuất</span>
+        </button>
       </nav>
     </>
   );

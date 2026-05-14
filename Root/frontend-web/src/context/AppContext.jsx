@@ -1,113 +1,112 @@
 /**
  * AppContext - Quản lý trạng thái toàn cục của ứng dụng
- * Requirements: 3.2, 3.3, 3.5, 4.2, 4.3
+ * Requirements: 0.2, 2.1, 4.1, 5.1, 7.1
  */
 
-import { createContext, useContext, useState } from "react";
-import { mockStudent, mockEvents, mockRegistrations } from "../data/mockData";
+import { createContext, useContext, useState, useCallback } from "react";
+import apiClient from "../utils/apiClient";
 
 export const AppContext = createContext(null);
+
+/**
+ * Map trangThaiDangKy từ API sang registrationStatus nội bộ.
+ *
+ * @param {string|null} trangThaiDangKy - Giá trị từ API
+ * @returns {"registered"|"attended"|"unregistered"}
+ */
+function mapRegistrationStatus(trangThaiDangKy) {
+  if (trangThaiDangKy === "da_duyet" || trangThaiDangKy === "cho_duyet") {
+    return "registered";
+  }
+  if (trangThaiDangKy === "da_diem_danh") {
+    return "attended";
+  }
+  return "unregistered";
+}
 
 /**
  * AppProvider - Provider bao bọc toàn bộ ứng dụng để cung cấp state toàn cục.
  *
  * State shape:
- * - currentStudent: Student
  * - events: Event[]
- * - registrations: { [eventId]: RegistrationStatus }
+ * - isLoading: boolean
+ * - error: string | null
  */
 export function AppProvider({ children }) {
-  const [currentStudent] = useState(mockStudent);
-  const [events, setEvents] = useState(mockEvents);
-  const [registrations, setRegistrations] = useState({ ...mockRegistrations });
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   /**
-   * Đăng ký tham gia sự kiện.
-   * - Kiểm tra còn chỗ trước khi đăng ký
-   * - Cập nhật registrations thành "registered"
-   * - Tăng registeredCount của sự kiện lên 1
+   * Fetch danh sách sự kiện từ API với các filter tùy chọn.
    *
-   * @param {string} eventId
-   * @throws {Error} Nếu sự kiện đã hết chỗ
+   * @param {{ search?: string, clubId?: string, availableOnly?: boolean }} [filters]
    */
-  function registerEvent(eventId) {
-    const event = events.find((e) => e.id === eventId);
-    if (!event) {
-      throw new Error(`Sự kiện không tồn tại: ${eventId}`);
+  const fetchEvents = useCallback(async (filters = {}) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = {};
+      if (filters.search) params.search = filters.search;
+      if (filters.clubId && filters.clubId !== "all") params.clubId = filters.clubId;
+      if (filters.availableOnly) params.availableOnly = true;
+
+      const response = await apiClient.get("/api/events", { params });
+      setEvents(response.data.data ?? []);
+    } catch (err) {
+      setError(err.response?.data?.error?.message || "Không thể tải danh sách sự kiện");
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    // Kiểm tra còn chỗ (Requirement 3.5)
-    if (event.registeredCount >= event.maxCapacity) {
-      throw new Error("Sự kiện đã hết chỗ, không thể đăng ký");
-    }
-
-    // Cập nhật registrations (Requirement 3.2)
-    setRegistrations((prev) => ({
-      ...prev,
-      [eventId]: "registered",
-    }));
-
-    // Tăng registeredCount lên 1 (Requirement 3.2)
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === eventId
-          ? { ...e, registeredCount: e.registeredCount + 1 }
-          : e
-      )
-    );
+  /**
+   * Đăng ký tham gia sự kiện, sau đó refresh danh sách.
+   *
+   * @param {string} maSK - Mã sự kiện (đã trim)
+   * @throws {Error} Nếu API trả về lỗi
+   */
+  async function registerEvent(maSK) {
+    await apiClient.post(`/api/events/${maSK}/register`);
+    await fetchEvents();
   }
 
   /**
-   * Hủy đăng ký sự kiện.
-   * - Cập nhật registrations thành "unregistered"
-   * - Giảm registeredCount của sự kiện xuống 1
+   * Hủy đăng ký sự kiện, sau đó refresh danh sách.
    *
-   * @param {string} eventId
+   * @param {string} maSK - Mã sự kiện (đã trim)
    */
-  function cancelRegistration(eventId) {
-    // Cập nhật registrations (Requirement 4.2)
-    setRegistrations((prev) => ({
-      ...prev,
-      [eventId]: "unregistered",
-    }));
-
-    // Giảm registeredCount xuống 1 (Requirement 4.2)
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === eventId
-          ? { ...e, registeredCount: Math.max(0, e.registeredCount - 1) }
-          : e
-      )
-    );
+  async function cancelRegistration(maSK) {
+    await apiClient.delete(`/api/events/${maSK}/register`);
+    await fetchEvents();
   }
 
   /**
-   * Lấy trạng thái đăng ký của một sự kiện.
-   * Mặc định trả về "unregistered" nếu chưa có trong map.
+   * Lấy trạng thái đăng ký từ event object (đã có trangThaiDangKy từ API).
+   * Dùng cho EventDetailPage khi đã fetch chi tiết sự kiện.
    *
-   * @param {string} eventId
-   * @returns {RegistrationStatus} "unregistered" | "registered" | "attended"
+   * @param {string|null} trangThaiDangKy - Giá trị trangThaiDangKy từ API
+   * @returns {"registered"|"attended"|"unregistered"}
    */
-  function getRegistrationStatus(eventId) {
-    return registrations[eventId] ?? "unregistered";
+  function getRegistrationStatus(trangThaiDangKy) {
+    return mapRegistrationStatus(trangThaiDangKy);
   }
 
   /**
-   * Lấy danh sách sự kiện mà sinh viên đã đăng ký
-   * (registrationStatus !== "unregistered").
+   * Lấy danh sách sự kiện mà sinh viên đã đăng ký từ API.
    *
-   * @returns {Event[]}
+   * @returns {Promise<Event[]>}
    */
-  function getRegisteredEvents() {
-    return events.filter(
-      (event) => (registrations[event.id] ?? "unregistered") !== "unregistered"
-    );
+  async function getRegisteredEvents() {
+    const response = await apiClient.get("/api/students/me/events");
+    return response.data.data ?? [];
   }
 
   const value = {
-    currentStudent,
     events,
-    registrations,
+    isLoading,
+    error,
+    fetchEvents,
     registerEvent,
     cancelRegistration,
     getRegistrationStatus,

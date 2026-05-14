@@ -1,14 +1,46 @@
-/**
- * Middleware xác thực người dùng từ header Authorization
- * Giải mã JWT (hoặc custom token) và attach user info vào req
- */
+const jwt = require("jsonwebtoken");
 
-const verifyAuth = (req, res, next) => {
+const getTokenFromHeader = (req) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return null;
+  }
+  return authHeader.substring(7).trim();
+};
+
+const parseLegacyToken = (token) => {
+  const decoded = Buffer.from(token, "base64").toString("utf-8");
+  const [userId, role, clubId] = decoded.split(":");
+  if (!userId || !role) {
+    throw new Error("Invalid legacy token format");
+  }
+  return {
+    maSV: userId,
+    role,
+    clubId: clubId === "null" ? null : clubId,
+  };
+};
+
+const verifyToken = (token) => {
+  if (!token) {
+    throw new Error("Missing authorization token");
+  }
+
+  if (token.includes(".")) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error("JWT_SECRET is not configured");
+    }
+    return jwt.verify(token, secret);
+  }
+
+  return parseLegacyToken(token);
+};
+
+const auth = (req, res, next) => {
   try {
-    // Lấy token từ header Authorization
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const token = getTokenFromHeader(req);
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: "Missing or invalid authorization token",
@@ -16,37 +48,8 @@ const verifyAuth = (req, res, next) => {
       });
     }
 
-    // Loại bỏ "Bearer " prefix
-    const token = authHeader.substring(7);
-
-    // Giả lập decode token (trong thực tế sử dụng jwt.verify)
-    // Format token mẫu: base64(userId:role:clubId)
-    let decodedUser;
-    try {
-      const decoded = Buffer.from(token, "base64").toString("utf-8");
-      const [userId, role, clubId] = decoded.split(":");
-
-      if (!userId || !role) {
-        throw new Error("Invalid token format");
-      }
-
-      decodedUser = {
-        userId,
-        role,
-        clubId: clubId || null,
-      };
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid or malformed token",
-        data: null,
-      });
-    }
-
-    // Attach user info vào request object
-    req.user = decodedUser;
-
-    next();
+    req.user = verifyToken(token);
+    return next();
   } catch (err) {
     return res.status(401).json({
       success: false,
@@ -56,10 +59,20 @@ const verifyAuth = (req, res, next) => {
   }
 };
 
-/**
- * Middleware kiểm tra quyền: Chỉ cho phép các role cụ thể
- * @param {string[]} allowedRoles - Mảng các role được phép
- */
+const optionalAuth = (req, res, next) => {
+  try {
+    const token = getTokenFromHeader(req);
+    if (token) {
+      req.user = verifyToken(token);
+    }
+  } catch (err) {
+    // Nếu token không hợp lệ, không block request, chỉ không gán user
+    req.user = null;
+  }
+
+  return next();
+};
+
 const authorizeRole = (allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -78,28 +91,13 @@ const authorizeRole = (allowedRoles) => {
       });
     }
 
-    next();
+    return next();
   };
 };
 
-/**
- * Middleware xử lý lỗi toàn cục
- */
-const errorHandler = (err, req, res, next) => {
-  console.error("❌ Error:", err);
-
-  const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-
-  return res.status(statusCode).json({
-    success: false,
-    message,
-    data: null,
-  });
-};
-
 module.exports = {
-  verifyAuth,
+  auth,
+  optionalAuth,
+  verifyAuth: auth,
   authorizeRole,
-  errorHandler,
 };

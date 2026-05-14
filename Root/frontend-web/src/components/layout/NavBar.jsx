@@ -69,6 +69,33 @@ function UserIcon({ className }) {
   );
 }
 
+// Manage icon
+function ManageIcon({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 3v3" />
+      <path d="M12 18v3" />
+      <path d="M4.22 4.22l2.12 2.12" />
+      <path d="M17.66 17.66l2.12 2.12" />
+      <path d="M1 12h3" />
+      <path d="M20 12h3" />
+      <path d="M4.22 19.78l2.12-2.12" />
+      <path d="M17.66 6.34l2.12-2.12" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 // Logout icon
 function LogoutIcon({ className }) {
   return (
@@ -100,6 +127,11 @@ const navItems = [
     label: "Của Tôi",
     path: "/my-events",
     icon: BookmarkIcon,
+  },
+  {
+    label: "Quản lý",
+    path: "/event-management",
+    icon: ManageIcon,
   },
 ];
 

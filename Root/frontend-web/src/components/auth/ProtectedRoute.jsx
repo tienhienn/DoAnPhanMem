@@ -1,13 +1,16 @@
 /**
- * ProtectedRoute - Bảo vệ các route yêu cầu đăng nhập
- * Requirements: 0.1, 0.3, 0.4, 0.5
+ * ProtectedRoute - Bảo vệ các route yêu cầu đăng nhập và/hoặc role cụ thể.
+ *
+ * Props:
+ * - roles: string[] (tùy chọn) — danh sách role được phép truy cập.
+ *   Nếu không truyền, chỉ kiểm tra đăng nhập.
  */
 
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-export default function ProtectedRoute() {
-  const { isAuthenticated, isLoading } = useAuth();
+export default function ProtectedRoute({ roles }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   // Hiển thị spinner trong khi kiểm tra auth state từ localStorage
   if (isLoading) {
@@ -21,6 +24,12 @@ export default function ProtectedRoute() {
   // Chưa đăng nhập → redirect về /login
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Kiểm tra role nếu được chỉ định
+  if (roles && roles.length > 0 && !roles.includes(user?.role)) {
+    // Đã đăng nhập nhưng không đủ quyền → về trang chủ của role đó
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

@@ -4,8 +4,29 @@ const { getPool } = require('../db/index');
 const sql = require('mssql');
 
 /**
+ * Map VaiTroID từ DB sang role string dùng trong hệ thống.
+ *
+ * VT000000001 → 'SV'   (Sinh viên)
+ * VT000000002 → 'BCN'  (Ban chủ nhiệm CLB)
+ * VT000000003 → 'KHOA' (Cán bộ khoa/đoàn)
+ * VT000000004 → 'CTSV' (Phòng Công tác Sinh viên)
+ *
+ * @param {string} vaiTroID
+ * @returns {string}
+ */
+function mapVaiTroToRole(vaiTroID) {
+  const map = {
+    VT000000001: 'SV',
+    VT000000002: 'BCN',
+    VT000000003: 'KHOA',
+    VT000000004: 'CTSV',
+  };
+  return map[vaiTroID] || 'SV';
+}
+
+/**
  * POST /api/auth/login
- * Đăng nhập bằng email và mật khẩu, trả về JWT token.
+ * Đăng nhập bằng email và mật khẩu, trả về JWT token kèm role.
  */
 async function login(req, res, next) {
   try {
@@ -67,31 +88,52 @@ async function login(req, res, next) {
       });
     }
 
-    // 6. Tạo JWT token
+    // 6. Lấy vai trò từ NGUOIDUNG_VAITRO (lấy vai trò cao nhất nếu có nhiều)
+    const roleResult = await pool
+      .request()
+      .input('maND', sql.VarChar, account.MaND)
+      .query(
+        `SELECT TOP 1 nv.VaiTroID
+         FROM NGUOIDUNG_VAITRO nv
+         INNER JOIN VAI_TRO vt ON nv.VaiTroID = vt.VaiTroID
+         WHERE nv.MaND = @maND AND vt.trangThai = 1
+         ORDER BY nv.VaiTroID DESC`
+      );
+
+    const vaiTroID = roleResult.recordset[0]?.VaiTroID || 'VT000000001';
+    const role = mapVaiTroToRole(vaiTroID);
+
+    // 7. Tạo JWT token kèm role
     const token = jwt.sign(
       {
+        maND: account.MaND,
+        // Giữ maSV để tương thích ngược với code cũ
         maSV: account.MaND,
         hoTen: account.hoTen,
         email: account.email,
+        role,
+        vaiTroID,
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 
-    // 7. Cập nhật lanDangNhapCuoi
+    // 8. Cập nhật lanDangNhapCuoi
     await pool
       .request()
       .input('maND', sql.VarChar, account.MaND)
       .query('UPDATE TAI_KHOAN SET lanDangNhapCuoi = GETDATE() WHERE MaND = @maND');
 
-    // 8. Trả về token và thông tin người dùng
+    // 9. Trả về token và thông tin người dùng
     return res.status(200).json({
       success: true,
       data: {
         token,
+        maND: account.MaND,
         maSV: account.MaND,
         hoTen: account.hoTen,
         email: account.email,
+        role,
       },
     });
   } catch (err) {

@@ -1,66 +1,39 @@
 /**
  * LoginPage - Trang đăng nhập
- * Requirements: 0.1, 0.3, 0.4, 0.5
+ * Sau khi đăng nhập thành công, AuthContext sẽ tự redirect đúng trang theo role.
  */
 
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Lock icon
 function LockIcon({ className }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
 }
 
-// Mail icon
 function MailIcon({ className }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
       <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
       <polyline points="22,6 12,13 2,6" />
     </svg>
   );
 }
 
-// Alert icon
 function AlertIcon({ className }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -75,7 +48,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Đã đăng nhập → redirect về trang chủ
+  // Đã đăng nhập → redirect về trang chủ (AuthContext đã xử lý đúng route theo role)
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
@@ -112,7 +85,7 @@ export default function LoginPage() {
         </div>
         <h1 className="text-2xl font-bold text-indigo-700 tracking-tight">HCMUTE CLB</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Hệ thống quản lý sự kiện câu lạc bộ
+          Hệ thống quản lý câu lạc bộ sinh viên
         </p>
       </div>
 
@@ -120,17 +93,14 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-indigo-100 p-8">
         <h2 className="text-xl font-semibold text-slate-800 mb-1">Đăng nhập</h2>
         <p className="text-sm text-slate-500 mb-6">
-          Nhập thông tin tài khoản sinh viên của bạn
+          Nhập email và mật khẩu tài khoản của bạn
         </p>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
           {/* Email field */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
-            >
-              Email sinh viên
+            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Email
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -143,7 +113,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@sv.ute.udn.vn"
+                placeholder="email@ute.udn.vn"
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-150"
               />
             </div>
@@ -151,10 +121,7 @@ export default function LoginPage() {
 
           {/* Password field */}
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-slate-700 mb-1.5"
-            >
+            <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
               Mật khẩu
             </label>
             <div className="relative">
@@ -176,10 +143,7 @@ export default function LoginPage() {
 
           {/* Error message */}
           {error && (
-            <div
-              role="alert"
-              className="flex items-start gap-2.5 p-3 rounded-lg bg-red-50 border border-red-200"
-            >
+            <div role="alert" className="flex items-start gap-2.5 p-3 rounded-lg bg-red-50 border border-red-200">
               <AlertIcon className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
               <p className="text-sm text-red-700">{error}</p>
             </div>
@@ -201,21 +165,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-      </div>
-
-      {/* Hint tài khoản test */}
-      <div className="mt-6 w-full max-w-md">
-        <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3">
-          <p className="text-xs font-semibold text-indigo-700 mb-1">Tài khoản thử nghiệm</p>
-          <p className="text-xs text-slate-600">
-            <span className="font-medium">Email:</span>{' '}
-            <span className="font-mono">an.nv@sv.ute.udn.vn</span>
-          </p>
-          <p className="text-xs text-slate-600 mt-0.5">
-            <span className="font-medium">Mật khẩu:</span>{' '}
-            <span className="font-mono">Password123</span>
-          </p>
-        </div>
       </div>
     </div>
   );

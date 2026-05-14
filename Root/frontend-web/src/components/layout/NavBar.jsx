@@ -1,27 +1,23 @@
 /**
  * NavBar - Responsive navigation bar
- * - Desktop (≥1024px / lg): fixed top, logo + nav links + student info + logout
+ * - Desktop (≥1024px / lg): fixed top, logo + nav links + user info + logout
  * - Mobile (<1024px): fixed bottom, icon + label + logout
- * Requirements: 7.1, 7.2, 7.3, 7.5, 0.4, 0.5, 0.6, 0.7
+ *
+ * Menu hiển thị theo role:
+ * - SV   → Sự Kiện, Của Tôi
+ * - BCN  → Sự Kiện, Quản lý
+ * - KHOA → Sự Kiện, Quản lý
+ * - CTSV → Sự Kiện, Quản lý
  */
 
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-// Calendar icon (SVG inline)
 function CalendarIcon({ className }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
@@ -30,86 +26,46 @@ function CalendarIcon({ className }) {
   );
 }
 
-// Bookmark/list icon (SVG inline)
 function BookmarkIcon({ className }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
     </svg>
   );
 }
 
-// User icon for student info
 function UserIcon({ className }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }
 
-// Manage icon
 function ManageIcon({ className }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 3v3" />
-      <path d="M12 18v3" />
-      <path d="M4.22 4.22l2.12 2.12" />
-      <path d="M17.66 17.66l2.12 2.12" />
-      <path d="M1 12h3" />
-      <path d="M20 12h3" />
-      <path d="M4.22 19.78l2.12-2.12" />
-      <path d="M17.66 6.34l2.12-2.12" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
+      <path d="M12 3v3" /><path d="M12 18v3" />
+      <path d="M4.22 4.22l2.12 2.12" /><path d="M17.66 17.66l2.12 2.12" />
+      <path d="M1 12h3" /><path d="M20 12h3" />
+      <path d="M4.22 19.78l2.12-2.12" /><path d="M17.66 6.34l2.12-2.12" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
 
-// Logout icon
 function LogoutIcon({ className }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className={className} aria-hidden="true">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
@@ -117,39 +73,38 @@ function LogoutIcon({ className }) {
   );
 }
 
-const navItems = [
-  {
-    label: "Sự Kiện",
-    path: "/",
-    icon: CalendarIcon,
-  },
-  {
-    label: "Của Tôi",
-    path: "/my-events",
-    icon: BookmarkIcon,
-  },
-  {
-    label: "Quản lý",
-    path: "/event-management",
-    icon: ManageIcon,
-  },
-];
+/** Label hiển thị role trong navbar */
+const ROLE_LABELS = {
+  SV: 'Sinh viên',
+  BCN: 'Ban chủ nhiệm CLB',
+  KHOA: 'Cán bộ Khoa',
+  CTSV: 'Phòng CTSV',
+};
+
+/** Nav items theo role */
+function getNavItems(role) {
+  const events = { label: 'Sự Kiện', path: '/', icon: CalendarIcon };
+  const myEvents = { label: 'Của Tôi', path: '/my-events', icon: BookmarkIcon };
+  const manage = { label: 'Quản lý', path: '/event-management', icon: ManageIcon };
+
+  if (role === 'BCN' || role === 'KHOA' || role === 'CTSV') {
+    return [events, manage];
+  }
+  // SV (default)
+  return [events, myEvents];
+}
 
 export default function NavBar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navItems = getNavItems(user?.role);
 
-  /**
-   * Determine if a nav item is active.
-   * "/" is active only when exactly at "/", not on sub-routes like "/events/:id".
-   * "/my-events" is active when pathname starts with "/my-events".
-   */
   function isActive(path) {
-    if (path === "/") {
-      return location.pathname === "/";
-    }
+    if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   }
+
+  const roleLabel = ROLE_LABELS[user?.role] || 'Người dùng';
 
   return (
     <>
@@ -191,7 +146,7 @@ export default function NavBar() {
           })}
         </div>
 
-        {/* Student Info + Logout — right */}
+        {/* User Info + Logout — right */}
         <div className="flex items-center gap-3 min-w-[160px] justify-end">
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
             <UserIcon className="w-4 h-4 text-indigo-600" />
@@ -200,9 +155,8 @@ export default function NavBar() {
             <p className="text-sm font-semibold text-slate-800 truncate max-w-[140px]">
               {user?.hoTen}
             </p>
-            <p className="text-xs text-slate-400">{user?.maSV}</p>
+            <p className="text-xs text-slate-400">{roleLabel}</p>
           </div>
-          {/* Nút đăng xuất desktop */}
           <button
             onClick={logout}
             title="Đăng xuất"
@@ -228,20 +182,12 @@ export default function NavBar() {
               to={path}
               className={[
                 "relative flex-1 flex flex-col items-center justify-center gap-1 text-xs font-medium transition-colors duration-150",
-                active
-                  ? "text-indigo-600"
-                  : "text-slate-400 hover:text-indigo-500",
+                active ? "text-indigo-600" : "text-slate-400 hover:text-indigo-500",
               ].join(" ")}
               aria-current={active ? "page" : undefined}
             >
-              <Icon
-                className={[
-                  "w-5 h-5 transition-transform duration-150",
-                  active ? "scale-110" : "",
-                ].join(" ")}
-              />
+              <Icon className={["w-5 h-5 transition-transform duration-150", active ? "scale-110" : ""].join(" ")} />
               <span>{label}</span>
-              {/* Active indicator dot */}
               {active && (
                 <span className="absolute bottom-1 w-1 h-1 rounded-full bg-indigo-600" />
               )}

@@ -1,6 +1,5 @@
 /**
  * AuthContext - Quản lý xác thực người dùng
- * Requirements: 0.2, 0.7, 0.8, 0.9
  */
 
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -12,23 +11,39 @@ export const AuthContext = createContext(null);
 /**
  * Giải mã JWT payload từ token string.
  * @param {string} token
- * @returns {{ maSV: string, hoTen: string, email: string, exp: number } | null}
+ * @returns {object|null}
  */
 function parseJwt(token) {
   try {
     const base64Payload = token.split('.')[1];
-    const payload = JSON.parse(atob(base64Payload));
-    return payload;
+    return JSON.parse(atob(base64Payload));
   } catch {
     return null;
   }
 }
 
 /**
+ * Xác định trang redirect sau khi đăng nhập dựa trên role.
+ * - BCN  → /event-management (quản lý sự kiện CLB)
+ * - KHOA → /event-management (duyệt sự kiện cấp khoa)
+ * - CTSV → /event-management (duyệt sự kiện cấp trường)
+ * - SV   → /                 (danh sách sự kiện)
+ *
+ * @param {string} role
+ * @returns {string}
+ */
+function getHomeByRole(role) {
+  if (role === 'BCN' || role === 'KHOA' || role === 'CTSV') {
+    return '/event-management';
+  }
+  return '/';
+}
+
+/**
  * AuthProvider - Provider bao bọc ứng dụng để cung cấp auth state.
  *
  * State shape:
- * - user: { maSV, hoTen, email } | null
+ * - user: { maND, hoTen, email, role } | null
  * - token: string | null
  * - isLoading: boolean
  */
@@ -44,7 +59,13 @@ export function AuthProvider({ children }) {
     if (savedToken) {
       const payload = parseJwt(savedToken);
       if (payload && payload.exp * 1000 > Date.now()) {
-        setUser({ maSV: payload.maSV, hoTen: payload.hoTen, email: payload.email });
+        setUser({
+          maND: payload.maND || payload.maSV,
+          maSV: payload.maSV || payload.maND,
+          hoTen: payload.hoTen,
+          email: payload.email,
+          role: payload.role || 'SV',
+        });
         setToken(savedToken);
       } else {
         localStorage.removeItem('token');
@@ -55,7 +76,7 @@ export function AuthProvider({ children }) {
 
   /**
    * Đăng nhập với email và password.
-   * Gọi POST /api/auth/login, lưu token, cập nhật state, navigate về trang chủ.
+   * Gọi POST /api/auth/login, lưu token, cập nhật state, navigate về trang phù hợp với role.
    *
    * @param {string} email
    * @param {string} password
@@ -63,11 +84,21 @@ export function AuthProvider({ children }) {
    */
   async function login(email, password) {
     const response = await apiClient.post('/api/auth/login', { email, password });
-    const { token: newToken, maSV, hoTen, email: userEmail } = response.data.data;
+    const { token: newToken, maND, maSV, hoTen, email: userEmail, role } = response.data.data;
+
     localStorage.setItem('token', newToken);
     setToken(newToken);
-    setUser({ maSV, hoTen, email: userEmail });
-    navigate('/');
+
+    const userObj = {
+      maND: maND || maSV,
+      maSV: maSV || maND,
+      hoTen,
+      email: userEmail,
+      role: role || 'SV',
+    };
+    setUser(userObj);
+
+    navigate(getHomeByRole(userObj.role));
   }
 
   /**

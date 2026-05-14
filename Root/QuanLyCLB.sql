@@ -19,7 +19,7 @@ GO
 -- =============================================
 
 CREATE TABLE Khoa (
-    maKhoa CHAR(13) PRIMARY KEY,
+    maKhoa VARCHAR(13) PRIMARY KEY,
     tenKhoa NVARCHAR(100) NOT NULL,
     tenVietTat NVARCHAR(10),
     soDienThoai VARCHAR(15),
@@ -27,14 +27,14 @@ CREATE TABLE Khoa (
 );
 
 CREATE TABLE DONVIQUANLY (
-    maDVQL CHAR(13) PRIMARY KEY,
+    maDVQL VARCHAR(13) PRIMARY KEY,
     tenDVQL NVARCHAR(255) NOT NULL,
     emailLienHien VARCHAR(50),
     soDienThoai VARCHAR(15)
 );
 
 CREATE TABLE VAI_TRO (
-    VaiTroID CHAR(13) PRIMARY KEY,
+    VaiTroID VARCHAR(13) PRIMARY KEY,
     tenVaiTro NVARCHAR(50) NOT NULL,
     moTa NVARCHAR(255),
     quyen NVARCHAR(255),
@@ -42,7 +42,7 @@ CREATE TABLE VAI_TRO (
 );
 
 CREATE TABLE TAI_KHOAN (
-    MaND CHAR(13) PRIMARY KEY,
+    MaND VARCHAR(13) PRIMARY KEY,
     hoTen NVARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     matKhau VARCHAR(255) NOT NULL,       -- bcrypt hash
@@ -59,8 +59,8 @@ CREATE TABLE TAI_KHOAN (
 -- =============================================
 
 CREATE TABLE Lop (
-    maLop CHAR(13) PRIMARY KEY,
-    maKhoa CHAR(13),
+    maLop VARCHAR(13) PRIMARY KEY,
+    maKhoa VARCHAR(13),
     tenLop NVARCHAR(50) NOT NULL,
     nienKhoa NVARCHAR(20),
     siSo INT,
@@ -70,8 +70,8 @@ CREATE TABLE Lop (
 );
 
 CREATE TABLE NGUOIDUNG_VAITRO (
-    MaND CHAR(13),
-    VaiTroID CHAR(13),
+    MaND VARCHAR(13),
+    VaiTroID VARCHAR(13),
     GhiChu NVARCHAR(255),
     PRIMARY KEY (MaND, VaiTroID),
     CONSTRAINT FK_NDVT_TaiKhoan FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND) 
@@ -81,8 +81,8 @@ CREATE TABLE NGUOIDUNG_VAITRO (
 );
 
 CREATE TABLE SINHVIEN (
-    maSV CHAR(13) PRIMARY KEY,
-    maLop CHAR(13),
+    maSV VARCHAR(13) PRIMARY KEY,
+    maLop VARCHAR(13),
     diemRenLuyen INT DEFAULT 0,
     CONSTRAINT FK_SV_TaiKhoan FOREIGN KEY (maSV) REFERENCES TAI_KHOAN(MaND) 
         ON UPDATE CASCADE ON DELETE CASCADE,
@@ -91,8 +91,8 @@ CREATE TABLE SINHVIEN (
 );
 
 CREATE TABLE CANBO (
-    maCanBo CHAR(13) PRIMARY KEY,
-    maDVQL CHAR(13),
+    maCanBo VARCHAR(13) PRIMARY KEY,
+    maDVQL VARCHAR(13),
     chucVu NVARCHAR(50),
     trangThai BIT DEFAULT 1,
     CONSTRAINT FK_CB_TaiKhoan FOREIGN KEY (maCanBo) REFERENCES TAI_KHOAN(MaND) 
@@ -102,8 +102,8 @@ CREATE TABLE CANBO (
 );
 
 CREATE TABLE CAULACBO (
-    MaCLB CHAR(13) PRIMARY KEY,
-    maDVQL CHAR(13),
+    MaCLB VARCHAR(13) PRIMARY KEY,
+    maDVQL VARCHAR(13),
     TenCLB NVARCHAR(100) NOT NULL,
     MoTa NVARCHAR(MAX),
     Logo NVARCHAR(255),
@@ -116,8 +116,8 @@ CREATE TABLE CAULACBO (
 );
 
 CREATE TABLE TAI_SAN (
-    MaTS CHAR(13) PRIMARY KEY,
-    MaDVQL CHAR(13),
+    MaTS VARCHAR(13) PRIMARY KEY,
+    MaDVQL VARCHAR(13),
     TenTS NVARCHAR(255) NOT NULL,
     SoLuongTong INT NOT NULL,
     CONSTRAINT FK_TS_DVQL FOREIGN KEY (MaDVQL) REFERENCES DONVIQUANLY(maDVQL) 
@@ -129,8 +129,8 @@ CREATE TABLE TAI_SAN (
 -- =============================================
 
 CREATE TABLE TAI_CHINH (
-    MaTC CHAR(13) PRIMARY KEY,
-    MaCLB CHAR(13),
+    MaTC VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
     TenTaiChinh NVARCHAR(100),
     Nam INT,
     TongThu DECIMAL(18,2) DEFAULT 0,
@@ -144,9 +144,9 @@ CREATE TABLE TAI_CHINH (
 );
 
 CREATE TABLE THANH_VIEN (
-    MaTV CHAR(13) PRIMARY KEY,
-    MaCLB CHAR(13),
-    MaND CHAR(13),
+    MaTV VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    MaND VARCHAR(13),
     VaiTroCLB NVARCHAR(50),
     NgayThamGia DATE,
     NgayRoi DATE,
@@ -161,8 +161,8 @@ CREATE TABLE THANH_VIEN (
 );
 
 CREATE TABLE SU_KIEN (
-    MaSK CHAR(13) PRIMARY KEY,
-    MaCLB CHAR(13),
+    MaSK VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
     TenSK NVARCHAR(150) NOT NULL,
     MoTa NVARCHAR(MAX),
     ThoiGianBatDau DATETIME,
@@ -182,8 +182,8 @@ CREATE TABLE SU_KIEN (
 -- =============================================
 
 CREATE TABLE LICHSU_THANHVIEN (
-    MaLS CHAR(13) PRIMARY KEY,
-    MaTV CHAR(13),
+    MaLS VARCHAR(13) PRIMARY KEY,
+    MaTV VARCHAR(13),
     HanhDong NVARCHAR(50),
     VaiTroCu NVARCHAR(50),
     VaiTroMoi NVARCHAR(50),
@@ -195,13 +195,13 @@ CREATE TABLE LICHSU_THANHVIEN (
 );
 
 CREATE TABLE NHIEM_VU (
-    MaNV CHAR(13) PRIMARY KEY,
-    MaCLB CHAR(13),
-    MaSK CHAR(13),
+    MaNV VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    MaSK VARCHAR(13),
     TenNV NVARCHAR(200) NOT NULL,
     MoTa NVARCHAR(MAX),
-    MaTV_PhuTrach CHAR(13),
-    NguoiGiaoID CHAR(13),
+    MaTV_PhuTrach VARCHAR(13),
+    NguoiGiaoID VARCHAR(13),
     DoUuTien NVARCHAR(50),
     TienDo INT DEFAULT 0,
     NgayBatDau DATE,
@@ -215,9 +215,9 @@ CREATE TABLE NHIEM_VU (
 );
 
 CREATE TABLE PHAN_CONG_NHIEMVU (
-    MaPC CHAR(13) PRIMARY KEY,
-    MaNV CHAR(13),
-    MaTV CHAR(13),
+    MaPC VARCHAR(13) PRIMARY KEY,
+    MaNV VARCHAR(13),
+    MaTV VARCHAR(13),
     TienDoCaNhan INT DEFAULT 0,
     NgayPhanCong DATETIME DEFAULT GETDATE(),
     NgayHoanThanh DATETIME,
@@ -228,11 +228,11 @@ CREATE TABLE PHAN_CONG_NHIEMVU (
 );
 
 CREATE TABLE DANGKY_SUKIEN (
-    MaDK CHAR(13) PRIMARY KEY,
-    MaSK CHAR(13),
-    MaND CHAR(13),
+    MaDK VARCHAR(13) PRIMARY KEY,
+    MaSK VARCHAR(13),
+    MaND VARCHAR(13),
     NgayDangKy DATETIME DEFAULT GETDATE(),
-    NguoiDuyetID CHAR(13),
+    NguoiDuyetID VARCHAR(13),
     LyDoDangKy NVARCHAR(300),
     NgayDuyet DATETIME,
     TrangThai NVARCHAR(50),
@@ -243,11 +243,11 @@ CREATE TABLE DANGKY_SUKIEN (
 );
 
 CREATE TABLE THONG_BAO (
-    MaTB CHAR(13) PRIMARY KEY,
-    MaCLB CHAR(13),
+    MaTB VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
     TieuDe NVARCHAR(200) NOT NULL,
     NoiDung NVARCHAR(MAX),
-    NguoiGuiID CHAR(13),
+    NguoiGuiID VARCHAR(13),
     SoNguoiNhan INT,
     LoaiTB NVARCHAR(50),
     NgayGui DATETIME DEFAULT GETDATE(),
@@ -257,10 +257,10 @@ CREATE TABLE THONG_BAO (
 );
 
 CREATE TABLE HOSO (
-    MaHoSo CHAR(13) PRIMARY KEY,
-    maCLB CHAR(13),
-    maNguoiGui CHAR(13),
-    maNguoiDuyet CHAR(13),
+    MaHoSo VARCHAR(13) PRIMARY KEY,
+    maCLB VARCHAR(13),
+    maNguoiGui VARCHAR(13),
+    maNguoiDuyet VARCHAR(13),
     loaiHoSo NVARCHAR(50),
     TieuDe NVARCHAR(200) NOT NULL,
     NoiDung NVARCHAR(MAX),
@@ -275,14 +275,14 @@ CREATE TABLE HOSO (
 );
 
 CREATE TABLE KHEN_THUONG_KY_LUAT (
-    MaKTKL CHAR(13) PRIMARY KEY,
-    MaND CHAR(13),
-    MaCLB CHAR(13),
+    MaKTKL VARCHAR(13) PRIMARY KEY,
+    MaND VARCHAR(13),
+    MaCLB VARCHAR(13),
     Loai NVARCHAR(50),
     HinhThuc NVARCHAR(100),
     DiemThayDoi FLOAT,
     LyDo NVARCHAR(MAX),
-    NguoiQuyetDinhID CHAR(13),
+    NguoiQuyetDinhID VARCHAR(13),
     NgayQuyetDinh DATETIME,
     NgayHieuLuc DATE,
     FileMinhChung NVARCHAR(255),
@@ -293,10 +293,10 @@ CREATE TABLE KHEN_THUONG_KY_LUAT (
 );
 
 CREATE TABLE PHIEU_MUON_TRA (
-    MaPhieu CHAR(13) PRIMARY KEY,
-    MaCLB CHAR(13),
-    MaSK CHAR(13),
-    NguoiMuonID CHAR(13),
+    MaPhieu VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    MaSK VARCHAR(13),
+    NguoiMuonID VARCHAR(13),
     NgayTaoPhieu DATE DEFAULT GETDATE(),
     NgayTraDuKien DATE,
     trangThaiPhieu NVARCHAR(50),
@@ -306,8 +306,8 @@ CREATE TABLE PHIEU_MUON_TRA (
 );
 
 CREATE TABLE CHI_TIET_PHIEU_MUON (
-    MaPhieu CHAR(13),
-    MaTS CHAR(13),
+    MaPhieu VARCHAR(13),
+    MaTS VARCHAR(13),
     SoLuongMuon INT NOT NULL,
     tinhTrang NVARCHAR(100),
     PRIMARY KEY (MaPhieu, MaTS),
@@ -320,8 +320,8 @@ GO
 -- =============================================
 -- 5. DỮ LIỆU MẪU (SAMPLE DATA)
 -- =============================================
--- Mật khẩu mẫu cho tất cả tài khoản: Password123
--- bcrypt hash (cost=10): $2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
+-- Mật khẩu mẫu cho tất cả tài khoản: password (chữ thường)
+-- bcrypt hash (cost=10): $2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi  (hash của "password")
 -- =============================================
 
 -- ---------------------------------------------
@@ -347,11 +347,10 @@ GO
 -- 5.3 Vai trò
 -- ---------------------------------------------
 INSERT INTO VAI_TRO (VaiTroID, tenVaiTro, moTa, quyen, trangThai) VALUES
-('VT000000001', N'Sinh viên',      N'Sinh viên thông thường',          N'xem_sukien,dangky_sukien',                          1),
-('VT000000002', N'Thành viên CLB', N'Thành viên câu lạc bộ',           N'xem_sukien,dangky_sukien,xem_thanhvien',             1),
-('VT000000003', N'Ban quản lý CLB',N'Quản lý hoạt động câu lạc bộ',    N'quan_ly_sukien,quan_ly_thanhvien,duyet_dangky',      1),
-('VT000000004', N'Cán bộ',         N'Cán bộ quản lý trường',           N'quan_ly_clb,quan_ly_sukien,xem_baocao',              1),
-('VT000000005', N'Admin',          N'Quản trị hệ thống',                N'full_access',                                        1);
+('VT000000001', N'Sinh viên',      N'Sinh viên thông thường', N'{đăng kí sự kiện}', 1),
+('VT000000002', N'Ban chủ nhiệm CLB',N'Quản lý hoạt động câu lạc bộ', N'{thống kê sự kiện; đăng ký tạo mới sự kiện; quản lý sự kiện; quản lý thành viên CLB}', 1),
+('VT000000003', N'Cán bộ khoa', N'Cán bộ của Khoa hoặc đoàn', N'{duyệt sự kiện do CLB gửi lên; xem thống kê hoạt động khoa; quản lý thông tin CLB thuộc khoa; theo dõi sự kiện thuộc khoa}',1),
+('VT000000003', N'Phòng CTSV', N'Phòng công tác sinh viên', N'{duyệt/từ chối sự kiện cấp trường; xem thống kê toàn trường; quản lý toàn bộ hoạt động sinh viên; khóa/mở hoạt động CLB;quản lý tất cả sự kiện}',1);
 GO
 
 -- ---------------------------------------------
@@ -366,7 +365,7 @@ INSERT INTO Lop (maLop, maKhoa, tenLop, nienKhoa, siSo, trangThai) VALUES
 GO
 
 -- ---------------------------------------------
--- 5.5 Tài khoản (matKhau = bcrypt("Password123"))
+-- 5.5 Tài khoản (matKhau = bcrypt("password"))  ← mật khẩu là "password" chữ thường
 -- ---------------------------------------------
 INSERT INTO TAI_KHOAN (MaND, hoTen, email, matKhau, soDienThoai, ngaySinh, gioiTinh, trangThai) VALUES
 -- Sinh viên
@@ -382,7 +381,9 @@ INSERT INTO TAI_KHOAN (MaND, hoTen, email, matKhau, soDienThoai, ngaySinh, gioiT
 ('SV210000009', N'Trần Văn Khóa',      'khoa.tv@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234569', '2003-06-20', N'Nam',  0),
 -- Cán bộ / Ban quản lý CLB
 ('CB000000001', N'Nguyễn Thị Quản',    'quan.nt@ute.udn.vn',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234570', '1990-03-10', N'Nữ',   1),
-('CB000000002', N'Lê Văn Trưởng',      'truong.lv@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234571', '1988-11-05', N'Nam',  1);
+('CB000000002', N'Lê Văn Trưởng',      'truong.lv@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234571', '1988-11-05', N'Nam',  1),
+('CB000000003', N'Nguyễn Hữu Thọ',      'tho.nh@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0896998961', '1960-11-05', N'Nam',  1)
+;
 GO
 
 -- ---------------------------------------------
@@ -405,7 +406,8 @@ GO
 -- ---------------------------------------------
 INSERT INTO CANBO (maCanBo, maDVQL, chucVu, trangThai) VALUES
 ('CB000000001', 'DVQL0000001', N'Bí thư Đoàn',          1),
-('CB000000002', 'DVQL0000002', N'Chuyên viên CTSV',      1);
+('CB000000002', 'DVQL0000002', N'Cán bộ khoa',      1),
+('CB000000003', 'DVQL0000003', N'Chuyên viên CTSV',      1);
 GO
 
 -- ---------------------------------------------
@@ -421,8 +423,9 @@ INSERT INTO NGUOIDUNG_VAITRO (MaND, VaiTroID, GhiChu) VALUES
 ('SV220000007', 'VT000000001', N'Sinh viên thường'),
 ('SV220000008', 'VT000000001', N'Sinh viên thường'),
 ('SV210000009', 'VT000000001', N'Tài khoản bị khóa'),
-('CB000000001', 'VT000000004', N'Cán bộ Đoàn'),
-('CB000000002', 'VT000000004', N'Cán bộ CTSV');
+('CB000000001', 'VT000000002', N'Cán bộ Đoàn'),
+('CB000000002', 'VT000000003', N'Cán bộ Khoa'),
+('CB000000003', 'VT000000004', N'Cán bộ CTSV');
 GO
 
 -- ---------------------------------------------
@@ -558,11 +561,6 @@ GO
 -- SELECT COUNT(*) AS soDangKy     FROM DANGKY_SUKIEN;     -- 20
 --
 -- Test đăng nhập:
--- Email: an.nv@sv.ute.udn.vn  | Password: Password123  → Thành công
--- Email: khoa.tv@sv.ute.udn.vn | Password: Password123 → HTTP 403 (tài khoản bị khóa)
+-- Email: an.nv@sv.ute.udn.vn      | Password: password  → Thành công
+-- Email: khoa.tv@sv.ute.udn.vn    | Password: password  → HTTP 403 (tài khoản bị khóa)
 -- =============================================
-USE QUANLYCLB_UTE;
-ALTER TABLE SU_KIEN ADD DiemRenLuyen FLOAT DEFAULT 0;
-ALTER TABLE SU_KIEN ADD LyDoTuChoi NVARCHAR(MAX);
-
-SELECT MaSK FROM SU_KIEN;

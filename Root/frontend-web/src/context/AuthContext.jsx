@@ -2,9 +2,9 @@
  * AuthContext - Quản lý xác thực người dùng
  */
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import apiClient from '../utils/apiClient';
+import { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import apiClient from "../utils/apiClient";
 
 export const AuthContext = createContext(null);
 
@@ -15,7 +15,7 @@ export const AuthContext = createContext(null);
  */
 function parseJwt(token) {
   try {
-    const base64Payload = token.split('.')[1];
+    const base64Payload = token.split(".")[1];
     return JSON.parse(atob(base64Payload));
   } catch {
     return null;
@@ -24,19 +24,25 @@ function parseJwt(token) {
 
 /**
  * Xác định trang redirect sau khi đăng nhập dựa trên role.
- * - BCN  → /event-management (quản lý sự kiện CLB)
- * - KHOA → /event-management (duyệt sự kiện cấp khoa)
- * - CTSV → /event-management (duyệt sự kiện cấp trường)
+ * - BCN  → /bcn-management (quản lý sự kiện CLB)
+ * - KHOA → /faculty-management (duyệt sự kiện cấp khoa)
+ * - CTSV → /student-affairs (duyệt sự kiện cấp trường)
  * - SV   → /                 (danh sách sự kiện)
  *
  * @param {string} role
  * @returns {string}
  */
 function getHomeByRole(role) {
-  if (role === 'BCN' || role === 'KHOA' || role === 'CTSV') {
-    return '/event-management';
+  switch (role) {
+    case "BCN":
+      return "/bcn-management";
+    case "KHOA":
+      return "/faculty-management";
+    case "CTSV":
+      return "/student-affairs";
+    default:
+      return "/";
   }
-  return '/';
 }
 
 /**
@@ -55,7 +61,7 @@ export function AuthProvider({ children }) {
 
   // Khôi phục session từ localStorage khi tải lại trang
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
+    const savedToken = localStorage.getItem("token");
     if (savedToken) {
       const payload = parseJwt(savedToken);
       if (payload && payload.exp * 1000 > Date.now()) {
@@ -64,11 +70,11 @@ export function AuthProvider({ children }) {
           maSV: payload.maSV || payload.maND,
           hoTen: payload.hoTen,
           email: payload.email,
-          role: payload.role || 'SV',
+          role: payload.role || "SV",
         });
         setToken(savedToken);
       } else {
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
       }
     }
     setIsLoading(false);
@@ -83,10 +89,20 @@ export function AuthProvider({ children }) {
    * @throws {AxiosError} Nếu đăng nhập thất bại
    */
   async function login(email, password) {
-    const response = await apiClient.post('/api/auth/login', { email, password });
-    const { token: newToken, maND, maSV, hoTen, email: userEmail, role } = response.data.data;
+    const response = await apiClient.post("/api/auth/login", {
+      email,
+      password,
+    });
+    const {
+      token: newToken,
+      maND,
+      maSV,
+      hoTen,
+      email: userEmail,
+      role,
+    } = response.data.data;
 
-    localStorage.setItem('token', newToken);
+    localStorage.setItem("token", newToken);
     setToken(newToken);
 
     const userObj = {
@@ -94,7 +110,7 @@ export function AuthProvider({ children }) {
       maSV: maSV || maND,
       hoTen,
       email: userEmail,
-      role: role || 'SV',
+      role: role || "SV",
     };
     setUser(userObj);
 
@@ -105,10 +121,10 @@ export function AuthProvider({ children }) {
    * Đăng xuất: xóa token, reset state, navigate về trang login.
    */
   function logout() {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setToken(null);
     setUser(null);
-    navigate('/login');
+    navigate("/login");
   }
 
   const value = {
@@ -120,11 +136,7 @@ export function AuthProvider({ children }) {
     logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 /**
@@ -133,6 +145,7 @@ export function AuthProvider({ children }) {
  */
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth phải được dùng bên trong AuthProvider');
+  if (!context)
+    throw new Error("useAuth phải được dùng bên trong AuthProvider");
   return context;
 }

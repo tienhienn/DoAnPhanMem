@@ -1,5 +1,5 @@
-const sql = require("mssql");
 require("dotenv").config();
+const sql = require("mssql");
 
 const config = {
   server: process.env.DB_SERVER || "localhost",

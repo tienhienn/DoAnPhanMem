@@ -20,7 +20,23 @@ import EventListPage from "./pages/EventListPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import QRScreen from "./pages/QRScreen";
 import MyEventsPage from "./pages/MyEventsPage";
-import EventManagementPage from "./pages/EventManagementPage";
+import BCNManagementPage from "./pages/BCNManagementPage";
+import FacultyManagementPage from "./pages/FacultyManagementPage";
+import StudentAffairsPage from "./pages/StudentAffairsPage";
+
+/**
+ * App - Root component
+ * Thiết lập React Router, AuthProvider và AppProvider cho toàn bộ ứng dụng.
+ *
+ * Phân quyền route:
+ * - /                          → SV, BCN, KHOA, CTSV (tất cả đã đăng nhập)
+ * - /events/:id                → tất cả
+ * - /events/:id/qr             → tất cả
+ * - /my-events                 → SV (sinh viên)
+ * - /bcn-management            → BCN (ban chủ nhiệm CLB)
+ * - /faculty-management        → KHOA (cán bộ khoa)
+ * - /student-affairs           → CTSV (phòng công tác sinh viên)
+ */
 
 export default function App() {
   return (
@@ -43,9 +59,28 @@ export default function App() {
                   <Route path="/my-events" element={<MyEventsPage />} />
                 </Route>
 
-                {/* Chỉ BCN, KHOA, CTSV */}
-                <Route element={<ProtectedRoute roles={["BCN", "KHOA", "CTSV"]} />}>
-                  <Route path="/event-management" element={<EventManagementPage />} />
+                {/* Chỉ Ban chủ nhiệm CLB */}
+                <Route element={<ProtectedRoute roles={["BCN"]} />}>
+                  <Route
+                    path="/bcn-management"
+                    element={<BCNManagementPage />}
+                  />
+                </Route>
+
+                {/* Chỉ Cán bộ Khoa */}
+                <Route element={<ProtectedRoute roles={["KHOA"]} />}>
+                  <Route
+                    path="/faculty-management"
+                    element={<FacultyManagementPage />}
+                  />
+                </Route>
+
+                {/* Chỉ Phòng CTSV */}
+                <Route element={<ProtectedRoute roles={["CTSV"]} />}>
+                  <Route
+                    path="/student-affairs"
+                    element={<StudentAffairsPage />}
+                  />
                 </Route>
               </Route>
             </Route>

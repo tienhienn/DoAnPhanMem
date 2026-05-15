@@ -5,9 +5,9 @@
  *
  * Menu hiển thị theo role:
  * - SV   → Sự Kiện, Của Tôi
- * - BCN  → Sự Kiện, Quản lý
- * - KHOA → Sự Kiện, Quản lý
- * - CTSV → Sự Kiện, Quản lý
+ * - BCN  → Sự Kiện, Quản lý (BCN)
+ * - KHOA → Sự Kiện, Quản lý (Khoa)
+ * - CTSV → Sự Kiện, Quản lý (CTSV)
  */
 
 import { NavLink, useLocation } from "react-router-dom";
@@ -15,9 +15,17 @@ import { useAuth } from "../../context/AuthContext";
 
 function CalendarIcon({ className }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
       <line x1="16" y1="2" x2="16" y2="6" />
       <line x1="8" y1="2" x2="8" y2="6" />
@@ -28,9 +36,17 @@ function CalendarIcon({ className }) {
 
 function BookmarkIcon({ className }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
     </svg>
   );
@@ -38,9 +54,17 @@ function BookmarkIcon({ className }) {
 
 function UserIcon({ className }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
@@ -49,13 +73,25 @@ function UserIcon({ className }) {
 
 function ManageIcon({ className }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      className={className} aria-hidden="true">
-      <path d="M12 3v3" /><path d="M12 18v3" />
-      <path d="M4.22 4.22l2.12 2.12" /><path d="M17.66 17.66l2.12 2.12" />
-      <path d="M1 12h3" /><path d="M20 12h3" />
-      <path d="M4.22 19.78l2.12-2.12" /><path d="M17.66 6.34l2.12-2.12" />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 3v3" />
+      <path d="M12 18v3" />
+      <path d="M4.22 4.22l2.12 2.12" />
+      <path d="M17.66 17.66l2.12 2.12" />
+      <path d="M1 12h3" />
+      <path d="M20 12h3" />
+      <path d="M4.22 19.78l2.12-2.12" />
+      <path d="M17.66 6.34l2.12-2.12" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   );
@@ -63,9 +99,17 @@ function ManageIcon({ className }) {
 
 function LogoutIcon({ className }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <polyline points="16 17 21 12 16 7" />
       <line x1="21" y1="12" x2="9" y2="12" />
@@ -75,23 +119,54 @@ function LogoutIcon({ className }) {
 
 /** Label hiển thị role trong navbar */
 const ROLE_LABELS = {
-  SV: 'Sinh viên',
-  BCN: 'Ban chủ nhiệm CLB',
-  KHOA: 'Cán bộ Khoa',
-  CTSV: 'Phòng CTSV',
+  SV: "Sinh viên",
+  BCN: "Ban chủ nhiệm CLB",
+  KHOA: "Cán bộ Khoa",
+  CTSV: "Phòng CTSV",
 };
 
 /** Nav items theo role */
 function getNavItems(role) {
-  const events = { label: 'Sự Kiện', path: '/', icon: CalendarIcon };
-  const myEvents = { label: 'Của Tôi', path: '/my-events', icon: BookmarkIcon };
-  const manage = { label: 'Quản lý', path: '/event-management', icon: ManageIcon };
+  const events = { label: "Sự Kiện", path: "/", icon: CalendarIcon };
 
-  if (role === 'BCN' || role === 'KHOA' || role === 'CTSV') {
+  if (role === "SV") {
+    const myEvents = {
+      label: "Của Tôi",
+      path: "/my-events",
+      icon: BookmarkIcon,
+    };
+    return [events, myEvents];
+  }
+
+  if (role === "BCN") {
+    const manage = {
+      label: "Quản lý BCN",
+      path: "/bcn-management",
+      icon: ManageIcon,
+    };
     return [events, manage];
   }
-  // SV (default)
-  return [events, myEvents];
+
+  if (role === "KHOA") {
+    const manage = {
+      label: "Duyệt Khoa",
+      path: "/faculty-management",
+      icon: ManageIcon,
+    };
+    return [events, manage];
+  }
+
+  if (role === "CTSV") {
+    const manage = {
+      label: "Quản lý CTSV",
+      path: "/student-affairs",
+      icon: ManageIcon,
+    };
+    return [events, manage];
+  }
+
+  // Default
+  return [events];
 }
 
 export default function NavBar() {
@@ -100,11 +175,11 @@ export default function NavBar() {
   const navItems = getNavItems(user?.role);
 
   function isActive(path) {
-    if (path === '/') return location.pathname === '/';
+    if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   }
 
-  const roleLabel = ROLE_LABELS[user?.role] || 'Người dùng';
+  const roleLabel = ROLE_LABELS[user?.role] || "Người dùng";
 
   return (
     <>
@@ -182,11 +257,18 @@ export default function NavBar() {
               to={path}
               className={[
                 "relative flex-1 flex flex-col items-center justify-center gap-1 text-xs font-medium transition-colors duration-150",
-                active ? "text-indigo-600" : "text-slate-400 hover:text-indigo-500",
+                active
+                  ? "text-indigo-600"
+                  : "text-slate-400 hover:text-indigo-500",
               ].join(" ")}
               aria-current={active ? "page" : undefined}
             >
-              <Icon className={["w-5 h-5 transition-transform duration-150", active ? "scale-110" : ""].join(" ")} />
+              <Icon
+                className={[
+                  "w-5 h-5 transition-transform duration-150",
+                  active ? "scale-110" : "",
+                ].join(" ")}
+              />
               <span>{label}</span>
               {active && (
                 <span className="absolute bottom-1 w-1 h-1 rounded-full bg-indigo-600" />

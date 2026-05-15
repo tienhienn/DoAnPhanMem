@@ -316,7 +316,9 @@ CREATE TABLE CHI_TIET_PHIEU_MUON (
 );
 GO
 
-
+USE QUANLYCLB_UTE;
+ALTER TABLE SU_KIEN ADD DiemRenLuyen FLOAT DEFAULT 0;
+ALTER TABLE SU_KIEN ADD LyDoTuChoi NVARCHAR(MAX);
 -- =============================================
 -- 5. DỮ LIỆU MẪU (SAMPLE DATA)
 -- =============================================
@@ -350,7 +352,7 @@ INSERT INTO VAI_TRO (VaiTroID, tenVaiTro, moTa, quyen, trangThai) VALUES
 ('VT000000001', N'Sinh viên',      N'Sinh viên thông thường', N'{đăng kí sự kiện}', 1),
 ('VT000000002', N'Ban chủ nhiệm CLB',N'Quản lý hoạt động câu lạc bộ', N'{thống kê sự kiện; đăng ký tạo mới sự kiện; quản lý sự kiện; quản lý thành viên CLB}', 1),
 ('VT000000003', N'Cán bộ khoa', N'Cán bộ của Khoa hoặc đoàn', N'{duyệt sự kiện do CLB gửi lên; xem thống kê hoạt động khoa; quản lý thông tin CLB thuộc khoa; theo dõi sự kiện thuộc khoa}',1),
-('VT000000003', N'Phòng CTSV', N'Phòng công tác sinh viên', N'{duyệt/từ chối sự kiện cấp trường; xem thống kê toàn trường; quản lý toàn bộ hoạt động sinh viên; khóa/mở hoạt động CLB;quản lý tất cả sự kiện}',1);
+('VT000000004', N'Phòng CTSV', N'Phòng công tác sinh viên', N'{duyệt/từ chối sự kiện cấp trường; xem thống kê toàn trường; quản lý toàn bộ hoạt động sinh viên; khóa/mở hoạt động CLB;quản lý tất cả sự kiện}',1);
 GO
 
 -- ---------------------------------------------

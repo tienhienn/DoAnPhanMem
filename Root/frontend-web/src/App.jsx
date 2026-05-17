@@ -23,6 +23,9 @@ import MyEventsPage from "./pages/MyEventsPage";
 import BCNManagementPage from "./pages/BCNManagementPage";
 import FacultyManagementPage from "./pages/FacultyManagementPage";
 import StudentAffairsPage from "./pages/StudentAffairsPage";
+import ProfilePage from "./pages/ProfilePage";
+import ClubsPage from "./pages/ClubsPage";
+import ClubDetailPage from "./pages/ClubDetailPage";
 
 /**
  * App - Root component
@@ -57,6 +60,9 @@ export default function App() {
                 {/* Chỉ sinh viên */}
                 <Route element={<ProtectedRoute roles={["SV"]} />}>
                   <Route path="/my-events" element={<MyEventsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/clubs" element={<ClubsPage />} />
+                  <Route path="/clubs/:id" element={<ClubDetailPage />} />
                 </Route>
 
                 {/* Chỉ Ban chủ nhiệm CLB */}

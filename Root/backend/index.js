@@ -9,6 +9,7 @@ const authRoutes = require("./routes/auth");
 const adminEventsRoutes = require("./routes/adminEvents");
 const eventRoutes = require("./routes/events");
 const studentRoutes = require("./routes/students");
+const clubRoutes = require("./routes/clubs");
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin/events", adminEventsRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/students", studentRoutes);
+app.use("/api/clubs", clubRoutes);
 
 // 404 handler — phải đặt sau tất cả routes
 app.use((req, res) => {

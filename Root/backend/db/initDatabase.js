@@ -29,7 +29,7 @@ const initDatabase = async () => {
     console.log("✓ Connected to SQL Server");
 
     // Đọc file SQL
-    const sqlFilePath = path.join(__dirname, "../QuanLyCLB.sql");
+    const sqlFilePath = path.join(__dirname, "../../QuanLyCLB.sql");
     if (!fs.existsSync(sqlFilePath)) {
       console.warn("⚠️  QuanLyCLB.sql not found at:", sqlFilePath);
       console.log("📝 Skipping database initialization");

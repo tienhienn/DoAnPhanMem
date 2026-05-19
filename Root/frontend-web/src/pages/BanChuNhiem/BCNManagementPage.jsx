@@ -22,7 +22,7 @@ import {
   FiMapPin,
   FiUsers,
 } from "react-icons/fi";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 // ============================================
 // MOCK DATA
@@ -77,7 +77,8 @@ const MOCK_EVENTS = [
     location: "Phòng C205",
     quota: 80,
     points: 1.0,
-    description: "Công ty X tuyển dụng các sinh viên ngành Công Nghệ Thông Tin.",
+    description:
+      "Công ty X tuyển dụng các sinh viên ngành Công Nghệ Thông Tin.",
     status: "rejected",
     createdBy: "Ban chủ nhiệm",
     feedback: "Sự kiện chưa đủ thông tin chi tiết. Vui lòng cập nhật lại.",
@@ -149,7 +150,7 @@ const EventFormModal = ({ isOpen, event, onClose, onSave }) => {
       quota: "",
       points: "",
       description: "",
-    }
+    },
   );
 
   if (!isOpen) return null;
@@ -158,7 +159,8 @@ const EventFormModal = ({ isOpen, event, onClose, onSave }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "quota" || name === "points" ? parseFloat(value) || "" : value,
+      [name]:
+        name === "quota" || name === "points" ? parseFloat(value) || "" : value,
     }));
   };
 
@@ -191,7 +193,9 @@ const EventFormModal = ({ isOpen, event, onClose, onSave }) => {
               {event ? "Chỉnh sửa sự kiện" : "Tạo sự kiện mới"}
             </h2>
             <p className="text-blue-100 text-sm mt-1">
-              {event ? "Cập nhật thông tin sự kiện" : "Lập kế hoạch hoạt động mới"}
+              {event
+                ? "Cập nhật thông tin sự kiện"
+                : "Lập kế hoạch hoạt động mới"}
             </p>
           </div>
           <button
@@ -627,7 +631,9 @@ export default function BCNManagementPage() {
   // Calculate statistics
   const totalEvents = events.length;
   const draftCount = events.filter((e) => e.status === "draft").length;
-  const pendingCount = events.filter((e) => e.status === "pending_faculty").length;
+  const pendingCount = events.filter(
+    (e) => e.status === "pending_faculty",
+  ).length;
 
   // Filter events
   const filteredEvents =
@@ -648,10 +654,8 @@ export default function BCNManagementPage() {
     if (editingEvent) {
       setEvents((prev) =>
         prev.map((e) =>
-          e.id === editingEvent.id
-            ? { ...e, ...formData, status }
-            : e
-        )
+          e.id === editingEvent.id ? { ...e, ...formData, status } : e,
+        ),
       );
     } else {
       setEvents((prev) => [
@@ -691,7 +695,8 @@ export default function BCNManagementPage() {
                 Quản lý Hoạt động Câu lạc bộ
               </h1>
               <p className="text-slate-600 mt-2">
-                Đã đăng nhập: <span className="font-semibold">{user?.hoTen}</span>
+                Đã đăng nhập:{" "}
+                <span className="font-semibold">{user?.hoTen}</span>
               </p>
             </div>
             <button
@@ -764,9 +769,7 @@ export default function BCNManagementPage() {
               <p className="text-lg font-semibold text-slate-900 mb-1">
                 Không có sự kiện nào
               </p>
-              <p className="text-slate-600">
-                Hãy tạo sự kiện mới để bắt đầu
-              </p>
+              <p className="text-slate-600">Hãy tạo sự kiện mới để bắt đầu</p>
             </div>
           )}
         </div>

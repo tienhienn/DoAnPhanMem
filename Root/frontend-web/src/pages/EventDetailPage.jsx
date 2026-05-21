@@ -162,9 +162,9 @@ export default function EventDetailPage() {
 
   const availableSlots = soNguoiToiDa - soNguoiDaDangKy;
 
-  // getActionButtons nhận event với field chuẩn (maxCapacity, registeredCount)
+  // getActionButtons nhận event với field chuẩn (maxCapacity, registeredCount, thoiGianBatDau)
   const actionButtons = getActionButtons(
-    { maxCapacity: soNguoiToiDa, registeredCount: soNguoiDaDangKy },
+    { maxCapacity: soNguoiToiDa, registeredCount: soNguoiDaDangKy, thoiGianBatDau },
     registrationStatus
   );
 
@@ -412,7 +412,7 @@ function ActionArea({
   }
 
   // Chưa đăng ký
-  const isDisabled = actionButtons.register === "disabled";
+  const isDisabled = actionButtons.register === "disabled" || actionButtons.register === "disabled_past";
 
   return (
     <div className="space-y-2">
@@ -428,11 +428,16 @@ function ActionArea({
         aria-disabled={isDisabled}
       >
         <TicketIcon />
-        Đăng Ký Tham Gia
+        {actionButtons.register === "disabled_past" ? "Đã Quá Hạn Đăng Ký" : "Đăng Ký Tham Gia"}
       </button>
-      {isDisabled && (
+      {actionButtons.register === "disabled" && (
         <p className="text-center text-sm text-red-500 font-medium">
-          Sự kiện đã hết chỗ
+          Sự kiện đã hết chỗ trống
+        </p>
+      )}
+      {actionButtons.register === "disabled_past" && (
+        <p className="text-center text-sm text-red-500 font-medium">
+          Sự kiện đã diễn ra hoặc đã kết thúc
         </p>
       )}
     </div>

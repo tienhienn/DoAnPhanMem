@@ -11,6 +11,10 @@ export default function ClubDetailPage() {
   const [joinStatus, setJoinStatus] = useState(null); // 'none', 'pending', 'joined'
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joinReason, setJoinReason] = useState('');
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leaveLoading, setLeaveLoading] = useState(false);
+  const [userClubRole, setUserClubRole] = useState(null);
+  const [leaveError, setLeaveError] = useState(null);
 
   useEffect(() => {
     fetchClubDetails();
@@ -34,14 +38,18 @@ export default function ClubDetailPage() {
         setClub(clubData.data);
         
         // Determine join status
-        if (myClubsData.success && myClubsData.data.some(c => c.MaCLB === id)) {
+        const myClubInfo = myClubsData.success ? myClubsData.data.find(c => c.MaCLB === id) : null;
+        if (myClubInfo) {
           setJoinStatus('joined');
+          setUserClubRole(myClubInfo.VaiTroCLB);
         } else if (requestsData.success) {
           const pendingReq = requestsData.data.find(req => req.MaCLB === id && req.TrangThai === 'cho_duyet');
           if (pendingReq) setJoinStatus('pending');
           else setJoinStatus('none');
+          setUserClubRole(null);
         } else {
           setJoinStatus('none');
+          setUserClubRole(null);
         }
       } else {
         setError(clubData.error?.message || 'Không tìm thấy CLB');
@@ -68,6 +76,24 @@ export default function ClubDetailPage() {
       }
     } catch (err) {
       alert(err.response?.data?.error?.message || err.response?.data?.message || 'Lỗi kết nối server');
+    }
+  };
+
+  const handleLeaveClub = async () => {
+    try {
+      setLeaveLoading(true);
+      setLeaveError(null);
+      const response = await apiClient.post(`/api/clubs/${id}/leave`);
+      if (response.data.success) {
+        setShowLeaveModal(false);
+        fetchClubDetails();
+      } else {
+        setLeaveError(response.data.message || 'Có lỗi xảy ra khi rời CLB');
+      }
+    } catch (err) {
+      setLeaveError(err.response?.data?.message || err.response?.data?.error?.message || 'Không thể rời câu lạc bộ');
+    } finally {
+      setLeaveLoading(false);
     }
   };
 
@@ -105,11 +131,28 @@ export default function ClubDetailPage() {
               </div>
             </div>
 
-            <div className="w-full md:w-auto mb-2">
+            <div className="w-full md:w-auto mb-2 text-center">
               {joinStatus === 'joined' ? (
-                <button disabled className="w-full md:w-auto px-6 py-3 bg-green-50 text-green-600 font-bold rounded-xl flex items-center justify-center gap-2 border border-green-200">
-                  <CheckCircle className="w-5 h-5" /> Đã tham gia
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button disabled className="w-full md:w-auto px-6 py-3 bg-green-50 text-green-600 font-bold rounded-xl flex items-center justify-center gap-2 border border-green-200">
+                    <CheckCircle className="w-5 h-5" /> Đã tham gia
+                  </button>
+                  {userClubRole === 'Chủ nhiệm' ? (
+                    <span className="text-xs text-red-500 font-semibold max-w-[200px] inline-block text-center mt-1">
+                      ⚠️ Chủ nhiệm không thể rời CLB
+                    </span>
+                  ) : (
+                    <button 
+                      onClick={() => {
+                        setLeaveError(null);
+                        setShowLeaveModal(true);
+                      }}
+                      className="w-full md:w-auto px-6 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-xl flex items-center justify-center gap-2 border border-red-200 transition-colors text-sm"
+                    >
+                      Rời câu lạc bộ
+                    </button>
+                  )}
+                </div>
               ) : joinStatus === 'pending' ? (
                 <button disabled className="w-full md:w-auto px-6 py-3 bg-amber-50 text-amber-600 font-bold rounded-xl flex items-center justify-center gap-2 border border-amber-200">
                   <Clock className="w-5 h-5" /> Đang chờ duyệt
@@ -210,6 +253,46 @@ export default function ClubDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 bg-red-50">
+              <h2 className="text-xl font-bold text-red-800">Rời câu lạc bộ</h2>
+              <p className="text-sm text-red-500 mt-1">Xác nhận rời khỏi {club.TenCLB}</p>
+            </div>
+            <div className="p-6">
+              {leaveError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium">
+                  {leaveError}
+                </div>
+              )}
+              <p className="text-gray-600 text-sm leading-relaxed mb-6">
+                Bạn có chắc chắn muốn rời câu lạc bộ **{club.TenCLB}**? Hành động này sẽ hủy bỏ tư cách thành viên hiện tại của bạn.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button 
+                  type="button" 
+                  disabled={leaveLoading}
+                  onClick={() => setShowLeaveModal(false)}
+                  className="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="button"
+                  disabled={leaveLoading}
+                  onClick={handleLeaveClub}
+                  className="px-5 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+                >
+                  {leaveLoading ? 'Đang thực hiện...' : 'Xác nhận rời'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

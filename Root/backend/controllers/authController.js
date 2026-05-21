@@ -141,4 +141,67 @@ async function login(req, res, next) {
   }
 }
 
-module.exports = { login };
+/**
+ * PUT /api/auth/change-password
+ * Đổi mật khẩu tài khoản
+ */
+async function changePassword(req, res, next) {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const maND = req.user.maND;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Mật khẩu cũ và mật khẩu mới là bắt buộc',
+        },
+      });
+    }
+
+    const pool = await getPool();
+    
+    // Lấy mật khẩu hiện tại
+    const result = await pool.request()
+      .input('maND', sql.VarChar, maND)
+      .query('SELECT matKhau FROM TAI_KHOAN WHERE MaND = @maND');
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản',
+      });
+    }
+
+    const currentHashed = result.recordset[0].matKhau;
+
+    // Kiểm tra mật khẩu cũ
+    const isMatch = await bcrypt.compare(oldPassword, currentHashed);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu cũ không chính xác',
+      });
+    }
+
+    // Mã hóa mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    const newHashed = await bcrypt.hash(newPassword, salt);
+
+    // Cập nhật vào DB
+    await pool.request()
+      .input('maND', sql.VarChar, maND)
+      .input('newHashed', sql.VarChar, newHashed)
+      .query('UPDATE TAI_KHOAN SET matKhau = @newHashed WHERE MaND = @maND');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đổi mật khẩu thành công',
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, changePassword };

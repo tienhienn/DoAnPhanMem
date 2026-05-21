@@ -413,7 +413,7 @@ async function getEventQR(req, res, next) {
     const registration = regResult.recordset[0];
 
     // 4. Tạo qrValue
-    const qrValue = `HCMUTE-${req.user.maSV}-${maSK}`;
+    const qrValue = `UTE-UDN-${req.user.maSV}-${maSK}`;
 
     // 5. Trả về
     return res.status(200).json({

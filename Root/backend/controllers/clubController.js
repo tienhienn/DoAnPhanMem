@@ -97,12 +97,12 @@ async function joinClub(req, res, next) {
     const { lyDoThamGia } = req.body;
 
     const pool = await getPool();
-    
+
     // Check if club exists and is active
     const clubResult = await pool.request()
       .input('maCLB', sql.VarChar, id)
       .query("SELECT * FROM CAULACBO WHERE MaCLB = @maCLB AND TrangThai = N'Hoạt động'");
-    
+
     if (clubResult.recordset.length === 0) {
       return res.status(404).json({ success: false, message: 'Câu lạc bộ không tồn tại hoặc không hoạt động' });
     }
@@ -112,7 +112,7 @@ async function joinClub(req, res, next) {
       .input('maCLB', sql.VarChar, id)
       .input('maND', sql.VarChar, maND)
       .query("SELECT * FROM THANH_VIEN WHERE MaCLB = @maCLB AND MaND = @maND AND TrangThai = N'Hoạt động'");
-    
+
     if (memberResult.recordset.length > 0) {
       return res.status(400).json({ success: false, message: 'Bạn đã là thành viên của câu lạc bộ này' });
     }
@@ -122,7 +122,7 @@ async function joinClub(req, res, next) {
       .input('maCLB', sql.VarChar, id)
       .input('maND', sql.VarChar, maND)
       .query("SELECT * FROM YEU_CAU_THAM_GIA_CLB WHERE MaCLB = @maCLB AND MaSV = @maND AND TrangThai = 'cho_duyet'");
-    
+
     if (requestResult.recordset.length > 0) {
       return res.status(400).json({ success: false, message: 'Bạn đã gửi yêu cầu tham gia câu lạc bộ này, vui lòng chờ duyệt' });
     }
@@ -180,10 +180,57 @@ async function getMyClubRequests(req, res, next) {
   }
 }
 
+/**
+ * POST /api/clubs/:id/leave
+ * Rời câu lạc bộ
+ */
+async function leaveClub(req, res, next) {
+  try {
+    const { id } = req.params;
+    const maND = req.user.maND;
+
+    const pool = await getPool();
+
+    // Check if member is active in the club
+    const memberResult = await pool.request()
+      .input('maCLB', sql.VarChar, id)
+      .input('maND', sql.VarChar, maND)
+      .query("SELECT * FROM THANH_VIEN WHERE MaCLB = @maCLB AND MaND = @maND AND TrangThai = N'Hoạt động'");
+
+    if (memberResult.recordset.length === 0) {
+      return res.status(400).json({ success: false, message: 'Bạn không phải là thành viên hoạt động của câu lạc bộ này' });
+    }
+
+    const member = memberResult.recordset[0];
+
+    // Chủ nhiệm cannot leave without transferring leadership
+    if (member.VaiTroCLB === 'Chủ nhiệm') {
+      return res.status(400).json({ success: false, message: 'Chủ nhiệm câu lạc bộ không thể rời CLB. Vui lòng chuyển giao vai trò trước.' });
+    }
+
+    // Update member status to 'Đã rời' and set NgayRoi
+    await pool.request()
+      .input('maTV', sql.VarChar, member.MaTV)
+      .query(`
+        UPDATE THANH_VIEN
+        SET TrangThai = N'Đã rời', NgayRoi = GETDATE(), LyDoRoi = N'Sinh viên chủ động rời CLB'
+        WHERE MaTV = @maTV
+      `);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Rời câu lạc bộ thành công'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getAllClubs,
   getClubById,
   getMyClubs,
   joinClub,
-  getMyClubRequests
+  getMyClubRequests,
+  leaveClub
 };

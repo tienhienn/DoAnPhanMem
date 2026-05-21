@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../utils/apiClient';
-import { User, Phone, Mail, Calendar, Edit2, Award, Book, Shield, Activity } from 'lucide-react';
+import { User, Phone, Mail, Calendar, Edit2, Award, Book, Shield, Activity, Key } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -14,6 +14,13 @@ export default function ProfilePage() {
     ngaySinh: '',
     gioiTinh: ''
   });
+
+  const [pwdData, setPwdData] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [pwdLoading, setPwdLoading] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -55,6 +62,31 @@ export default function ProfilePage() {
       }
     } catch (err) {
       alert(err.response?.data?.error?.message || 'Lỗi kết nối server');
+    }
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (pwdData.newPassword !== pwdData.confirmPassword) {
+      alert('Mật khẩu mới và xác nhận mật khẩu không khớp!');
+      return;
+    }
+    try {
+      setPwdLoading(true);
+      const response = await apiClient.put('/api/auth/change-password', {
+        oldPassword: pwdData.oldPassword,
+        newPassword: pwdData.newPassword
+      });
+      if (response.data.success) {
+        alert('Đổi mật khẩu thành công!');
+        setPwdData({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        alert(response.data.message || 'Lỗi đổi mật khẩu');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Mật khẩu cũ không chính xác hoặc lỗi kết nối');
+    } finally {
+      setPwdLoading(false);
     }
   };
 
@@ -146,50 +178,97 @@ export default function ProfilePage() {
           </div>
         </form>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-800 border-b pb-3 mb-6 flex items-center gap-2">
-              <User className="w-5 h-5 text-indigo-500" /> Thông tin liên hệ
-            </h2>
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                  <Mail className="w-5 h-5 text-blue-500" />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-800 border-b pb-3 mb-6 flex items-center gap-2">
+                <User className="w-5 h-5 text-indigo-500" /> Thông tin liên hệ
+              </h2>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                    <Mail className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Email</p>
+                    <p className="font-medium text-gray-800">{profile.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium text-gray-800">{profile.email}</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center shrink-0">
+                    <Phone className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Số điện thoại</p>
+                    <p className="font-medium text-gray-800">{profile.soDienThoai || 'Chưa cập nhật'}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center shrink-0">
-                  <Phone className="w-5 h-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Số điện thoại</p>
-                  <p className="font-medium text-gray-800">{profile.soDienThoai || 'Chưa cập nhật'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
-                  <Calendar className="w-5 h-5 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Ngày sinh</p>
-                  <p className="font-medium text-gray-800">
-                    {profile.ngaySinh ? new Date(profile.ngaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
-                  </p>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
+                    <Calendar className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Ngày sinh</p>
+                    <p className="font-medium text-gray-800">
+                      {profile.ngaySinh ? new Date(profile.ngaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
+            
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-sm p-6 text-white relative overflow-hidden flex flex-col justify-center items-center text-center">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-xl"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12 blur-xl"></div>
+              <Activity className="w-12 h-12 text-indigo-200 mb-4" />
+              <h3 className="text-lg font-medium text-indigo-100 mb-1">Trạng thái</h3>
+              <p className="text-2xl font-bold">Đang hoạt động</p>
+            </div>
           </div>
-          
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-sm p-6 text-white relative overflow-hidden flex flex-col justify-center items-center text-center">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-xl"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12 blur-xl"></div>
-            <Activity className="w-12 h-12 text-indigo-200 mb-4" />
-            <h3 className="text-lg font-medium text-indigo-100 mb-1">Trạng thái</h3>
-            <p className="text-2xl font-bold">Đang hoạt động</p>
+
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+            <h2 className="text-xl font-bold text-gray-800 border-b pb-3 mb-6 flex items-center gap-2">
+              <Key className="w-5 h-5 text-indigo-500" /> Đổi mật khẩu
+            </h2>
+            <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại</label>
+                <input 
+                  type="password"
+                  required
+                  value={pwdData.oldPassword}
+                  onChange={e => setPwdData({...pwdData, oldPassword: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
+                <input 
+                  type="password"
+                  required
+                  value={pwdData.newPassword}
+                  onChange={e => setPwdData({...pwdData, newPassword: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
+                <input 
+                  type="password"
+                  required
+                  value={pwdData.confirmPassword}
+                  onChange={e => setPwdData({...pwdData, confirmPassword: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <button 
+                type="submit"
+                disabled={pwdLoading}
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:bg-gray-400 transition-colors shadow-sm font-medium"
+              >
+                {pwdLoading ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
+              </button>
+            </form>
           </div>
         </div>
       )}

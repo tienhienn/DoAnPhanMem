@@ -14,10 +14,11 @@ export default function Layout() {
     <div className="min-h-screen bg-slate-50">
       <NavBar />
       {/*
+        pt-14 on mobile clears the mobile top header (h-14 = 3.5rem)
         pt-16 on lg+ clears the fixed top navbar (h-16 = 4rem)
         pb-16 on mobile clears the fixed bottom navbar (h-16 = 4rem)
       */}
-      <main className="pb-16 lg:pb-0 lg:pt-16">
+      <main className="pt-14 pb-16 lg:pb-0 lg:pt-16">
         <Outlet />
       </main>
     </div>

@@ -68,7 +68,13 @@ export function getActionButtons(event, registrationStatus) {
   }
 
   // unregistered
+  const isPast = event.thoiGianBatDau && new Date(event.thoiGianBatDau) < new Date();
   const availableSlots = event.maxCapacity - event.registeredCount;
+
+  if (isPast) {
+    return { viewQR: false, cancel: false, register: "disabled_past" };
+  }
+
   if (availableSlots > 0) {
     return { viewQR: false, cancel: false, register: "enabled" };
   } else {

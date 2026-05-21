@@ -81,9 +81,9 @@ export default function LoginPage() {
       {/* Logo + Tên trường */}
       <div className="flex flex-col items-center mb-8">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center shadow-lg mb-4">
-          <span className="text-white text-2xl font-bold leading-none">H</span>
+          <span className="text-white text-2xl font-bold leading-none">U</span>
         </div>
-        <h1 className="text-2xl font-bold text-indigo-700 tracking-tight">HCMUTE CLB</h1>
+        <h1 className="text-2xl font-bold text-indigo-700 tracking-tight">UTE-UDN CLB</h1>
         <p className="text-sm text-slate-500 mt-1">
           Hệ thống quản lý câu lạc bộ sinh viên
         </p>

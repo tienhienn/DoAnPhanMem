@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
-const { getMyEvents } = require('../controllers/studentController');
+const { getMyEvents, getMyNotifications, markNotificationAsRead } = require('../controllers/studentController');
 const { getProfile, updateProfile } = require('../controllers/profileController');
 const { getMyClubs, getMyClubRequests } = require('../controllers/clubController');
 
@@ -10,5 +10,7 @@ router.put('/me', auth, updateProfile);
 router.get('/me/events', auth, getMyEvents);
 router.get('/me/clubs', auth, getMyClubs);
 router.get('/me/club-requests', auth, getMyClubRequests);
+router.get('/me/notifications', auth, getMyNotifications);
+router.put('/me/notifications/:id/read', auth, markNotificationAsRead);
 
 module.exports = router;

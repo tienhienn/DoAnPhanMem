@@ -21,7 +21,7 @@ import {
   FiDownload,
   FiChevronRight,
 } from "react-icons/fi";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 // ============================================
 // MOCK DATA
@@ -201,7 +201,9 @@ const FinalApprovalModal = ({
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 px-8 py-8 flex items-center justify-between rounded-t-3xl">
           <div>
-            <h2 className="text-2xl font-bold text-white">Cấp Phép Hoạt Động</h2>
+            <h2 className="text-2xl font-bold text-white">
+              Cấp Phép Hoạt Động
+            </h2>
             <p className="text-blue-100 text-sm mt-1">
               Phê duyệt cuối cùng từ Phòng CTSV
             </p>
@@ -323,8 +325,8 @@ const FinalApprovalModal = ({
           {/* Opinion/Reason Input */}
           <div>
             <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
-              <FiMessageSquare className="inline w-4 h-4 mr-2" />
-              Ý kiến chỉ đạo / Lý do
+              <FiMessageSquare className="inline w-4 h-4 mr-2" />Ý kiến chỉ đạo
+              / Lý do
             </label>
             <textarea
               value={opinion}
@@ -460,7 +462,7 @@ export default function StudentAffairsPage() {
   const totalEvents = pendingEvents.length + approvedEvents.length;
   const totalStudents = approvedEvents.reduce(
     (sum, e) => sum + (e.registeredCount || 0),
-    0
+    0,
   );
   const completedEvents = approvedEvents.length;
 
@@ -500,7 +502,7 @@ export default function StudentAffairsPage() {
       year: "numeric",
     });
     alert(
-      `Xuất báo cáo tháng ${month}\n\nTổng sự kiện: ${totalEvents}\nSự kiện hoàn thành: ${completedEvents}\nTổng sinh viên tham gia: ${totalStudents}`
+      `Xuất báo cáo tháng ${month}\n\nTổng sự kiện: ${totalEvents}\nSự kiện hoàn thành: ${completedEvents}\nTổng sinh viên tham gia: ${totalStudents}`,
     );
   };
 
@@ -514,7 +516,8 @@ export default function StudentAffairsPage() {
               Quản Lý Cấp Phép Sự Kiện
             </h1>
             <p className="text-slate-600 mt-2">
-              Phòng Công Tác Sinh Viên: <span className="font-semibold">{user?.hoTen}</span>
+              Phòng Công Tác Sinh Viên:{" "}
+              <span className="font-semibold">{user?.hoTen}</span>
             </p>
           </div>
 
@@ -584,9 +587,7 @@ export default function StudentAffairsPage() {
                 <p className="text-lg font-semibold text-slate-900 mb-1">
                   Không có sự kiện chờ duyệt
                 </p>
-                <p className="text-slate-600">
-                  Tất cả sự kiện đã được xử lý
-                </p>
+                <p className="text-slate-600">Tất cả sự kiện đã được xử lý</p>
               </div>
             )}
           </div>
@@ -598,7 +599,8 @@ export default function StudentAffairsPage() {
                 Sự kiện đã cấp phép
               </h2>
               <p className="text-slate-600 text-sm mt-1">
-                {approvedEvents.length} sự kiện • {totalStudents} sinh viên tham gia
+                {approvedEvents.length} sự kiện • {totalStudents} sinh viên tham
+                gia
               </p>
             </div>
 
@@ -610,7 +612,9 @@ export default function StudentAffairsPage() {
               </div>
             ) : (
               <div className="text-center py-8 bg-white rounded-xl border border-slate-200">
-                <p className="text-slate-600">Chưa có sự kiện nào được cấp phép</p>
+                <p className="text-slate-600">
+                  Chưa có sự kiện nào được cấp phép
+                </p>
               </div>
             )}
           </div>

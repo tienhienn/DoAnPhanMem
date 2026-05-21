@@ -17,7 +17,7 @@ import {
   FiMessageSquare,
   FiChevronRight,
 } from "react-icons/fi";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 // ============================================
 // MOCK DATA
@@ -31,8 +31,7 @@ const MOCK_EVENTS = [
     location: "Sân vận động trường",
     quota: 200,
     points: 3.0,
-    description:
-      "Cuộc thi hackathon quy mô lớn, hỗ trợ startup khởi nghiệp.",
+    description: "Cuộc thi hackathon quy mô lớn, hỗ trợ startup khởi nghiệp.",
     status: "pending_faculty",
     createdBy: "Ban chủ nhiệm CLB Lập trình",
     clubName: "CLB Lập trình UTE",
@@ -182,13 +181,7 @@ const ApprovalStepper = ({ status }) => {
 // ============================================
 // APPROVAL MODAL WITH GLASSMORPHISM - PREMIUM DESIGN
 // ============================================
-const ApprovalModal = ({
-  isOpen,
-  event,
-  onClose,
-  onApprove,
-  onReject,
-}) => {
+const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
   const [notes, setNotes] = useState("");
 
   if (!isOpen || !event) return null;
@@ -387,7 +380,11 @@ const EventTableRow = ({ event, onSelect }) => {
       bg: "bg-blue-100",
       text: "text-blue-700",
     },
-    approved: { label: "Đã duyệt", bg: "bg-emerald-100", text: "text-emerald-700" },
+    approved: {
+      label: "Đã duyệt",
+      bg: "bg-emerald-100",
+      text: "text-emerald-700",
+    },
     rejected: { label: "Bị từ chối", bg: "bg-rose-100", text: "text-rose-700" },
   };
 
@@ -429,8 +426,12 @@ export default function FacultyManagementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Calculate statistics
-  const pendingCount = events.filter((e) => e.status === "pending_faculty").length;
-  const approvedCount = events.filter((e) => e.status === "pending_student_affairs").length;
+  const pendingCount = events.filter(
+    (e) => e.status === "pending_faculty",
+  ).length;
+  const approvedCount = events.filter(
+    (e) => e.status === "pending_student_affairs",
+  ).length;
   const rejectedCount = events.filter((e) => e.status === "rejected").length;
 
   // Get pending events for display
@@ -446,8 +447,8 @@ export default function FacultyManagementPage() {
       prev.map((e) =>
         e.id === eventId
           ? { ...e, status: "pending_student_affairs", feedback: notes }
-          : e
-      )
+          : e,
+      ),
     );
     setIsModalOpen(false);
     setSelectedEvent(null);
@@ -456,8 +457,8 @@ export default function FacultyManagementPage() {
   const handleReject = (eventId, reason) => {
     setEvents((prev) =>
       prev.map((e) =>
-        e.id === eventId ? { ...e, status: "rejected", feedback: reason } : e
-      )
+        e.id === eventId ? { ...e, status: "rejected", feedback: reason } : e,
+      ),
     );
     setIsModalOpen(false);
     setSelectedEvent(null);
@@ -560,8 +561,12 @@ export default function FacultyManagementPage() {
                     <p className="font-semibold text-slate-800 text-sm line-clamp-2">
                       {event.name}
                     </p>
-                    <p className="text-xs text-slate-600 mt-1">{event.clubName}</p>
-                    <p className="text-xs text-slate-500 mt-2">{event.startTime}</p>
+                    <p className="text-xs text-slate-600 mt-1">
+                      {event.clubName}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-2">
+                      {event.startTime}
+                    </p>
                   </div>
                 );
               })}

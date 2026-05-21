@@ -159,7 +159,7 @@ function UserProfileIcon({ className }) {
   );
 }
 
-function BellIcon({ className }) {
+function ChecklistIcon({ className }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -172,13 +172,13 @@ function BellIcon({ className }) {
       className={className}
       aria-hidden="true"
     >
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      <path d="M9 11l3 3L22 4" />
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1" />
     </svg>
   );
 }
 
-function CheckIcon({ className }) {
+function PeopleIcon({ className }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -191,7 +191,51 @@ function CheckIcon({ className }) {
       className={className}
       aria-hidden="true"
     >
-      <polyline points="20 6 9 17 4 12" />
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+function WalletIcon({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+      <path d="M1 10h22" />
+      <circle cx="17" cy="15" r="1" />
+    </svg>
+  );
+}
+
+function FileTextIcon({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="12" y1="13" x2="12" y2="17" />
+      <line x1="9" y1="15" x2="15" y2="15" />
     </svg>
   );
 }
@@ -213,7 +257,7 @@ function getNavItems(role) {
       events,
       { label: "Của Tôi", path: "/my-events", icon: BookmarkIcon },
       { label: "Câu lạc bộ", path: "/clubs", icon: UsersGroupIcon },
-      { label: "Cá nhân", path: "/profile", icon: UserProfileIcon }
+      { label: "Cá nhân", path: "/profile", icon: UserProfileIcon },
     ];
   }
 
@@ -223,7 +267,27 @@ function getNavItems(role) {
       path: "/bcn-management",
       icon: ManageIcon,
     };
-    return [events, manage];
+    const members = {
+      label: "Quản lý nhân sự",
+      path: "/member-management",
+      icon: PeopleIcon,
+    };
+    const tasks = {
+      label: "Phân công nhiệm vụ",
+      path: "/event-tasks/1",
+      icon: ChecklistIcon,
+    };
+    const finance = {
+      label: "Tài chính & CSVC",
+      path: "/finance-logistics",
+      icon: WalletIcon,
+    };
+    const reports = {
+      label: "Báo cáo & Văn bản",
+      path: "/periodic-reports",
+      icon: FileTextIcon,
+    };
+    return [events, manage, members, tasks, finance, reports];
   }
 
   if (role === "KHOA") {
@@ -259,7 +323,7 @@ export default function NavBar() {
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-    if (user && user.role === 'SV') {
+    if (user && user.role === "SV") {
       fetchNotifications();
       const timer = setInterval(fetchNotifications, 30000);
       return () => clearInterval(timer);
@@ -278,42 +342,50 @@ export default function NavBar() {
 
   const fetchNotifications = async () => {
     try {
-      const response = await apiClient.get('/api/students/me/notifications');
+      const response = await apiClient.get("/api/students/me/notifications");
       if (response.data.success) {
         setNotifications(response.data.data);
-        const unread = response.data.data.filter(n => !n.DaDoc).length;
+        const unread = response.data.data.filter((n) => !n.DaDoc).length;
         setUnreadCount(unread);
       }
     } catch (err) {
-      console.error('Error fetching notifications:', err);
+      console.error("Error fetching notifications:", err);
     }
   };
 
   const handleMarkAsRead = async (id) => {
     try {
-      const response = await apiClient.put(`/api/students/me/notifications/${id}/read`);
+      const response = await apiClient.put(
+        `/api/students/me/notifications/${id}/read`,
+      );
       if (response.data.success) {
-        setNotifications(prev => prev.map(n => n.MaTB === id ? { ...n, DaDoc: true } : n));
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setNotifications((prev) =>
+          prev.map((n) => (n.MaTB === id ? { ...n, DaDoc: true } : n)),
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (err) {
-      console.error('Error marking notification as read:', err);
+      console.error("Error marking notification as read:", err);
     }
   };
 
   const handleMarkAllAsRead = async () => {
     try {
-      const unreadNotifs = notifications.filter(n => !n.DaDoc);
-      await Promise.all(unreadNotifs.map(n => apiClient.put(`/api/students/me/notifications/${n.MaTB}/read`)));
-      setNotifications(prev => prev.map(n => ({ ...n, DaDoc: true })));
+      const unreadNotifs = notifications.filter((n) => !n.DaDoc);
+      await Promise.all(
+        unreadNotifs.map((n) =>
+          apiClient.put(`/api/students/me/notifications/${n.MaTB}/read`),
+        ),
+      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, DaDoc: true })));
       setUnreadCount(0);
     } catch (err) {
-      console.error('Error marking all as read:', err);
+      console.error("Error marking all as read:", err);
     }
   };
 
   const renderNotificationBell = () => {
-    if (!user || user.role !== 'SV') return null;
+    if (!user || user.role !== "SV") return null;
 
     return (
       <div className="relative" ref={dropdownRef}>
@@ -333,7 +405,9 @@ export default function NavBar() {
         {showNotifDropdown && (
           <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-indigo-50/80 z-50 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100 bg-slate-50">
-              <span className="font-bold text-slate-800 text-sm">Thông báo</span>
+              <span className="font-bold text-slate-800 text-sm">
+                Thông báo
+              </span>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
@@ -356,21 +430,40 @@ export default function NavBar() {
                     onClick={() => !notif.DaDoc && handleMarkAsRead(notif.MaTB)}
                     className={[
                       "p-4 transition-colors cursor-pointer text-left",
-                      notif.DaDoc ? "hover:bg-slate-50" : "bg-indigo-50/30 hover:bg-indigo-50/50"
+                      notif.DaDoc
+                        ? "hover:bg-slate-50"
+                        : "bg-indigo-50/30 hover:bg-indigo-50/50",
                     ].join(" ")}
                   >
                     <div className="flex gap-3">
                       <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5 overflow-hidden">
-                        {notif.ClubLogo ? <img src={notif.ClubLogo} alt="" className="w-full h-full object-cover" /> : notif.TenCLB?.charAt(0) || "T"}
+                        {notif.ClubLogo ? (
+                          <img
+                            src={notif.ClubLogo}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          notif.TenCLB?.charAt(0) || "T"
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-1">
-                          <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">{notif.TenCLB || "Hệ thống"}</span>
+                          <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
+                            {notif.TenCLB || "Hệ thống"}
+                          </span>
                           <span className="text-[10px] text-slate-400 shrink-0 mt-0.5">
-                            {new Date(notif.NgayGui).toLocaleDateString('vi-VN')}
+                            {new Date(notif.NgayGui).toLocaleDateString(
+                              "vi-VN",
+                            )}
                           </span>
                         </div>
-                        <p className={["text-sm mt-0.5 text-slate-800", !notif.DaDoc ? "font-bold" : "font-normal"].join(" ")}>
+                        <p
+                          className={[
+                            "text-sm mt-0.5 text-slate-800",
+                            !notif.DaDoc ? "font-bold" : "font-normal",
+                          ].join(" ")}
+                        >
                           {notif.TieuDe}
                         </p>
                         <p className="text-xs text-slate-500 mt-1 line-clamp-2">
@@ -398,7 +491,10 @@ export default function NavBar() {
   return (
     <>
       {/* ── Mobile Header Bar (below lg): fixed top ── */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-white/95 backdrop-blur-sm border-b border-indigo-100 flex items-center justify-between px-4 shadow-sm" aria-label="Thanh tiêu đề di động">
+      <div
+        className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-white/95 backdrop-blur-sm border-b border-indigo-100 flex items-center justify-between px-4 shadow-sm"
+        aria-label="Thanh tiêu đề di động"
+      >
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-blue-500 flex items-center justify-center shadow-sm">
             <span className="text-white text-xs font-bold leading-none">U</span>

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import { Users, Calendar, Flag, Info, UserPlus, CheckCircle, Clock, ChevronLeft } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function ClubDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { enterManagementMode } = useAuth();
   const [club, setClub] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -137,6 +140,17 @@ export default function ClubDetailPage() {
                   <button disabled className="w-full md:w-auto px-6 py-3 bg-green-50 text-green-600 font-bold rounded-xl flex items-center justify-center gap-2 border border-green-200">
                     <CheckCircle className="w-5 h-5" /> Đã tham gia
                   </button>
+                  {(userClubRole === 'Chủ nhiệm' || userClubRole === 'Phó chủ nhiệm') && (
+                    <button 
+                      onClick={() => {
+                        enterManagementMode(id);
+                        navigate('/bcn-management');
+                      }}
+                      className="w-full md:w-auto px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all transform hover:scale-[1.02]"
+                    >
+                      Quản lý CLB
+                    </button>
+                  )}
                   {userClubRole === 'Chủ nhiệm' ? (
                     <span className="text-xs text-red-500 font-semibold max-w-[200px] inline-block text-center mt-1">
                       ⚠️ Chủ nhiệm không thể rời CLB

@@ -192,7 +192,14 @@ function EventItem({ event, onViewDetail, onViewQR }) {
 
             {/* Badge trạng thái + nút QR */}
             <div className="flex items-center justify-between gap-2">
-              <StatusBadge trangThaiDangKy={trangThaiDangKy} />
+              <div className="flex items-center gap-1.5">
+                <StatusBadge trangThaiDangKy={trangThaiDangKy} />
+                {event.diemRenLuyen && (
+                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    ⭐ +{event.diemRenLuyen} ĐRL
+                  </span>
+                )}
+              </div>
 
               {/* Nút Xem Mã QR */}
               <button

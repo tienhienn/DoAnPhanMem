@@ -172,6 +172,9 @@ CREATE TABLE SU_KIEN (
     ChiPhiDuKien DECIMAL(18,2),
     LoaiSK NVARCHAR(50),
     TrangThai NVARCHAR(50),
+    UrlAnh NVARCHAR(255),
+    DiemRenLuyen INT DEFAULT 5,
+    LyDoTuChoi NVARCHAR(MAX),
     NgayTao DATETIME DEFAULT GETDATE(),
     CONSTRAINT FK_SK_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) 
         ON UPDATE CASCADE ON DELETE CASCADE
@@ -271,6 +274,17 @@ CREATE TABLE THONG_BAO (
     CONSTRAINT FK_TB_TaiKhoan FOREIGN KEY (NguoiGuiID) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+CREATE TABLE THONG_BAO_NGUOIDUNG (
+    MaTB VARCHAR(13) NOT NULL,
+    MaND VARCHAR(13) NOT NULL,
+    DaDoc BIT DEFAULT 0,
+    NgayDoc DATETIME,
+    PRIMARY KEY (MaTB, MaND),
+    CONSTRAINT FK_TBND_ThongBao FOREIGN KEY (MaTB) REFERENCES THONG_BAO(MaTB) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_TBND_TaiKhoan FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+
 CREATE TABLE HOSO (
     MaHoSo VARCHAR(13) PRIMARY KEY,
     maCLB VARCHAR(13),
@@ -331,9 +345,7 @@ CREATE TABLE CHI_TIET_PHIEU_MUON (
 );
 GO
 
-USE QUANLYCLB_UTE;
-ALTER TABLE SU_KIEN ADD DiemRenLuyen FLOAT DEFAULT 0;
-ALTER TABLE SU_KIEN ADD LyDoTuChoi NVARCHAR(MAX);
+
 -- =============================================
 -- 5. DỮ LIỆU MẪU (SAMPLE DATA)
 -- =============================================
@@ -480,50 +492,58 @@ GO
 -- 5.11 Sự kiện
 -- Bao gồm đủ các trạng thái để test frontend
 -- ---------------------------------------------
-INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai) VALUES
+INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai, UrlAnh, DiemRenLuyen) VALUES
 -- Sắp diễn ra
 ('SK000000001', 'CLB00000001',
     N'Workshop: Nhập môn ReactJS',
     N'Buổi workshop thực hành xây dựng ứng dụng web với ReactJS dành cho sinh viên mới bắt đầu. Mang theo laptop.',
-    '2026-06-10 08:00', '2026-06-10 11:30', N'Phòng Lab 201 - Nhà A', 40, 0, N'Workshop', N'sap_dien_ra'),
+    '2026-06-10 08:00', '2026-06-10 11:30', N'Phòng Lab 201 - Nhà A', 40, 0, N'Workshop', N'sap_dien_ra',
+    'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=60', 5),
 
 ('SK000000002', 'CLB00000001',
     N'Hackathon UTE 2026',
     N'Cuộc thi lập trình 24 giờ với chủ đề "Chuyển đổi số trong giáo dục". Giải thưởng lên đến 10 triệu đồng.',
-    '2026-06-20 07:00', '2026-06-21 07:00', N'Hội trường A - Tầng 1', 60, 5000000, N'Cuộc thi', N'sap_dien_ra'),
+    '2026-06-20 07:00', '2026-06-21 07:00', N'Hội trường A - Tầng 1', 60, 5000000, N'Cuộc thi', N'sap_dien_ra',
+    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&auto=format&fit=crop&q=60', 15),
 
 ('SK000000003', 'CLB00000002',
     N'English Speaking Club - Tháng 6',
     N'Buổi sinh hoạt tiếng Anh hàng tháng với chủ đề "Technology and Future". Tất cả trình độ đều được chào đón.',
-    '2026-06-15 14:00', '2026-06-15 16:30', N'Phòng 305 - Nhà B', 30, 0, N'Sinh hoạt', N'sap_dien_ra'),
+    '2026-06-15 14:00', '2026-06-15 16:30', N'Phòng 305 - Nhà B', 30, 0, N'Sinh hoạt', N'sap_dien_ra',
+    'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=60', 5),
 
 ('SK000000004', 'CLB00000003',
     N'Giải bóng đá mini UTE Cup 2026',
     N'Giải đấu bóng đá mini dành cho sinh viên toàn trường. Đăng ký theo đội (5 người/đội).',
-    '2026-07-05 07:30', '2026-07-05 17:00', N'Sân thể thao trường', 100, 200000, N'Thể thao', N'sap_dien_ra'),
+    '2026-07-05 07:30', '2026-07-05 17:00', N'Sân thể thao trường', 100, 200000, N'Thể thao', N'sap_dien_ra',
+    'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=60', 10),
 
 ('SK000000005', 'CLB00000004',
     N'Ngày hội Tình nguyện Hè 2026',
     N'Hoạt động tình nguyện dọn dẹp môi trường và tặng quà cho trẻ em có hoàn cảnh khó khăn tại huyện Hòa Vang.',
-    '2026-07-15 06:00', '2026-07-15 17:00', N'Huyện Hòa Vang, Đà Nẵng', 50, 0, N'Tình nguyện', N'sap_dien_ra'),
+    '2026-07-15 06:00', '2026-07-15 17:00', N'Huyện Hòa Vang, Đà Nẵng', 50, 0, N'Tình nguyện', N'sap_dien_ra',
+    'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&auto=format&fit=crop&q=60', 15),
 
 -- Đang diễn ra
 ('SK000000006', 'CLB00000001',
     N'Khóa học Git & GitHub cơ bản',
     N'Khóa học 3 buổi về quản lý mã nguồn với Git và GitHub. Buổi 2/3 đang diễn ra.',
-    '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra'),
+    '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra',
+    'https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=800&auto=format&fit=crop&q=60', 5),
 
 -- Đã kết thúc (để test trạng thái)
 ('SK000000007', 'CLB00000002',
     N'Cuộc thi hùng biện tiếng Anh 2025',
     N'Cuộc thi hùng biện tiếng Anh cấp trường năm học 2024-2025.',
-    '2025-12-10 08:00', '2025-12-10 17:00', N'Hội trường B', 80, 0, N'Cuộc thi', N'da_ket_thuc'),
+    '2025-12-10 08:00', '2025-12-10 17:00', N'Hội trường B', 80, 0, N'Cuộc thi', N'da_ket_thuc',
+    'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=60', 10),
 
 -- Sự kiện đã hết chỗ (để test full capacity)
 ('SK000000008', 'CLB00000001',
     N'Seminar: AI và Machine Learning',
     N'Buổi seminar về ứng dụng AI trong thực tế với diễn giả từ doanh nghiệp công nghệ.',
-    '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra');
+    '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra',
+    'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=60', 5);
 GO
 
 -- ---------------------------------------------
@@ -563,6 +583,23 @@ GO
 
 -- Cập nhật SoNguoiToiDa SK8 = 20 để đúng với số đăng ký trên
 UPDATE SU_KIEN SET SoNguoiToiDa = 20 WHERE MaSK = 'SK000000008';
+GO
+
+-- ---------------------------------------------
+-- 5.13 Thông báo và liên kết người nhận
+-- ---------------------------------------------
+INSERT INTO THONG_BAO (MaTB, MaCLB, TieuDe, NoiDung, NguoiGuiID, SoNguoiNhan, LoaiTB, NgayGui, TrangThai) VALUES
+('TB000000001', 'CLB00000001', N'Nộp quỹ CLB tháng 5/2026', N'Chào các thành viên, vui lòng nộp quỹ tháng 5/2026 đúng hạn trước ngày 25/5/2026.', 'SV210000001', 3, N'Tài chính', '2026-05-18 09:00', N'da_gui'),
+('TB000000002', 'CLB00000001', N'Chuẩn bị cho Workshop ReactJS', N'Các thành viên tham gia hỗ trợ Workshop ReactJS vui lòng có mặt lúc 7:30 ngày 10/6/2026 tại Lab 201.', 'SV210000001', 3, N'Sự kiện', '2026-05-19 14:30', N'da_gui'),
+('TB000000003', 'CLB00000002', N'Thông báo lịch sinh hoạt tháng 6', N'English Speaking Club tháng 6 sẽ diễn ra vào ngày 15/6/2026 tại phòng 305 Nhà B. Rất mong các bạn tham gia đầy đủ.', 'SV210000004', 2, N'Sinh hoạt', '2026-05-20 08:00', N'da_gui');
+GO
+
+INSERT INTO THONG_BAO_NGUOIDUNG (MaTB, MaND, DaDoc, NgayDoc) VALUES
+('TB000000001', 'SV210000001', 0, NULL),
+('TB000000002', 'SV210000001', 0, NULL),
+('TB000000003', 'SV210000001', 1, '2026-05-21 09:15'),
+('TB000000001', 'SV210000003', 0, NULL),
+('TB000000002', 'SV210000003', 1, '2026-05-20 10:00');
 GO
 
 -- =============================================

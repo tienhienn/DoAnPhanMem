@@ -24,6 +24,8 @@ async function getEvents(req, res, next) {
         sk.SoNguoiToiDa         AS soNguoiToiDa,
         sk.LoaiSK               AS loaiSK,
         sk.TrangThai            AS trangThai,
+        sk.UrlAnh               AS urlAnh,
+        sk.DiemRenLuyen         AS diemRenLuyen,
         clb.MaCLB               AS maCLB,
         clb.TenCLB              AS tenCLB,
         (
@@ -96,6 +98,8 @@ async function getEventById(req, res, next) {
         sk.SoNguoiToiDa         AS soNguoiToiDa,
         sk.LoaiSK               AS loaiSK,
         sk.TrangThai            AS trangThai,
+        sk.UrlAnh               AS urlAnh,
+        sk.DiemRenLuyen         AS diemRenLuyen,
         clb.MaCLB               AS maCLB,
         clb.TenCLB              AS tenCLB,
         (

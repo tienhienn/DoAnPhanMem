@@ -9,6 +9,7 @@ const path = require("path");
 const initDatabase = async () => {
   const config = {
     server: process.env.DB_SERVER || "localhost",
+      port: parseInt(process.env.DB_PORT || "1433", 10),
     database: "master", // Kết nối đến master để tạo database
     user: process.env.DB_USER || "sa",
     password: process.env.DB_PASSWORD || "12345",

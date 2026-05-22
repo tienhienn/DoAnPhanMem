@@ -3,9 +3,11 @@ const sql = require("mssql");
 
 const config = {
   server: process.env.DB_SERVER || "localhost",
+  port: parseInt(process.env.DB_PORT || "1433", 10),
   database: process.env.DB_NAME || "QUANLYCLB_UTE",
   user: process.env.DB_USER || "sa",
   password: process.env.DB_PASSWORD || "12345",
+  charset: "utf8",
   connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "5000", 10),
   pool: {
     min: parseInt(process.env.DB_POOL_MIN || "1", 10),
@@ -16,6 +18,7 @@ const config = {
     encrypt: process.env.DB_ENCRYPT === "true",
     trustServerCertificate: process.env.DB_TRUST_CERT === "true",
     enableKeepAlive: true,
+    useUTC: false,
   },
 };
 
@@ -41,7 +44,8 @@ const initPool = async () => {
     return pool;
   } catch (err) {
     console.error("❌ Failed to initialize database connection pool:", err);
-    process.exit(1);
+    // Rethrow the error so the caller can decide how to handle failure
+    throw err;
   }
 };
 

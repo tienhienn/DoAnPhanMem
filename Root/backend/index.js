@@ -54,15 +54,30 @@ const PORT = process.env.PORT || 3000;
 const startServer = async () => {
   try {
     console.log("🔧 Initializing database...");
-    await initDatabase();
-    await initPool();
+    let dbReady = false;
+
+    if (process.env.SKIP_DB_INIT === "true") {
+      console.log("⚠️  SKIP_DB_INIT is true — skipping database initialization");
+    } else {
+      try {
+        await initDatabase();
+        await initPool();
+        dbReady = true;
+        console.log("✓ Database initialized — proceeding to start server");
+      } catch (dbErr) {
+        console.warn("⚠️  Database initialization failed — starting server anyway:", dbErr.message || dbErr);
+      }
+    }
 
     app.listen(PORT, () => {
       console.log(`✓ Server is running on port ${PORT}`);
       console.log(`✓ Environment: ${process.env.NODE_ENV || "development"}`);
+      if (!dbReady) {
+        console.log("⚠️  Warning: Database not connected. Some endpoints may be unavailable.");
+      }
     });
   } catch (err) {
-    console.error("❌ Failed to start server:", err);
+    console.error("❌ Unexpected error while starting server:", err);
     process.exit(1);
   }
 };

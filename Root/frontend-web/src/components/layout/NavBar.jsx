@@ -324,7 +324,7 @@ function getNavItems(role) {
       path: "/periodic-reports",
       icon: FileTextIcon,
     };
-    return [events, manage, members, tasks, finance, reports];
+    return [manage, members, tasks, finance, reports];
   }
 
   if (role === "KHOA") {
@@ -350,7 +350,7 @@ function getNavItems(role) {
 }
 
 export default function NavBar() {
-  const { user, logout } = useAuth();
+  const { user, logout, exitManagementMode } = useAuth();
   const location = useLocation();
   const navItems = getNavItems(user?.role);
 
@@ -541,6 +541,14 @@ export default function NavBar() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {user?.originalRole === "SV" && (
+            <button
+              onClick={exitManagementMode}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-all"
+            >
+              Thoát Quản lý
+            </button>
+          )}
           {renderNotificationBell()}
         </div>
       </div>
@@ -585,6 +593,14 @@ export default function NavBar() {
 
         {/* User Info + Logout — right */}
         <div className="flex items-center gap-3 min-w-[160px] justify-end">
+          {user?.originalRole === "SV" && (
+            <button
+              onClick={exitManagementMode}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-all transform hover:scale-[1.02] flex items-center gap-1"
+            >
+              Thoát Quản lý
+            </button>
+          )}
           {renderNotificationBell()}
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
             <UserIcon className="w-4 h-4 text-indigo-600" />

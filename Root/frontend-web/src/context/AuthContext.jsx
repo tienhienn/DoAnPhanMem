@@ -127,6 +127,30 @@ export function AuthProvider({ children }) {
     navigate("/login");
   }
 
+  function enterManagementMode(clubId) {
+    if (user) {
+      setUser((prev) => ({
+        ...prev,
+        originalRole: prev.originalRole || prev.role,
+        role: "BCN",
+        clubId: clubId,
+      }));
+    }
+  }
+
+  function exitManagementMode() {
+    if (user) {
+      setUser((prev) => {
+        const updated = { ...prev };
+        updated.role = prev.originalRole || "SV";
+        delete updated.originalRole;
+        delete updated.clubId;
+        return updated;
+      });
+      navigate("/clubs");
+    }
+  }
+
   const value = {
     user,
     token,
@@ -134,6 +158,8 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     login,
     logout,
+    enterManagementMode,
+    exitManagementMode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

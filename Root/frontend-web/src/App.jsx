@@ -61,8 +61,8 @@ export default function App() {
                 <Route path="/events/:id" element={<EventDetailPage />} />
                 <Route path="/events/:id/qr" element={<QRScreen />} />
 
-                {/* Chỉ sinh viên */}
-                <Route element={<ProtectedRoute roles={["SV"]} />}>
+                {/* Chỉ sinh viên hoặc BCN */}
+                <Route element={<ProtectedRoute roles={["SV", "BCN"]} />}>
                   <Route path="/my-events" element={<MyEventsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/clubs" element={<ClubsPage />} />

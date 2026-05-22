@@ -365,8 +365,7 @@ GO
 -- ---------------------------------------------
 INSERT INTO VAI_TRO (VaiTroID, tenVaiTro, moTa, quyen, trangThai) VALUES
 ('VT000000001', N'Sinh viên',      N'Sinh viên thông thường', N'{đăng kí sự kiện}', 1),
-('VT000000002', N'Ban chủ nhiệm CLB',N'Quản lý hoạt động câu lạc bộ', N'{thống kê sự kiện; đăng ký tạo mới sự kiện; quản lý sự kiện; quản lý thành viên CLB}', 1),
-('VT000000003', N'Cán bộ khoa', N'Cán bộ của Khoa hoặc đoàn', N'{duyệt sự kiện do CLB gửi lên; xem thống kê hoạt động khoa; quản lý thông tin CLB thuộc khoa; theo dõi sự kiện thuộc khoa}',1),
+('VT000000003', N'Cán bộ khoa/đoàn', N'Cán bộ của Khoa hoặc đoàn', N'{duyệt sự kiện do CLB gửi lên; xem thống kê hoạt động khoa; quản lý thông tin CLB thuộc khoa; theo dõi sự kiện thuộc khoa}',1),
 ('VT000000004', N'Phòng CTSV', N'Phòng công tác sinh viên', N'{duyệt/từ chối sự kiện cấp trường; xem thống kê toàn trường; quản lý toàn bộ hoạt động sinh viên; khóa/mở hoạt động CLB;quản lý tất cả sự kiện}',1);
 GO
 
@@ -440,7 +439,7 @@ INSERT INTO NGUOIDUNG_VAITRO (MaND, VaiTroID, GhiChu) VALUES
 ('SV220000007', 'VT000000001', N'Sinh viên thường'),
 ('SV220000008', 'VT000000001', N'Sinh viên thường'),
 ('SV210000009', 'VT000000001', N'Tài khoản bị khóa'),
-('CB000000001', 'VT000000002', N'Cán bộ Đoàn'),
+('CB000000001', 'VT000000003', N'Cán bộ Đoàn'),
 ('CB000000002', 'VT000000003', N'Cán bộ Khoa'),
 ('CB000000003', 'VT000000004', N'Cán bộ CTSV');
 GO

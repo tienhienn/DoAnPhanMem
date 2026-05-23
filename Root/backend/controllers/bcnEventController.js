@@ -597,48 +597,48 @@ const submitEventForApproval = async (req, res, next) => {
  * Duyệt sự kiện (Phòng CTSV)
  * PATCH /api/bcn/events/:id/approve-ctsv
  */
-const approveCTSV = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const pool = await getPool();
+// const approveCTSV = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const pool = await getPool();
 
-    const checkResult = await pool
-      .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .query(`SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK`);
+//     const checkResult = await pool
+//       .request()
+//       .input("MaSK", sql.NVarChar(13), id)
+//       .query(`SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK`);
 
-    if (checkResult.recordset.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: { code: "NOT_FOUND", message: "Sự kiện không tồn tại" },
-      });
-    }
+//     if (checkResult.recordset.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         error: { code: "NOT_FOUND", message: "Sự kiện không tồn tại" },
+//       });
+//     }
 
-    // Chỉ duyệt được khi đang ở trạng thái chờ duyệt CTSV
-    const currentStatus = checkResult.recordset[0].TrangThai;
-    if (currentStatus !== "cho_duyet_ctsv") {
-      return res.status(403).json({
-        success: false,
-        error: {
-          code: "FORBIDDEN",
-          message: "Sự kiện không ở trạng thái chờ duyệt CTSV",
-        },
-      });
-    }
+//     // Chỉ duyệt được khi đang ở trạng thái chờ duyệt CTSV
+//     const currentStatus = checkResult.recordset[0].TrangThai;
+//     if (currentStatus !== "cho_duyet_ctsv") {
+//       return res.status(403).json({
+//         success: false,
+//         error: {
+//           code: "FORBIDDEN",
+//           message: "Sự kiện không ở trạng thái chờ duyệt CTSV",
+//         },
+//       });
+//     }
 
-    await pool
-      .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .query(`UPDATE SU_KIEN SET TrangThai = 'da_duyet' WHERE MaSK = @MaSK`);
+//     await pool
+//       .request()
+//       .input("MaSK", sql.NVarChar(13), id)
+//       .query(`UPDATE SU_KIEN SET TrangThai = 'da_duyet' WHERE MaSK = @MaSK`);
 
-    res.status(200).json({
-      success: true,
-      message: "Duyệt sự kiện từ CTSV thành công",
-    });
-  } catch (err) {
-    next(err);
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       message: "Duyệt sự kiện từ CTSV thành công",
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 
 /**
  * Từ chối sự kiện
@@ -712,5 +712,4 @@ module.exports = {
   updateEvent,
   deleteEvent,
   submitEventForApproval,
-  approveCTSV,
 };

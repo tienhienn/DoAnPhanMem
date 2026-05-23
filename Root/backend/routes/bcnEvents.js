@@ -7,9 +7,7 @@ const {
   updateEvent,
   deleteEvent,
   submitEventForApproval,
-  approveFaculty,
   approveCTSV,
-  rejectEvent,
 } = require("../controllers/bcnEventController");
 const { auth } = require("../middleware/auth");
 
@@ -50,21 +48,9 @@ router.delete("/:id", auth, deleteEvent);
 router.patch("/:id/submit", auth, submitEventForApproval);
 
 /**
- * Duyệt sự kiện (Cán bộ Khoa)
- * PATCH /api/bcn/events/:id/approve-faculty
- */
-router.patch("/:id/approve-faculty", auth, approveFaculty);
-
-/**
  * Duyệt sự kiện (Phòng CTSV)
  * PATCH /api/bcn/events/:id/approve-ctsv
  */
 router.patch("/:id/approve-ctsv", auth, approveCTSV);
-
-/**
- * Từ chối sự kiện
- * PATCH /api/bcn/events/:id/reject
- */
-router.patch("/:id/reject", auth, rejectEvent);
 
 module.exports = router;

@@ -20,7 +20,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 // ============================================
 // STATUS MAPPING: Database status → UI status
@@ -68,12 +69,7 @@ const ApprovalStepper = ({ status }) => {
     { key: "da_duyet", label: "Hoàn tất", icon: "✅" },
   ];
 
-  const statusOrder = [
-    "draft",
-    "cho_duyet_khoa",
-    "cho_duyet_ctsv",
-    "da_duyet",
-  ];
+  const statusOrder = ["draft", "cho_duyet_khoa", "cho_duyet_ctsv", "da_duyet"];
   const currentIndex = statusOrder.indexOf(status);
 
   return (
@@ -114,7 +110,14 @@ const ApprovalStepper = ({ status }) => {
 // ============================================
 // APPROVAL MODAL WITH GLASSMORPHISM - PREMIUM DESIGN
 // ============================================
-const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject, loading }) => {
+const ApprovalModal = ({
+  isOpen,
+  event,
+  onClose,
+  onApprove,
+  onReject,
+  loading,
+}) => {
   const [notes, setNotes] = useState("");
 
   if (!isOpen || !event) return null;
@@ -365,14 +368,23 @@ const EventTableRow = ({ event, onSelect }) => {
   return (
     <div
       onClick={() => event.TrangThai === "cho_duyet_khoa" && onSelect(event)}
-      className={`grid grid-cols-6 gap-4 px-6 py-4 border-b border-slate-200 hover:bg-teal-50/30 transition-colors ${
+      className={`grid grid-cols-7 gap-4 px-6 py-4 border-b border-slate-200 hover:bg-teal-50/30 transition-colors ${
         event.TrangThai === "cho_duyet_khoa" ? "cursor-pointer" : ""
       }`}
     >
       <div className="font-semibold text-slate-800 truncate">{event.TenSK}</div>
-      <div className="text-sm text-slate-600">{formatDate(event.ThoiGianBatDau)}</div>
-      <div className="text-sm text-slate-600 truncate">{event.DiaDiem || "N/A"}</div>
-      <div className="text-sm text-slate-600">{event.SoNguoiToiDa || "N/A"}</div>
+      <div className="text-sm font-medium text-teal-600 truncate">
+        {event.TenCLB}
+      </div>
+      <div className="text-sm text-slate-600">
+        {formatDate(event.ThoiGianBatDau)}
+      </div>
+      <div className="text-sm text-slate-600 truncate">
+        {event.DiaDiem || "N/A"}
+      </div>
+      <div className="text-sm text-slate-600">
+        {event.SoNguoiToiDa || "N/A"}
+      </div>
       <div className="text-sm text-slate-600">{event.DiemRenLuyen || 0}</div>
       <div className="flex items-center justify-between">
         <span
@@ -408,12 +420,15 @@ export default function FacultyManagementPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Fetch all events with status cho_duyet_khoa (pending faculty approval)
-      const response = await axios.get(`${API_BASE_URL}/bcn/events?TrangThai=cho_duyet_khoa`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      
+      const response = await axios.get(
+        `${API_BASE_URL}/khoa/events?TrangThai=cho_duyet_khoa`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+
       setEvents(response.data.data || []);
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -427,14 +442,14 @@ export default function FacultyManagementPage() {
   const pendingCount = events.filter(
     (e) => e.TrangThai === "cho_duyet_khoa",
   ).length;
-  
+
   // Fetch all events to get approved and rejected counts
   const [allEvents, setAllEvents] = useState([]);
-  
+
   useEffect(() => {
     const fetchAllEvents = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/bcn/events`, {
+        const response = await axios.get(`${API_BASE_URL}/khoa/events`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setAllEvents(response.data.data || []);
@@ -448,7 +463,9 @@ export default function FacultyManagementPage() {
   const approvedCount = allEvents.filter(
     (e) => e.TrangThai === "cho_duyet_ctsv",
   ).length;
-  const rejectedCount = allEvents.filter((e) => e.TrangThai === "tu_choi").length;
+  const rejectedCount = allEvents.filter(
+    (e) => e.TrangThai === "tu_choi",
+  ).length;
 
   // Get pending events for display
   const pendingEvents = events.filter((e) => e.TrangThai === "cho_duyet_khoa");
@@ -462,14 +479,16 @@ export default function FacultyManagementPage() {
     try {
       setLoading(true);
       await axios.patch(
-        `${API_BASE_URL}/bcn/events/${maSK}/approve-faculty`,
+        `${API_BASE_URL}/khoa/events/${maSK}/approve`,
         {},
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
+        },
       );
-      
-      alert("Phê duyệt sự kiện thành công! Sự kiện đã được chuyển cho CTSV xét duyệt.");
+
+      alert(
+        "Phê duyệt sự kiện thành công! Sự kiện đã được chuyển cho CTSV xét duyệt.",
+      );
       setIsModalOpen(false);
       setSelectedEvent(null);
       await fetchEvents();
@@ -485,13 +504,13 @@ export default function FacultyManagementPage() {
     try {
       setLoading(true);
       await axios.patch(
-        `${API_BASE_URL}/bcn/events/${maSK}/reject`,
+        `${API_BASE_URL}/khoa/events/${maSK}/reject`,
         { LyDoTuChoi: reason },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
+        },
       );
-      
+
       alert("Từ chối sự kiện thành công!");
       setIsModalOpen(false);
       setSelectedEvent(null);
@@ -514,7 +533,8 @@ export default function FacultyManagementPage() {
               Quản Lý Phê Duyệt Sự Kiện
             </h1>
             <p className="text-slate-600 mt-2">
-              Cán bộ Khoa: <span className="font-semibold">{user?.hoTen || "N/A"}</span>
+              Cán bộ Khoa:{" "}
+              <span className="font-semibold">{user?.hoTen || "N/A"}</span>
             </p>
           </div>
 
@@ -557,6 +577,7 @@ export default function FacultyManagementPage() {
             <div className="grid grid-cols-6 gap-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-teal-50 px-6 py-4 border-b border-slate-200">
               {[
                 "Tên sự kiện",
+                "Câu lạc bộ",
                 "Thời gian",
                 "Địa điểm",
                 "Chỉ tiêu",
@@ -621,14 +642,18 @@ export default function FacultyManagementPage() {
                         {event.MaCLB}
                       </p>
                       <p className="text-xs text-slate-500 mt-2">
-                        {new Date(event.ThoiGianBatDau).toLocaleDateString("vi-VN")}
+                        {new Date(event.ThoiGianBatDau).toLocaleDateString(
+                          "vi-VN",
+                        )}
                       </p>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p className="text-slate-500 text-center py-8">Không có sự kiện nào</p>
+              <p className="text-slate-500 text-center py-8">
+                Không có sự kiện nào
+              </p>
             )}
           </div>
         </div>

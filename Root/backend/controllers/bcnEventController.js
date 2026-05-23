@@ -548,50 +548,50 @@ const submitEventForApproval = async (req, res, next) => {
  * Duyệt sự kiện (Cán bộ Khoa)
  * PATCH /api/bcn/events/:id/approve-faculty
  */
-const approveFaculty = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const pool = await getPool();
+// const approveFaculty = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const pool = await getPool();
 
-    const checkResult = await pool
-      .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .query(`SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK`);
+//     const checkResult = await pool
+//       .request()
+//       .input("MaSK", sql.NVarChar(13), id)
+//       .query(`SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK`);
 
-    if (checkResult.recordset.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: { code: "NOT_FOUND", message: "Sự kiện không tồn tại" },
-      });
-    }
+//     if (checkResult.recordset.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         error: { code: "NOT_FOUND", message: "Sự kiện không tồn tại" },
+//       });
+//     }
 
-    // Chỉ duyệt được khi đang ở trạng thái chờ duyệt khoa
-    const currentStatus = checkResult.recordset[0].TrangThai;
-    if (currentStatus !== "cho_duyet_khoa") {
-      return res.status(403).json({
-        success: false,
-        error: {
-          code: "FORBIDDEN",
-          message: "Sự kiện không ở trạng thái chờ duyệt khoa",
-        },
-      });
-    }
+//     // Chỉ duyệt được khi đang ở trạng thái chờ duyệt khoa
+//     const currentStatus = checkResult.recordset[0].TrangThai;
+//     if (currentStatus !== "cho_duyet_khoa") {
+//       return res.status(403).json({
+//         success: false,
+//         error: {
+//           code: "FORBIDDEN",
+//           message: "Sự kiện không ở trạng thái chờ duyệt khoa",
+//         },
+//       });
+//     }
 
-    await pool
-      .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .query(
-        `UPDATE SU_KIEN SET TrangThai = 'cho_duyet_ctsv' WHERE MaSK = @MaSK`,
-      );
+//     await pool
+//       .request()
+//       .input("MaSK", sql.NVarChar(13), id)
+//       .query(
+//         `UPDATE SU_KIEN SET TrangThai = 'cho_duyet_ctsv' WHERE MaSK = @MaSK`,
+//       );
 
-    res.status(200).json({
-      success: true,
-      message: "Duyệt sự kiện từ Khoa thành công",
-    });
-  } catch (err) {
-    next(err);
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       message: "Duyệt sự kiện từ Khoa thành công",
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 
 /**
  * Duyệt sự kiện (Phòng CTSV)
@@ -644,66 +644,66 @@ const approveCTSV = async (req, res, next) => {
  * Từ chối sự kiện
  * PATCH /api/bcn/events/:id/reject
  */
-const rejectEvent = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { LyDoTuChoi } = req.body;
+// const rejectEvent = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const { LyDoTuChoi } = req.body;
 
-    if (!LyDoTuChoi || !LyDoTuChoi.trim()) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "Vui lòng nhập lý do từ chối",
-        },
-      });
-    }
+//     if (!LyDoTuChoi || !LyDoTuChoi.trim()) {
+//       return res.status(400).json({
+//         success: false,
+//         error: {
+//           code: "VALIDATION_ERROR",
+//           message: "Vui lòng nhập lý do từ chối",
+//         },
+//       });
+//     }
 
-    const pool = await getPool();
+//     const pool = await getPool();
 
-    const checkResult = await pool
-      .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .query(`SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK`);
+//     const checkResult = await pool
+//       .request()
+//       .input("MaSK", sql.NVarChar(13), id)
+//       .query(`SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK`);
 
-    if (checkResult.recordset.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: { code: "NOT_FOUND", message: "Sự kiện không tồn tại" },
-      });
-    }
+//     if (checkResult.recordset.length === 0) {
+//       return res.status(404).json({
+//         success: false,
+//         error: { code: "NOT_FOUND", message: "Sự kiện không tồn tại" },
+//       });
+//     }
 
-    const currentStatus = checkResult.recordset[0].TrangThai;
-    if (
-      currentStatus !== "cho_duyet_khoa" &&
-      currentStatus !== "cho_duyet_ctsv"
-    ) {
-      return res.status(403).json({
-        success: false,
-        error: {
-          code: "FORBIDDEN",
-          message: "Chỉ có thể từ chối sự kiện đang chờ duyệt",
-        },
-      });
-    }
+//     const currentStatus = checkResult.recordset[0].TrangThai;
+//     if (
+//       currentStatus !== "cho_duyet_khoa" &&
+//       currentStatus !== "cho_duyet_ctsv"
+//     ) {
+//       return res.status(403).json({
+//         success: false,
+//         error: {
+//           code: "FORBIDDEN",
+//           message: "Chỉ có thể từ chối sự kiện đang chờ duyệt",
+//         },
+//       });
+//     }
 
-    await pool
-      .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .input("LyDoTuChoi", sql.NVarChar(sql.MAX), LyDoTuChoi.trim()).query(`
-        UPDATE SU_KIEN
-        SET TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi
-        WHERE MaSK = @MaSK
-      `);
+//     await pool
+//       .request()
+//       .input("MaSK", sql.NVarChar(13), id)
+//       .input("LyDoTuChoi", sql.NVarChar(sql.MAX), LyDoTuChoi.trim()).query(`
+//         UPDATE SU_KIEN
+//         SET TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi
+//         WHERE MaSK = @MaSK
+//       `);
 
-    res.status(200).json({
-      success: true,
-      message: "Từ chối sự kiện thành công",
-    });
-  } catch (err) {
-    next(err);
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       message: "Từ chối sự kiện thành công",
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
 
 module.exports = {
   getEventsByClub,
@@ -712,7 +712,5 @@ module.exports = {
   updateEvent,
   deleteEvent,
   submitEventForApproval,
-  approveFaculty,
   approveCTSV,
-  rejectEvent,
 };

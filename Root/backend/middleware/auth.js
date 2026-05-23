@@ -15,7 +15,7 @@ const parseLegacyToken = (token) => {
     throw new Error("Invalid legacy token format");
   }
   return {
-    maSV: userId,
+    maND: userId,  // Changed from maSV to maND
     role,
     clubId: clubId === "null" ? null : clubId,
   };
@@ -57,7 +57,7 @@ const auth = async (req, res, next) => {
         const sql = require("mssql");
         const pool = await getPool();
         const result = await pool.request()
-          .input("maND", sql.VarChar, decoded.maND)
+          .input("maND", sql.NVarChar(50), decoded.maND)
           .query(`
             SELECT TOP 1 MaCLB 
             FROM THANH_VIEN 
@@ -98,7 +98,7 @@ const optionalAuth = async (req, res, next) => {
           const sql = require("mssql");
           const pool = await getPool();
           const result = await pool.request()
-            .input("maND", sql.VarChar, decoded.maND)
+            .input("maND", sql.NVarChar(50), decoded.maND)
             .query(`
               SELECT TOP 1 MaCLB 
               FROM THANH_VIEN 

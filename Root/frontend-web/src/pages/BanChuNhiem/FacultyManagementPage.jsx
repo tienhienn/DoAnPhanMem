@@ -3,13 +3,13 @@
  *
  * Chức năng:
  * - Xem thống kê nhanh: Cần duyệt, Đã duyệt bảo trợ, Bị từ chối
- * - Danh sách chờ duyệt (pending_faculty)
+ * - Danh sách chờ duyệt (cho_duyet_khoa)
  * - Modal chi tiết sự kiện (Read-only)
  * - Phê duyệt hoặc từ chối với ghi chú
- * - Chuyển trạng thái sang pending_student_affairs (CTSV)
+ * - Chuyển trạng thái sang cho_duyet_ctsv (CTSV)
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FiCheck,
   FiX,
@@ -18,86 +18,19 @@ import {
   FiChevronRight,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 // ============================================
-// MOCK DATA
+// STATUS MAPPING: Database status → UI status
 // ============================================
-const MOCK_EVENTS = [
-  {
-    id: 1,
-    name: "Hackathon Innovation 2026",
-    startTime: "2026-05-20 08:00",
-    endTime: "2026-05-21 17:00",
-    location: "Sân vận động trường",
-    quota: 200,
-    points: 3.0,
-    description: "Cuộc thi hackathon quy mô lớn, hỗ trợ startup khởi nghiệp.",
-    status: "pending_faculty",
-    createdBy: "Ban chủ nhiệm CLB Lập trình",
-    clubName: "CLB Lập trình UTE",
-    feedback: "",
-  },
-  {
-    id: 2,
-    name: "Hội thảo Python Advanced",
-    startTime: "2026-05-15 09:00",
-    endTime: "2026-05-15 11:30",
-    location: "Phòng A101, Tòa A",
-    quota: 100,
-    points: 1.5,
-    description:
-      "Hội thảo nâng cao về Python, xử lý dữ liệu và Web Development.",
-    status: "pending_faculty",
-    createdBy: "Ban chủ nhiệm CLB",
-    clubName: "CLB Lập trình UTE",
-    feedback: "",
-  },
-  {
-    id: 3,
-    name: "Buổi tư vấn Du học Úc",
-    startTime: "2026-05-22 14:00",
-    endTime: "2026-05-22 16:00",
-    location: "Phòng hội trường B",
-    quota: 150,
-    points: 0.5,
-    description:
-      "Tư vấn chi tiết về chương trình du học tại các trường Đại học Úc.",
-    status: "pending_student_affairs",
-    createdBy: "Ban chủ nhiệm CLB",
-    clubName: "CLB Tiếng Anh UTE",
-    feedback: "Sự kiện hay, ủng hộ",
-  },
-  {
-    id: 4,
-    name: "Lễ tuyên dương Sinh viên Xuất sắc 2025",
-    startTime: "2026-05-25 19:00",
-    endTime: "2026-05-25 21:00",
-    location: "Nhà văn hóa sinh viên",
-    quota: 300,
-    points: 2.0,
-    description:
-      "Lễ tuyên dương và khen thưởng các sinh viên có thành tích xuất sắc.",
-    status: "approved",
-    createdBy: "Ban chủ nhiệm CLB",
-    clubName: "Đoàn Thanh niên",
-    feedback: "Sự kiện hay, ủng hộ",
-  },
-  {
-    id: 5,
-    name: "Roadshow Tuyển dụng Công ty X",
-    startTime: "2026-05-28 10:00",
-    endTime: "2026-05-28 12:00",
-    location: "Phòng C205",
-    quota: 80,
-    points: 1.0,
-    description:
-      "Công ty X tuyển dụng các sinh viên ngành Công Nghệ Thông Tin.",
-    status: "rejected",
-    createdBy: "Ban chủ nhiệm CLB",
-    clubName: "CLB CNTT",
-    feedback: "Sự kiện chưa đủ thông tin chi tiết. Vui lòng cập nhật lại.",
-  },
-];
+const STATUS_MAP = {
+  cho_duyet_khoa: "pending_faculty",
+  cho_duyet_ctsv: "pending_student_affairs",
+  da_duyet: "approved",
+  tu_choi: "rejected",
+};
 
 // ============================================
 // STAT CARD COMPONENT
@@ -130,16 +63,16 @@ const StatCard = ({ icon: Icon, label, value, color }) => {
 const ApprovalStepper = ({ status }) => {
   const steps = [
     { key: "draft", label: "Tạo mới", icon: "📝" },
-    { key: "pending_faculty", label: "Khoa duyệt", icon: "🏫" },
-    { key: "pending_student_affairs", label: "CTSV duyệt", icon: "👥" },
-    { key: "approved", label: "Hoàn tất", icon: "✅" },
+    { key: "cho_duyet_khoa", label: "Khoa duyệt", icon: "🏫" },
+    { key: "cho_duyet_ctsv", label: "CTSV duyệt", icon: "👥" },
+    { key: "da_duyet", label: "Hoàn tất", icon: "✅" },
   ];
 
   const statusOrder = [
     "draft",
-    "pending_faculty",
-    "pending_student_affairs",
-    "approved",
+    "cho_duyet_khoa",
+    "cho_duyet_ctsv",
+    "da_duyet",
   ];
   const currentIndex = statusOrder.indexOf(status);
 
@@ -181,13 +114,13 @@ const ApprovalStepper = ({ status }) => {
 // ============================================
 // APPROVAL MODAL WITH GLASSMORPHISM - PREMIUM DESIGN
 // ============================================
-const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
+const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject, loading }) => {
   const [notes, setNotes] = useState("");
 
   if (!isOpen || !event) return null;
 
   const handleApprove = () => {
-    onApprove(event.id, notes);
+    onApprove(event.MaSK, notes);
     setNotes("");
   };
 
@@ -196,9 +129,11 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
       alert("Vui lòng nhập lý do từ chối");
       return;
     }
-    onReject(event.id, notes);
+    onReject(event.MaSK, notes);
     setNotes("");
   };
+
+  const formatDate = (date) => new Date(date).toLocaleString("vi-VN");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -233,7 +168,7 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
             <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">
               Tiến trình phê duyệt
             </h3>
-            <ApprovalStepper status={event.status} />
+            <ApprovalStepper status={event.TrangThai} />
           </div>
 
           {/* Event Details - Premium Layout */}
@@ -249,20 +184,27 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
                     Tên sự kiện
                   </p>
                   <p className="text-lg font-bold text-slate-900">
-                    {event.name}
+                    {event.TenSK}
                   </p>
                 </div>
 
                 {/* Time */}
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                   <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Thời gian
+                    Thời gian bắt đầu
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
-                    {event.startTime}
+                    {formatDate(event.ThoiGianBatDau)}
                   </p>
-                  <p className="text-xs text-slate-600 mt-1">
-                    Kết thúc: {event.endTime}
+                </div>
+
+                {/* End Time */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
+                    Thời gian kết thúc
+                  </p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {formatDate(event.ThoiGianKetThuc)}
                   </p>
                 </div>
 
@@ -272,7 +214,7 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
                     Địa điểm
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
-                    {event.location}
+                    {event.DiaDiem || "N/A"}
                   </p>
                 </div>
 
@@ -282,7 +224,7 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
                     Chỉ tiêu sinh viên
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
-                    {event.quota} sinh viên
+                    {event.SoNguoiToiDa || "N/A"} sinh viên
                   </p>
                 </div>
 
@@ -292,17 +234,27 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
                     Điểm rèn luyện
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
-                    {event.points} điểm
+                    {event.DiemRenLuyen || 0} điểm
                   </p>
                 </div>
 
-                {/* Club */}
+                {/* Event Type */}
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                   <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Câu lạc bộ
+                    Loại sự kiện
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
-                    {event.clubName}
+                    {event.LoaiSK || "N/A"}
+                  </p>
+                </div>
+
+                {/* Cost */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
+                    Chi phí dự kiến
+                  </p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} đ
                   </p>
                 </div>
               </div>
@@ -315,10 +267,25 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
               </h3>
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                 <p className="text-sm text-slate-700 leading-relaxed">
-                  {event.description}
+                  {event.MoTa || "Không có mô tả"}
                 </p>
               </div>
             </div>
+
+            {/* Rejection Reason if rejected */}
+            {event.TrangThai === "tu_choi" && event.LyDoTuChoi && (
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
+                <div className="flex gap-3">
+                  <FiAlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-rose-900 mb-1">
+                      Lý do từ chối trước:
+                    </p>
+                    <p className="text-sm text-rose-700">{event.LyDoTuChoi}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Approval Notes */}
@@ -332,7 +299,8 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Nhập ghi chú hoặc lý do từ chối..."
               rows="5"
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white"
+              disabled={loading}
+              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
             />
           </div>
         </div>
@@ -341,23 +309,26 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
         <div className="border-t border-slate-200 bg-slate-50 px-8 py-6 flex items-center justify-end gap-3 rounded-b-3xl">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-100 transition-all"
+            disabled={loading}
+            className="px-6 py-2.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-100 transition-all disabled:opacity-50"
           >
             Đóng
           </button>
           <button
             onClick={handleReject}
-            className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+            disabled={loading}
+            className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50"
           >
             <FiX className="w-4 h-4" />
-            Từ chối
+            {loading ? "Đang xử lý..." : "Từ chối"}
           </button>
           <button
             onClick={handleApprove}
-            className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+            disabled={loading}
+            className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50"
           >
             <FiCheck className="w-4 h-4" />
-            Phê duyệt bảo trợ
+            {loading ? "Đang xử lý..." : "Phê duyệt bảo trợ"}
           </button>
         </div>
       </div>
@@ -370,45 +341,46 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject }) => {
 // ============================================
 const EventTableRow = ({ event, onSelect }) => {
   const statusConfig = {
-    pending_faculty: {
+    cho_duyet_khoa: {
       label: "Chờ duyệt",
       bg: "bg-amber-100",
       text: "text-amber-700",
     },
-    pending_student_affairs: {
+    cho_duyet_ctsv: {
       label: "Chờ CTSV",
       bg: "bg-blue-100",
       text: "text-blue-700",
     },
-    approved: {
+    da_duyet: {
       label: "Đã duyệt",
       bg: "bg-emerald-100",
       text: "text-emerald-700",
     },
-    rejected: { label: "Bị từ chối", bg: "bg-rose-100", text: "text-rose-700" },
+    tu_choi: { label: "Bị từ chối", bg: "bg-rose-100", text: "text-rose-700" },
   };
 
-  const config = statusConfig[event.status] || statusConfig.pending_faculty;
+  const config = statusConfig[event.TrangThai] || statusConfig.cho_duyet_khoa;
+  const formatDate = (date) => new Date(date).toLocaleDateString("vi-VN");
 
   return (
     <div
-      onClick={() => event.status === "pending_faculty" && onSelect(event)}
+      onClick={() => event.TrangThai === "cho_duyet_khoa" && onSelect(event)}
       className={`grid grid-cols-6 gap-4 px-6 py-4 border-b border-slate-200 hover:bg-teal-50/30 transition-colors ${
-        event.status === "pending_faculty" ? "cursor-pointer" : ""
+        event.TrangThai === "cho_duyet_khoa" ? "cursor-pointer" : ""
       }`}
     >
-      <div className="font-semibold text-slate-800 truncate">{event.name}</div>
-      <div className="text-sm text-slate-600">{event.startTime}</div>
-      <div className="text-sm text-slate-600 truncate">{event.location}</div>
-      <div className="text-sm text-slate-600">{event.quota}</div>
-      <div className="text-sm text-slate-600">{event.points}</div>
+      <div className="font-semibold text-slate-800 truncate">{event.TenSK}</div>
+      <div className="text-sm text-slate-600">{formatDate(event.ThoiGianBatDau)}</div>
+      <div className="text-sm text-slate-600 truncate">{event.DiaDiem || "N/A"}</div>
+      <div className="text-sm text-slate-600">{event.SoNguoiToiDa || "N/A"}</div>
+      <div className="text-sm text-slate-600">{event.DiemRenLuyen || 0}</div>
       <div className="flex items-center justify-between">
         <span
           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}
         >
           {config.label}
         </span>
-        {event.status === "pending_faculty" && (
+        {event.TrangThai === "cho_duyet_khoa" && (
           <FiChevronRight className="w-4 h-4 text-slate-400" />
         )}
       </div>
@@ -421,47 +393,115 @@ const EventTableRow = ({ event, onSelect }) => {
 // ============================================
 export default function FacultyManagementPage() {
   const { user } = useAuth();
-  const [events, setEvents] = useState(MOCK_EVENTS);
+  const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch events on mount
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch all events with status cho_duyet_khoa (pending faculty approval)
+      const response = await axios.get(`${API_BASE_URL}/bcn/events?TrangThai=cho_duyet_khoa`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      
+      setEvents(response.data.data || []);
+    } catch (err) {
+      console.error("Error fetching events:", err);
+      setError("Không thể tải danh sách sự kiện");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Calculate statistics
   const pendingCount = events.filter(
-    (e) => e.status === "pending_faculty",
+    (e) => e.TrangThai === "cho_duyet_khoa",
   ).length;
-  const approvedCount = events.filter(
-    (e) => e.status === "pending_student_affairs",
+  
+  // Fetch all events to get approved and rejected counts
+  const [allEvents, setAllEvents] = useState([]);
+  
+  useEffect(() => {
+    const fetchAllEvents = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/bcn/events`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setAllEvents(response.data.data || []);
+      } catch (err) {
+        console.error("Error fetching all events:", err);
+      }
+    };
+    fetchAllEvents();
+  }, []);
+
+  const approvedCount = allEvents.filter(
+    (e) => e.TrangThai === "cho_duyet_ctsv",
   ).length;
-  const rejectedCount = events.filter((e) => e.status === "rejected").length;
+  const rejectedCount = allEvents.filter((e) => e.TrangThai === "tu_choi").length;
 
   // Get pending events for display
-  const pendingEvents = events.filter((e) => e.status === "pending_faculty");
+  const pendingEvents = events.filter((e) => e.TrangThai === "cho_duyet_khoa");
 
   const handleSelectEvent = (event) => {
     setSelectedEvent(event);
     setIsModalOpen(true);
   };
 
-  const handleApprove = (eventId, notes) => {
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === eventId
-          ? { ...e, status: "pending_student_affairs", feedback: notes }
-          : e,
-      ),
-    );
-    setIsModalOpen(false);
-    setSelectedEvent(null);
+  const handleApprove = async (maSK, notes) => {
+    try {
+      setLoading(true);
+      await axios.patch(
+        `${API_BASE_URL}/bcn/events/${maSK}/approve-faculty`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      
+      alert("Phê duyệt sự kiện thành công! Sự kiện đã được chuyển cho CTSV xét duyệt.");
+      setIsModalOpen(false);
+      setSelectedEvent(null);
+      await fetchEvents();
+    } catch (err) {
+      console.error("Error approving event:", err);
+      alert("Lỗi: " + (err.response?.data?.error?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReject = (eventId, reason) => {
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === eventId ? { ...e, status: "rejected", feedback: reason } : e,
-      ),
-    );
-    setIsModalOpen(false);
-    setSelectedEvent(null);
+  const handleReject = async (maSK, reason) => {
+    try {
+      setLoading(true);
+      await axios.patch(
+        `${API_BASE_URL}/bcn/events/${maSK}/reject`,
+        { LyDoTuChoi: reason },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      
+      alert("Từ chối sự kiện thành công!");
+      setIsModalOpen(false);
+      setSelectedEvent(null);
+      await fetchEvents();
+    } catch (err) {
+      console.error("Error rejecting event:", err);
+      alert("Lỗi: " + (err.response?.data?.error?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -474,9 +514,20 @@ export default function FacultyManagementPage() {
               Quản Lý Phê Duyệt Sự Kiện
             </h1>
             <p className="text-slate-600 mt-2">
-              Cán bộ Khoa: <span className="font-semibold">{user?.hoTen}</span>
+              Cán bộ Khoa: <span className="font-semibold">{user?.hoTen || "N/A"}</span>
             </p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex gap-3">
+              <FiAlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-rose-900">Lỗi:</p>
+                <p className="text-sm text-rose-700">{error}</p>
+              </div>
+            </div>
+          )}
 
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -522,11 +573,15 @@ export default function FacultyManagementPage() {
             </div>
 
             {/* Table Body */}
-            {pendingEvents.length > 0 ? (
+            {loading ? (
+              <div className="px-6 py-12 text-center text-slate-500">
+                <p>Đang tải dữ liệu...</p>
+              </div>
+            ) : pendingEvents.length > 0 ? (
               <div className="divide-y divide-slate-200">
                 {pendingEvents.map((event) => (
                   <EventTableRow
-                    key={event.id}
+                    key={event.MaSK}
                     event={event}
                     onSelect={handleSelectEvent}
                   />
@@ -545,32 +600,36 @@ export default function FacultyManagementPage() {
             <h2 className="text-lg font-bold text-slate-800 mb-4">
               Tất cả sự kiện
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {events.map((event) => {
-                const statusConfig = {
-                  pending_faculty: "bg-amber-50 border-amber-200",
-                  pending_student_affairs: "bg-blue-50 border-blue-200",
-                  approved: "bg-emerald-50 border-emerald-200",
-                  rejected: "bg-rose-50 border-rose-200",
-                };
-                return (
-                  <div
-                    key={event.id}
-                    className={`rounded-xl border p-4 ${statusConfig[event.status]}`}
-                  >
-                    <p className="font-semibold text-slate-800 text-sm line-clamp-2">
-                      {event.name}
-                    </p>
-                    <p className="text-xs text-slate-600 mt-1">
-                      {event.clubName}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-2">
-                      {event.startTime}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+            {allEvents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {allEvents.map((event) => {
+                  const statusConfig = {
+                    cho_duyet_khoa: "bg-amber-50 border-amber-200",
+                    cho_duyet_ctsv: "bg-blue-50 border-blue-200",
+                    da_duyet: "bg-emerald-50 border-emerald-200",
+                    tu_choi: "bg-rose-50 border-rose-200",
+                  };
+                  return (
+                    <div
+                      key={event.MaSK}
+                      className={`rounded-xl border p-4 ${statusConfig[event.TrangThai] || "bg-slate-50 border-slate-200"}`}
+                    >
+                      <p className="font-semibold text-slate-800 text-sm line-clamp-2">
+                        {event.TenSK}
+                      </p>
+                      <p className="text-xs text-slate-600 mt-1">
+                        {event.MaCLB}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-2">
+                        {new Date(event.ThoiGianBatDau).toLocaleDateString("vi-VN")}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-slate-500 text-center py-8">Không có sự kiện nào</p>
+            )}
           </div>
         </div>
       </div>
@@ -585,6 +644,7 @@ export default function FacultyManagementPage() {
         }}
         onApprove={handleApprove}
         onReject={handleReject}
+        loading={loading}
       />
     </div>
   );

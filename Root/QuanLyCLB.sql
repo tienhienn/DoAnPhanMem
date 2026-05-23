@@ -2,12 +2,11 @@
 -- TẠO CƠ SỞ DỮ LIỆU
 -- =============================================
 -- Xóa cơ sở dữ liệu nếu đã tồn tại
---drop database if exists QUANLYCLB_UTE
 IF EXISTS (SELECT * FROM sys.databases WHERE name = 'QUANLYCLB_UTE')
 BEGIN
-    USE master; -- Chuyển sang cơ sở dữ liệu master để có thể xóa được cơ sở dữ liệu khác
-    ALTER DATABASE QUANLYCLB_UTE SET SINGLE_USER WITH ROLLBACK IMMEDIATE; -- Ngắt mọi kết nối
-    DROP DATABASE QUANLYCLB_UTE; -- Xóa cơ sở dữ liệu
+    USE master;
+    ALTER DATABASE QUANLYCLB_UTE SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE QUANLYCLB_UTE;
 END
 CREATE DATABASE QUANLYCLB_UTE;
 GO
@@ -236,7 +235,7 @@ CREATE TABLE YEU_CAU_THAM_GIA_CLB (
     MaSV VARCHAR(13),
     LyDoThamGia NVARCHAR(MAX),
     NgayNop DATETIME DEFAULT GETDATE(),
-    TrangThai NVARCHAR(50) DEFAULT 'cho_duyet', -- cho_duyet, da_duyet, tu_choi
+    TrangThai NVARCHAR(50) DEFAULT 'cho_duyet',
     NgayDuyet DATETIME,
     NguoiDuyetID VARCHAR(13),
     LyDoTuChoi NVARCHAR(MAX),
@@ -349,27 +348,27 @@ GO
 -- =============================================
 -- 5. DỮ LIỆU MẪU (SAMPLE DATA)
 -- =============================================
--- Mật khẩu mẫu cho tất cả tài khoản: password (chữ thường)
--- bcrypt hash (cost=10): $2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi  (hash của "password")
--- =============================================
 
 -- ---------------------------------------------
--- 5.1 Khoa
+-- 5.1 Khoa (Đã cập nhật tên Khoa)
 -- ---------------------------------------------
 INSERT INTO Khoa (maKhoa, tenKhoa, tenVietTat, soDienThoai, email) VALUES
-('KHOA0000001', N'Khoa Công nghệ Thông tin',       N'CNTT',  '02363650403', 'cntt@ute.udn.vn'),
-('KHOA0000002', N'Khoa Điện - Điện tử',             N'DDT',   '02363650404', 'ddt@ute.udn.vn'),
-('KHOA0000003', N'Khoa Cơ khí',                     N'CK',    '02363650405', 'ck@ute.udn.vn'),
-('KHOA0000004', N'Khoa Kinh tế',                    N'KT',    '02363650406', 'kt@ute.udn.vn');
+('KHOA0000001', N'Khoa Công nghệ Số',       N'CNS',   '02363650403', 'cns@ute.udn.vn'),
+('KHOA0000002', N'Khoa Điện - Điện tử',      N'DDT',   '02363650404', 'ddt@ute.udn.vn'),
+('KHOA0000003', N'Khoa Cơ khí',              N'CK',    '02363650405', 'ck@ute.udn.vn'),
+('KHOA0000004', N'Khoa Hóa',                 N'HOA',   '02363650406', 'hoa@ute.udn.vn');
 GO
 
 -- ---------------------------------------------
--- 5.2 Đơn vị quản lý
+-- 5.2 Đơn vị quản lý (Đã cập nhật theo yêu cầu)
 -- ---------------------------------------------
 INSERT INTO DONVIQUANLY (maDVQL, tenDVQL, emailLienHien, soDienThoai) VALUES
 ('DVQL0000001', N'Đoàn Thanh niên - Hội Sinh viên', 'doan@ute.udn.vn',  '02363650400'),
-('DVQL0000002', N'Phòng Công tác Sinh viên',         'ctsv@ute.udn.vn',  '02363650401'),
-('DVQL0000003', N'Trung tâm Hỗ trợ Sinh viên',       'httro@ute.udn.vn', '02363650402');
+('DVQL0000002', N'Khoa Công nghệ Số',               'cns@ute.udn.vn',   '02363650403'),
+('DVQL0000003', N'Khoa Điện - Điện tử',             'ddt@ute.udn.vn',   '02363650404'),
+('DVQL0000004', N'Khoa Cơ khí',                     'ck@ute.udn.vn',    '02363650405'),
+('DVQL0000005', N'Khoa Hóa',                        'hoa@ute.udn.vn',   '02363650406'),
+('DVQL0000006', N'Phòng Công tác Sinh viên',        'ctsv@ute.udn.vn',  '02363650401');
 GO
 
 -- ---------------------------------------------
@@ -382,21 +381,20 @@ INSERT INTO VAI_TRO (VaiTroID, tenVaiTro, moTa, quyen, trangThai) VALUES
 GO
 
 -- ---------------------------------------------
--- 5.4 Lớp
+-- 5.4 Lớp (Đã cập nhật theo tên Khoa)
 -- ---------------------------------------------
 INSERT INTO Lop (maLop, maKhoa, tenLop, nienKhoa, siSo, trangThai) VALUES
-('LOP00000001', 'KHOA0000001', N'21TCLC_DT2',  N'2021-2025', 35, N'Đang học'),
-('LOP00000002', 'KHOA0000001', N'21TCLC_DT3',  N'2021-2025', 33, N'Đang học'),
+('LOP00000001', 'KHOA0000001', N'21TCLC_CNS1', N'2021-2025', 35, N'Đang học'),
+('LOP00000002', 'KHOA0000001', N'21TCLC_CNS2', N'2021-2025', 33, N'Đang học'),
 ('LOP00000003', 'KHOA0000002', N'21TCLC_DDT1', N'2021-2025', 36, N'Đang học'),
 ('LOP00000004', 'KHOA0000003', N'22TCLC_CK1',  N'2022-2026', 34, N'Đang học'),
-('LOP00000005', 'KHOA0000004', N'22TCLC_KT1',  N'2022-2026', 32, N'Đang học');
+('LOP00000005', 'KHOA0000004', N'22TCLC_HOA1', N'2022-2026', 32, N'Đang học');
 GO
 
 -- ---------------------------------------------
--- 5.5 Tài khoản (matKhau = bcrypt("password"))  ← mật khẩu là "password" chữ thường
+-- 5.5 Tài khoản (matKhau = bcrypt("password"))
 -- ---------------------------------------------
 INSERT INTO TAI_KHOAN (MaND, hoTen, email, matKhau, soDienThoai, ngaySinh, gioiTinh, trangThai) VALUES
--- Sinh viên
 ('SV210000001', N'Nguyễn Văn An',      'an.nv@sv.ute.udn.vn',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234561', '2003-05-15', N'Nam',  1),
 ('SV210000002', N'Trần Thị Bình',      'binh.tt@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234562', '2003-08-22', N'Nữ',   1),
 ('SV210000003', N'Lê Hoàng Cường',     'cuong.lh@sv.ute.udn.vn',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234563', '2003-11-10', N'Nam',  1),
@@ -405,13 +403,10 @@ INSERT INTO TAI_KHOAN (MaND, hoTen, email, matKhau, soDienThoai, ngaySinh, gioiT
 ('SV220000006', N'Võ Thị Hoa',         'hoa.vt@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234566', '2004-09-17', N'Nữ',   1),
 ('SV220000007', N'Đặng Quốc Hùng',     'hung.dq@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234567', '2004-01-25', N'Nam',  1),
 ('SV220000008', N'Bùi Thị Lan',        'lan.bt@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234568', '2004-04-12', N'Nữ',   1),
--- Tài khoản bị khóa (để test)
 ('SV210000009', N'Trần Văn Khóa',      'khoa.tv@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234569', '2003-06-20', N'Nam',  0),
--- Cán bộ / Ban quản lý CLB
 ('CB000000001', N'Nguyễn Thị Quản',    'quan.nt@ute.udn.vn',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234570', '1990-03-10', N'Nữ',   1),
 ('CB000000002', N'Lê Văn Trưởng',      'truong.lv@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234571', '1988-11-05', N'Nam',  1),
-('CB000000003', N'Nguyễn Hữu Thọ',      'tho.nh@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0896998961', '1960-11-05', N'Nam',  1)
-;
+('CB000000003', N'Nguyễn Hữu Thọ',     'tho.nh@ute.udn.vn',        '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0896998961', '1960-11-05', N'Nam',  1);
 GO
 
 -- ---------------------------------------------
@@ -430,12 +425,12 @@ INSERT INTO SINHVIEN (maSV, maLop, diemRenLuyen) VALUES
 GO
 
 -- ---------------------------------------------
--- 5.7 Cán bộ
+-- 5.7 Cán bộ (Cập nhật ánh xạ tới Đơn vị quản lý mới)
 -- ---------------------------------------------
 INSERT INTO CANBO (maCanBo, maDVQL, chucVu, trangThai) VALUES
 ('CB000000001', 'DVQL0000001', N'Bí thư Đoàn',          1),
-('CB000000002', 'DVQL0000002', N'Cán bộ khoa',      1),
-('CB000000003', 'DVQL0000003', N'Chuyên viên CTSV',      1);
+('CB000000002', 'DVQL0000002', N'Cán bộ khoa CNS',      1),
+('CB000000003', 'DVQL0000006', N'Chuyên viên CTSV',     1);
 GO
 
 -- ---------------------------------------------
@@ -452,15 +447,15 @@ INSERT INTO NGUOIDUNG_VAITRO (MaND, VaiTroID, GhiChu) VALUES
 ('SV220000008', 'VT000000001', N'Sinh viên thường'),
 ('SV210000009', 'VT000000001', N'Tài khoản bị khóa'),
 ('CB000000001', 'VT000000003', N'Cán bộ Đoàn'),
-('CB000000002', 'VT000000003', N'Cán bộ Khoa'),
+('CB000000002', 'VT000000003', N'Cán bộ Khoa CNS'),
 ('CB000000003', 'VT000000004', N'Cán bộ CTSV');
 GO
 
 -- ---------------------------------------------
--- 5.9 Câu lạc bộ
+-- 5.9 Câu lạc bộ (Gán CLB Lập Trình cho Khoa Công Nghệ Số - DVQL0000002)
 -- ---------------------------------------------
 INSERT INTO CAULACBO (MaCLB, maDVQL, TenCLB, MoTa, NgayThanhLap, SoThanhVienToiDa, LinhVuc, TrangThai) VALUES
-('CLB00000001', 'DVQL0000001', N'CLB Lập trình UTE',
+('CLB00000001', 'DVQL0000002', N'CLB Lập trình UTE',
     N'Câu lạc bộ dành cho sinh viên yêu thích lập trình, tổ chức các buổi workshop, hackathon và cuộc thi coding.',
     '2018-09-01', 100, N'Công nghệ', N'Hoạt động'),
 ('CLB00000002', 'DVQL0000001', N'CLB Tiếng Anh UTE',
@@ -469,7 +464,7 @@ INSERT INTO CAULACBO (MaCLB, maDVQL, TenCLB, MoTa, NgayThanhLap, SoThanhVienToiD
 ('CLB00000003', 'DVQL0000001', N'CLB Thể thao UTE',
     N'Câu lạc bộ tổ chức các hoạt động thể dục thể thao: bóng đá, cầu lông, bơi lội và các giải đấu nội bộ.',
     '2016-10-20', 150, N'Thể thao',  N'Hoạt động'),
-('CLB00000004', 'DVQL0000002', N'CLB Tình nguyện UTE',
+('CLB00000004', 'DVQL0000001', N'CLB Tình nguyện UTE',
     N'Câu lạc bộ tổ chức các hoạt động tình nguyện, từ thiện và hỗ trợ cộng đồng.',
     '2019-05-01', 120, N'Tình nguyện', N'Hoạt động');
 GO
@@ -490,83 +485,30 @@ GO
 
 -- ---------------------------------------------
 -- 5.11 Sự kiện
--- Bao gồm đủ các trạng thái để test frontend
 -- ---------------------------------------------
 INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai, UrlAnh, DiemRenLuyen) VALUES
--- Sắp diễn ra
-('SK000000001', 'CLB00000001',
-    N'Workshop: Nhập môn ReactJS',
-    N'Buổi workshop thực hành xây dựng ứng dụng web với ReactJS dành cho sinh viên mới bắt đầu. Mang theo laptop.',
-    '2026-06-10 08:00', '2026-06-10 11:30', N'Phòng Lab 201 - Nhà A', 40, 0, N'Workshop', N'sap_dien_ra',
-    'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=60', 5),
-
-('SK000000002', 'CLB00000001',
-    N'Hackathon UTE 2026',
-    N'Cuộc thi lập trình 24 giờ với chủ đề "Chuyển đổi số trong giáo dục". Giải thưởng lên đến 10 triệu đồng.',
-    '2026-06-20 07:00', '2026-06-21 07:00', N'Hội trường A - Tầng 1', 60, 5000000, N'Cuộc thi', N'sap_dien_ra',
-    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&auto=format&fit=crop&q=60', 15),
-
-('SK000000003', 'CLB00000002',
-    N'English Speaking Club - Tháng 6',
-    N'Buổi sinh hoạt tiếng Anh hàng tháng với chủ đề "Technology and Future". Tất cả trình độ đều được chào đón.',
-    '2026-06-15 14:00', '2026-06-15 16:30', N'Phòng 305 - Nhà B', 30, 0, N'Sinh hoạt', N'sap_dien_ra',
-    'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=60', 5),
-
-('SK000000004', 'CLB00000003',
-    N'Giải bóng đá mini UTE Cup 2026',
-    N'Giải đấu bóng đá mini dành cho sinh viên toàn trường. Đăng ký theo đội (5 người/đội).',
-    '2026-07-05 07:30', '2026-07-05 17:00', N'Sân thể thao trường', 100, 200000, N'Thể thao', N'sap_dien_ra',
-    'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=60', 10),
-
-('SK000000005', 'CLB00000004',
-    N'Ngày hội Tình nguyện Hè 2026',
-    N'Hoạt động tình nguyện dọn dẹp môi trường và tặng quà cho trẻ em có hoàn cảnh khó khăn tại huyện Hòa Vang.',
-    '2026-07-15 06:00', '2026-07-15 17:00', N'Huyện Hòa Vang, Đà Nẵng', 50, 0, N'Tình nguyện', N'sap_dien_ra',
-    'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&auto=format&fit=crop&q=60', 15),
-
--- Đang diễn ra
-('SK000000006', 'CLB00000001',
-    N'Khóa học Git & GitHub cơ bản',
-    N'Khóa học 3 buổi về quản lý mã nguồn với Git và GitHub. Buổi 2/3 đang diễn ra.',
-    '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra',
-    'https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=800&auto=format&fit=crop&q=60', 5),
-
--- Đã kết thúc (để test trạng thái)
-('SK000000007', 'CLB00000002',
-    N'Cuộc thi hùng biện tiếng Anh 2025',
-    N'Cuộc thi hùng biện tiếng Anh cấp trường năm học 2024-2025.',
-    '2025-12-10 08:00', '2025-12-10 17:00', N'Hội trường B', 80, 0, N'Cuộc thi', N'da_ket_thuc',
-    'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=60', 10),
-
--- Sự kiện đã hết chỗ (để test full capacity)
-('SK000000008', 'CLB00000001',
-    N'Seminar: AI và Machine Learning',
-    N'Buổi seminar về ứng dụng AI trong thực tế với diễn giả từ doanh nghiệp công nghệ.',
-    '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra',
-    'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=60', 5);
+('SK000000001', 'CLB00000001', N'Workshop: Nhập môn ReactJS', N'Buổi workshop thực hành xây dựng ứng dụng web với ReactJS.', '2026-06-10 08:00', '2026-06-10 11:30', N'Phòng Lab 201 - Nhà A', 40, 0, N'Workshop', N'sap_dien_ra', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=60', 5),
+('SK000000002', 'CLB00000001', N'Hackathon UTE 2026', N'Cuộc thi lập trình 24 giờ với chủ đề "Chuyển đổi số trong giáo dục".', '2026-06-20 07:00', '2026-06-21 07:00', N'Hội trường A - Tầng 1', 60, 5000000, N'Cuộc thi', N'sap_dien_ra', 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&auto=format&fit=crop&q=60', 15),
+('SK000000003', 'CLB00000002', N'English Speaking Club - Tháng 6', N'Buổi sinh hoạt tiếng Anh hàng tháng.', '2026-06-15 14:00', '2026-06-15 16:30', N'Phòng 305 - Nhà B', 30, 0, N'Sinh hoạt', N'sap_dien_ra', 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=60', 5),
+('SK000000004', 'CLB00000003', N'Giải bóng đá mini UTE Cup 2026', N'Giải đấu bóng đá mini dành cho sinh viên toàn trường.', '2026-07-05 07:30', '2026-07-05 17:00', N'Sân thể thao trường', 100, 200000, N'Thể thao', N'sap_dien_ra', 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=60', 10),
+('SK000000005', 'CLB00000004', N'Ngày hội Tình nguyện Hè 2026', N'Hoạt động tình nguyện dọn dẹp môi trường và tặng quà.', '2026-07-15 06:00', '2026-07-15 17:00', N'Huyện Hòa Vang, Đà Nẵng', 50, 0, N'Tình nguyện', N'sap_dien_ra', 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&auto=format&fit=crop&q=60', 15),
+('SK000000006', 'CLB00000001', N'Khóa học Git & GitHub cơ bản', N'Khóa học 3 buổi về quản lý mã nguồn với Git và GitHub.', '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra', 'https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=800&auto=format&fit=crop&q=60', 5),
+('SK000000007', 'CLB00000002', N'Cuộc thi hùng biện tiếng Anh 2025', N'Cuộc thi hùng biện tiếng Anh cấp trường năm học 2024-2025.', '2025-12-10 08:00', '2025-12-10 17:00', N'Hội trường B', 80, 0, N'Cuộc thi', N'da_ket_thuc', 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=60', 10),
+('SK000000008', 'CLB00000001', N'Seminar: AI và Machine Learning', N'Buổi seminar về ứng dụng AI trong thực tế.', '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra', 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=60', 5);
 GO
 
 -- ---------------------------------------------
 -- 5.12 Đăng ký sự kiện mẫu
 -- ---------------------------------------------
 INSERT INTO DANGKY_SUKIEN (MaDK, MaSK, MaND, NgayDangKy, NguoiDuyetID, NgayDuyet, TrangThai, LyDoDangKy) VALUES
--- SV210000001 đăng ký SK1 (đã duyệt) → có QR
 ('DK000000001', 'SK000000001', 'SV210000001', '2026-05-20 09:00', 'CB000000001', '2026-05-20 10:00', N'da_duyet',      N'Muốn học ReactJS'),
--- SV210000001 đăng ký SK2 (đã duyệt)
 ('DK000000002', 'SK000000002', 'SV210000001', '2026-05-21 10:00', 'CB000000001', '2026-05-21 11:00', N'da_duyet',      N'Muốn tham gia hackathon'),
--- SV210000002 đăng ký SK1 (đã duyệt)
 ('DK000000003', 'SK000000001', 'SV210000002', '2026-05-20 11:00', 'CB000000001', '2026-05-20 12:00', N'da_duyet',      N'Quan tâm đến ReactJS'),
--- SV210000003 đăng ký SK1 (chờ duyệt)
-('DK000000004', 'SK000000001', 'SV210000003', '2026-05-22 08:30', NULL,           NULL,               N'cho_duyet',     N'Muốn học lập trình web'),
--- SV210000004 đăng ký SK3 (đã duyệt)
+('DK000000004', 'SK000000001', 'SV210000003', '2026-05-22 08:30', NULL,          NULL,               N'cho_duyet',     N'Muốn học lập trình web'),
 ('DK000000005', 'SK000000003', 'SV210000004', '2026-05-23 14:00', 'CB000000001', '2026-05-23 15:00', N'da_duyet',      N'Muốn luyện tiếng Anh'),
--- SV220000005 đăng ký SK3 (đã hủy) → test hủy đăng ký
-('DK000000006', 'SK000000003', 'SV220000005', '2026-05-24 09:00', NULL,           NULL,               N'da_huy',        N'Đăng ký thử'),
--- SV220000006 đăng ký SK4 (đã duyệt)
+('DK000000006', 'SK000000003', 'SV220000005', '2026-05-24 09:00', NULL,          NULL,               N'da_huy',        N'Đăng ký thử'),
 ('DK000000007', 'SK000000004', 'SV220000006', '2026-05-25 10:00', 'CB000000001', '2026-05-25 11:00', N'da_duyet',      N'Thích bóng đá'),
--- SV220000007 đăng ký SK6 (đã điểm danh) → test trạng thái da_diem_danh
 ('DK000000008', 'SK000000006', 'SV220000007', '2026-04-30 08:00', 'CB000000001', '2026-04-30 09:00', N'da_diem_danh',  N'Muốn học Git'),
--- Đăng ký cho SK8 để fill đủ 20/20 chỗ (test hết chỗ)
 ('DK000000009', 'SK000000008', 'SV210000001', '2026-05-01 08:00', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
 ('DK000000010', 'SK000000008', 'SV210000002', '2026-05-01 08:05', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
 ('DK000000011', 'SK000000008', 'SV210000003', '2026-05-01 08:10', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
@@ -581,17 +523,13 @@ INSERT INTO DANGKY_SUKIEN (MaDK, MaSK, MaND, NgayDangKy, NguoiDuyetID, NgayDuyet
 ('DK000000020', 'SK000000008', 'SV210000001', NULL, NULL, NULL, N'da_duyet', N'Quan tâm AI');
 GO
 
--- Cập nhật SoNguoiToiDa SK8 = 20 để đúng với số đăng ký trên
-UPDATE SU_KIEN SET SoNguoiToiDa = 20 WHERE MaSK = 'SK000000008';
-GO
-
 -- ---------------------------------------------
 -- 5.13 Thông báo và liên kết người nhận
 -- ---------------------------------------------
 INSERT INTO THONG_BAO (MaTB, MaCLB, TieuDe, NoiDung, NguoiGuiID, SoNguoiNhan, LoaiTB, NgayGui, TrangThai) VALUES
-('TB000000001', 'CLB00000001', N'Nộp quỹ CLB tháng 5/2026', N'Chào các thành viên, vui lòng nộp quỹ tháng 5/2026 đúng hạn trước ngày 25/5/2026.', 'SV210000001', 3, N'Tài chính', '2026-05-18 09:00', N'da_gui'),
-('TB000000002', 'CLB00000001', N'Chuẩn bị cho Workshop ReactJS', N'Các thành viên tham gia hỗ trợ Workshop ReactJS vui lòng có mặt lúc 7:30 ngày 10/6/2026 tại Lab 201.', 'SV210000001', 3, N'Sự kiện', '2026-05-19 14:30', N'da_gui'),
-('TB000000003', 'CLB00000002', N'Thông báo lịch sinh hoạt tháng 6', N'English Speaking Club tháng 6 sẽ diễn ra vào ngày 15/6/2026 tại phòng 305 Nhà B. Rất mong các bạn tham gia đầy đủ.', 'SV210000004', 2, N'Sinh hoạt', '2026-05-20 08:00', N'da_gui');
+('TB000000001', 'CLB00000001', N'Nộp quỹ CLB tháng 5/2026', N'Chào các thành viên, vui lòng nộp quỹ.', 'SV210000001', 3, N'Tài chính', '2026-05-18 09:00', N'da_gui'),
+('TB000000002', 'CLB00000001', N'Chuẩn bị cho Workshop ReactJS', N'Các thành viên tham gia hỗ trợ Workshop.', 'SV210000001', 3, N'Sự kiện', '2026-05-19 14:30', N'da_gui'),
+('TB000000003', 'CLB00000002', N'Thông báo lịch sinh hoạt tháng 6', N'English Speaking Club tháng 6 sẽ diễn ra...', 'SV210000004', 2, N'Sinh hoạt', '2026-05-20 08:00', N'da_gui');
 GO
 
 INSERT INTO THONG_BAO_NGUOIDUNG (MaTB, MaND, DaDoc, NgayDoc) VALUES
@@ -603,17 +541,11 @@ INSERT INTO THONG_BAO_NGUOIDUNG (MaTB, MaND, DaDoc, NgayDoc) VALUES
 GO
 
 -- =============================================
--- 6. KIỂM TRA DỮ LIỆU
+-- KIỂM TRA LẠI DỮ LIỆU
 -- =============================================
--- Chạy các câu lệnh sau để xác nhận dữ liệu đã được insert đúng:
---
--- SELECT COUNT(*) AS soTaiKhoan   FROM TAI_KHOAN;        -- 11
--- SELECT COUNT(*) AS soSinhVien   FROM SINHVIEN;          -- 9
--- SELECT COUNT(*) AS soCLB        FROM CAULACBO;          -- 4
--- SELECT COUNT(*) AS soSuKien     FROM SU_KIEN;           -- 8
--- SELECT COUNT(*) AS soDangKy     FROM DANGKY_SUKIEN;     -- 20
---
--- Test đăng nhập:
--- Email: an.nv@sv.ute.udn.vn      | Password: password  → Thành công
--- Email: khoa.tv@sv.ute.udn.vn    | Password: password  → HTTP 403 (tài khoản bị khóa)
--- =============================================
+select * from SU_KIEN;
+select * from CAULACBO;
+select * from THANH_VIEN;
+select * from DONVIQUANLY;
+select * from CANBO;
+select * from TAI_KHOAN

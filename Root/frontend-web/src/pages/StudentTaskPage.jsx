@@ -53,7 +53,23 @@ const StudentTaskPage = () => {
       alert("Không có file để xem");
       return;
     }
-    const fullUrl = `${API_BASE_URL.replace("/api", "")}${fileLink}`;
+
+    // Nếu là link web (Google Drive, Dropbox...) thì mở trực tiếp
+    if (fileLink.startsWith("http://") || fileLink.startsWith("https://")) {
+      window.open(fileLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // Nếu là đường dẫn file của hệ thống (/uploads/...)
+    // Loại bỏ chữ '/api' khỏi API_BASE_URL để có domain gốc
+    const backendDomain = API_BASE_URL.replace("/api", "");
+
+    // Xóa dấu '/' ở đầu fileLink nếu có để tránh bị nối thành: domain.com//uploads
+    const cleanFileLink = fileLink.startsWith("/")
+      ? fileLink.substring(1)
+      : fileLink;
+
+    const fullUrl = `${backendDomain}/${cleanFileLink}`;
     console.log("📂 Opening file:", fullUrl);
     window.open(fullUrl, "_blank", "noopener,noreferrer");
   };
@@ -64,7 +80,19 @@ const StudentTaskPage = () => {
       alert("Không có file để tải");
       return;
     }
-    const fullUrl = `${API_BASE_URL.replace("/api", "")}${fileLink}`;
+
+    // Nếu là link ngoài thì chỉ mở tab mới
+    if (fileLink.startsWith("http://") || fileLink.startsWith("https://")) {
+      window.open(fileLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    const backendDomain = API_BASE_URL.replace("/api", "");
+    const cleanFileLink = fileLink.startsWith("/")
+      ? fileLink.substring(1)
+      : fileLink;
+    const fullUrl = `${backendDomain}/${cleanFileLink}`;
+
     console.log("⬇️ Downloading file:", fullUrl);
 
     const link = document.createElement("a");
@@ -364,7 +392,7 @@ const StudentTaskPage = () => {
                   )}
 
                   {/* Submission Status */}
-                  {task.submissionLink && task.status !== "in_progress" ? (
+                  {task.status === "reviewing" || task.submissionLink ? (
                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                       <p className="text-xs text-slate-600 font-semibold mb-2">
                         ✓ ĐÃ GỬI BÁO CÁO
@@ -387,33 +415,15 @@ const StudentTaskPage = () => {
                         Nộp lúc: {formatDate(task.submittedAt)}
                       </p>
                     </div>
-                  ) : null}
-
-                  {/* Nút gửi/nộp lại báo cáo */}
-                  {task.status !== "done" && (task.status === "todo" || task.status === "in_progress" || !task.submissionLink) ? (
-                    <div className="space-y-3">
-                      {task.status === "in_progress" && task.submissionLink && (
-                        <div className="bg-amber-50 p-3 rounded-xl border border-amber-200">
-                          <p className="text-xs text-amber-700 font-semibold flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                            <span>
-                              Ban chủ nhiệm yêu cầu bạn sửa lại báo cáo. Vui
-                              lòng nộp lại với các cải tiến.
-                            </span>
-                          </p>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => handleOpenSubmit(task)}
-                        className="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
-                      >
-                        <Send className="w-5 h-5" />
-                        {task.status === "in_progress" && task.submissionLink
-                          ? "Nộp lại báo cáo"
-                          : "Gửi báo cáo"}
-                      </button>
-                    </div>
-                  ) : null}
+                  ) : (
+                    <button
+                      onClick={() => handleOpenSubmit(task)}
+                      disabled={task.status === "done"}
+                      className="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-5 h-5" /> Gửi báo cáo
+                    </button>
+                  )}
                 </div>
               </div>
             );

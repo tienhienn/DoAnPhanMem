@@ -3,9 +3,6 @@ import {
   ChevronDown,
   Plus,
   Calendar,
-  User,
-  CheckCircle2,
-  Clock,
   AlertCircle,
   X,
   Eye,
@@ -13,6 +10,10 @@ import {
   Link as LinkIcon,
   Check,
   XCircle,
+  Clock,
+  CheckCircle2,
+  Paperclip,
+  UploadCloud,
 } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
@@ -23,13 +24,11 @@ const API_BASE_URL =
 const EventTaskManagement = () => {
   const { user } = useAuth();
 
-  // State quản lý dữ liệu từ API
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // State quản lý giao diện
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -41,9 +40,9 @@ const EventTaskManagement = () => {
     assignee: "",
     deadline: "",
     description: "",
+    attachmentLink: null,
   });
 
-  // 1. Fetch Danh sách sự kiện của BCN khi vừa vào trang
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -53,21 +52,16 @@ const EventTaskManagement = () => {
       const res = await axios.get(`${API_BASE_URL}/bcn/events`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      const eventList = res.data.data || [];
-      // Chỉ lấy các sự kiện đã tạo thành công (bỏ bản nháp và từ chối)
-      const validEvents = eventList.filter(
+      const validEvents = (res.data.data || []).filter(
         (e) => e.TrangThai !== "draft" && e.TrangThai !== "tu_choi",
       );
       setEvents(validEvents);
-      if (validEvents.length > 0) {
-        setSelectedEvent(validEvents[0]); // Mặc định chọn sự kiện đầu tiên
-      }
+      if (validEvents.length > 0) setSelectedEvent(validEvents[0]);
     } catch (error) {
       console.error("Lỗi lấy sự kiện:", error);
     }
   };
 
-  // 2. Fetch Danh sách Task và Members mỗi khi đổi Sự kiện
   useEffect(() => {
     if (selectedEvent) {
       fetchTasks(selectedEvent.MaSK);
@@ -103,8 +97,6 @@ const EventTaskManagement = () => {
     }
   };
 
-  // ================= ACTION HANDLERS (Gọi API) =================
-
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.assignee || !formData.deadline) {
@@ -113,25 +105,37 @@ const EventTaskManagement = () => {
     }
     try {
       setLoading(true);
-      await axios.post(
-        `${API_BASE_URL}/tasks`,
-        {
-          MaSK: selectedEvent.MaSK,
-          MaCLB: selectedEvent.MaCLB,
-          title: formData.title,
-          description: formData.description,
-          assigneeId: formData.assignee, // MaTV
-          deadline: formData.deadline,
+
+      // Khởi tạo FormData để chứa cả text và file
+      const submitData = new FormData();
+      submitData.append("MaSK", selectedEvent.MaSK);
+      submitData.append("MaCLB", selectedEvent.MaCLB);
+      submitData.append("title", formData.title);
+      submitData.append("description", formData.description);
+      submitData.append("assigneeId", formData.assignee);
+      submitData.append("deadline", formData.deadline);
+
+      if (formData.attachmentFile) {
+        submitData.append("file", formData.attachmentFile); // Đính kèm file
+      }
+
+      await axios.post(`${API_BASE_URL}/tasks`, submitData, {
+        headers: {
+          "Content-Type": "multipart/form-data", // Quan trọng khi gửi file
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
-      );
+      });
 
       alert("Phân công thành công!");
-      setFormData({ title: "", assignee: "", deadline: "", description: "" });
+      setFormData({
+        title: "",
+        assignee: "",
+        deadline: "",
+        description: "",
+        attachmentFile: null,
+      });
       setShowAddModal(false);
-      fetchTasks(selectedEvent.MaSK); // Load lại ds
+      fetchTasks(selectedEvent.MaSK);
     } catch (error) {
       alert(
         "Lỗi khi thêm: " +
@@ -192,7 +196,6 @@ const EventTaskManagement = () => {
     }
   };
 
-  // ================= UI HELPERS =================
   const stats = {
     total: tasks.length,
     todo: tasks.filter((t) => t.status === "todo").length,
@@ -311,7 +314,6 @@ const EventTaskManagement = () => {
             </div>
           </div>
         </div>
-
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between">
             <div>
@@ -327,7 +329,6 @@ const EventTaskManagement = () => {
             </div>
           </div>
         </div>
-
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 bg-amber-50/30 relative overflow-hidden">
           <div className="flex items-center justify-between relative z-10">
             <div>
@@ -343,7 +344,6 @@ const EventTaskManagement = () => {
             </div>
           </div>
         </div>
-
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between">
             <div>
@@ -414,8 +414,14 @@ const EventTaskManagement = () => {
                     >
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-semibold text-slate-900">
+                          <p className="font-semibold text-slate-900 flex items-center gap-2">
                             {task.title}
+                            {task.attachmentLink && (
+                              <Paperclip
+                                className="w-3.5 h-3.5 text-blue-500"
+                                title="Có tài liệu đính kèm"
+                              />
+                            )}
                           </p>
                           <p className="text-xs text-slate-500 mt-1 line-clamp-1">
                             {task.description}
@@ -464,7 +470,7 @@ const EventTaskManagement = () => {
                           <button
                             onClick={() => handleOpenReview(task)}
                             className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
-                            title="Xem chi tiết & Cập nhật"
+                            title="Xem chi tiết & Xét duyệt"
                           >
                             <Eye className="w-5 h-5" />
                           </button>
@@ -490,7 +496,7 @@ const EventTaskManagement = () => {
                   Chưa có công việc nào
                 </p>
                 <p className="text-slate-500 text-sm mt-1">
-                  Nhấn nút "Thêm công việc" để giao việc cho thành viên
+                  Nhấn nút "Thêm nhiệm vụ" để giao việc cho thành viên
                 </p>
               </div>
             )}
@@ -581,6 +587,48 @@ const EventTaskManagement = () => {
                   placeholder="Chi tiết công việc cần làm..."
                 />
               </div>
+
+              {/* TRƯỜNG TẢI FILE ĐÍNH KÈM */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Tài liệu đính kèm (nếu có)
+                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-dashed border-blue-300 text-blue-600 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors">
+                    <UploadCloud className="w-5 h-5" />
+                    <span className="font-medium truncate">
+                      {formData.attachmentFile
+                        ? formData.attachmentFile.name
+                        : "Tải lên tài liệu (.pdf, .zip, .docx...)"}
+                    </span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          attachmentFile: e.target.files[0],
+                        })
+                      }
+                    />
+                  </label>
+
+                  {/* Nút Xóa file đã chọn */}
+                  {formData.attachmentFile && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, attachmentFile: null })
+                      }
+                      className="p-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors border-2 border-transparent"
+                      title="Xóa file"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -657,11 +705,38 @@ const EventTaskManagement = () => {
                     {selectedTask.description || "Không có mô tả"}
                   </p>
                 </div>
+
+                {/* HIỂN THỊ LINK BCN ĐÍNH KÈM Ở ĐÂY */}
+                {selectedTask.attachmentLink && (
+                  <div className="col-span-2">
+                    <p className="text-xs text-slate-500 font-medium uppercase mb-1">
+                      Tài liệu BCN giao
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <a
+                        href={`${API_BASE_URL.replace("/api", "")}${selectedTask.attachmentLink}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors text-sm font-medium"
+                      >
+                        <Paperclip className="w-4 h-4" /> Mở tài liệu
+                      </a>
+                      <a
+                        href={`${API_BASE_URL.replace("/api", "")}${selectedTask.attachmentLink}?download=true`}
+                        download
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-100 transition-colors text-sm font-medium"
+                      >
+                        <UploadCloud className="w-4 h-4" /> Tải xuống
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Khu vực Báo cáo của thành viên */}
               {selectedTask.status === "reviewing" ||
-              selectedTask.status === "done" ? (
+              selectedTask.status === "done" ||
+              selectedTask.submissionLink ? (
                 <div className="border border-amber-200 bg-amber-50/30 p-6 rounded-2xl space-y-4">
                   <h4 className="font-bold text-slate-800 flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-amber-600" />

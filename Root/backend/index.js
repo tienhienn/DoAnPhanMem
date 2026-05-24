@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const { initPool, closePool } = require("./db");
 const { initDatabase } = require("./db/initDatabase");
 const errorHandler = require("./middleware/errorHandler");
@@ -41,6 +42,9 @@ app.use("/api/bcn/events", bcnEventsRoutes);
 app.use("/api/khoa/events", khoaEventsRoutes);
 app.use("/api/ctsv/events", ctsvEventsRoutes);
 app.use("/api/tasks", taskRoutes);
+// Cấp quyền truy cập công khai vào thư mục uploads (sử dụng absolute path)
+const uploadDir = path.join(__dirname, "uploads");
+app.use("/uploads", express.static(uploadDir));
 
 // 404 handler — phải đặt sau tất cả routes
 app.use((req, res) => {

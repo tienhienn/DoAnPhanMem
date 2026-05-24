@@ -714,7 +714,7 @@ const EventTaskManagement = () => {
                     </p>
                     <div className="flex items-center gap-3">
                       <a
-                        href={`${API_BASE_URL.replace("/api", "")}${selectedTask.attachmentLink}`}
+                        href={selectedTask.attachmentLink}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors text-sm font-medium"
@@ -722,7 +722,7 @@ const EventTaskManagement = () => {
                         <Paperclip className="w-4 h-4" /> Mở tài liệu
                       </a>
                       <a
-                        href={`${API_BASE_URL.replace("/api", "")}${selectedTask.attachmentLink}?download=true`}
+                        href={selectedTask.attachmentLink}
                         download
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-100 transition-colors text-sm font-medium"
                       >
@@ -748,14 +748,23 @@ const EventTaskManagement = () => {
                       <p className="text-xs text-slate-500 font-medium mb-1">
                         File đính kèm / Link kết quả:
                       </p>
-                      <a
-                        href={selectedTask.submissionLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-300 transition-colors text-sm font-medium"
-                      >
-                        <LinkIcon className="w-4 h-4" /> Xem đính kèm
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={selectedTask.submissionLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-300 transition-colors text-sm font-medium"
+                        >
+                          <LinkIcon className="w-4 h-4" /> Xem đính kèm
+                        </a>
+                        <a
+                          href={selectedTask.submissionLink}
+                          download
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors text-sm font-medium"
+                        >
+                          <UploadCloud className="w-4 h-4" /> Tải xuống
+                        </a>
+                      </div>
                     </div>
                   )}
 

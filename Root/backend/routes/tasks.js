@@ -6,6 +6,8 @@ const {
   createTask,
   reviewTask,
   deleteTask,
+  getStudentTasks,
+  submitTaskReport,
 } = require("../controllers/taskController");
 const { auth } = require("../middleware/auth");
 
@@ -26,11 +28,21 @@ const handleMulterError = (err, req, res, next) => {
   next();
 };
 
+// ========== BCN ROUTES ==========
 router.get("/event/:eventId", auth, getTasksByEvent);
 router.get("/club-members/:clubId", auth, getClubMembersForAssign);
 router.post("/", auth, upload.single("file"), handleMulterError, createTask);
-
 router.patch("/:id/review", auth, reviewTask);
 router.delete("/:id", auth, deleteTask);
+
+// ========== STUDENT ROUTES ==========
+router.get("/student/my-tasks", auth, getStudentTasks);
+router.patch(
+  "/:id/submit",
+  auth,
+  upload.single("file"),
+  handleMulterError,
+  submitTaskReport,
+);
 
 module.exports = router;

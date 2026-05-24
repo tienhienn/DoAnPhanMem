@@ -13,6 +13,7 @@ const clubRoutes = require("./routes/clubs");
 const bcnEventsRoutes = require("./routes/bcnEvents");
 const khoaEventsRoutes = require("./routes/khoaEvents");
 const ctsvEventsRoutes = require("./routes/ctsvEvents");
+const taskRoutes = require("./routes/tasks");
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use("/api/clubs", clubRoutes);
 app.use("/api/bcn/events", bcnEventsRoutes);
 app.use("/api/khoa/events", khoaEventsRoutes);
 app.use("/api/ctsv/events", ctsvEventsRoutes);
+app.use("/api/tasks", taskRoutes);
 
 // 404 handler — phải đặt sau tất cả routes
 app.use((req, res) => {

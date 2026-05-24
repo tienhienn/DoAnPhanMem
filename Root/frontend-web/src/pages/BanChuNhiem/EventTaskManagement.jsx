@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronDown,
   Plus,
@@ -8,82 +8,34 @@ import {
   Clock,
   AlertCircle,
   X,
+  Eye,
+  MessageSquare,
+  Link as LinkIcon,
+  Check,
+  XCircle,
 } from "lucide-react";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const EventTaskManagement = () => {
-  // Mock Data - Danh sách sự kiện
-  const events = [
-    { id: 1, name: "Hackathon 2026" },
-    { id: 2, name: "Tech Conference 2026" },
-    { id: 3, name: "Workshop React" },
-    { id: 4, name: "Ngày hội Công nghệ" },
-  ];
+  const { user } = useAuth();
 
-  // Mock Data - Danh sách thành viên
-  const members = [
-    { id: 1, name: "Nguyễn Văn An", avatar: "👨‍💼", role: "Leader" },
-    { id: 2, name: "Trần Thị Bảo", avatar: "👩‍💻", role: "Developer" },
-    { id: 3, name: "Lê Minh Chính", avatar: "👨‍🎨", role: "Designer" },
-    { id: 4, name: "Phạm Thị Dung", avatar: "👩‍📊", role: "Manager" },
-    { id: 5, name: "Đỗ Hoàng Em", avatar: "👨‍🔧", role: "Developer" },
-  ];
+  // State quản lý dữ liệu từ API
+  const [events, setEvents] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Mock Data - Danh sách nhiệm vụ
-  const initialTasks = [
-    {
-      id: 1,
-      title: "Setup Infrastructure & Server",
-      assignee: members[0],
-      deadline: "2026-06-15",
-      status: "todo", // todo, in_progress, done
-      description: "Chuẩn bị server, database, và các công cụ cần thiết",
-    },
-    {
-      id: 2,
-      title: "Design UI/UX Mockups",
-      assignee: members[2],
-      deadline: "2026-06-10",
-      status: "in_progress",
-      description: "Thiết kế wireframe và mockup cho toàn bộ ứng dụng",
-    },
-    {
-      id: 3,
-      title: "API Development",
-      assignee: members[1],
-      deadline: "2026-06-20",
-      status: "in_progress",
-      description: "Phát triển REST API cho các chức năng chính",
-    },
-    {
-      id: 4,
-      title: "Frontend Development",
-      assignee: members[4],
-      deadline: "2026-06-25",
-      status: "todo",
-      description: "Xây dựng giao diện người dùng bằng React",
-    },
-    {
-      id: 5,
-      title: "Testing & QA",
-      assignee: members[3],
-      deadline: "2026-07-01",
-      status: "done",
-      description: "Thực hiện kiểm tra chất lượng toàn bộ hệ thống",
-    },
-    {
-      id: 6,
-      title: "Deployment & Launch",
-      assignee: members[0],
-      deadline: "2026-07-05",
-      status: "done",
-      description: "Triển khai lên production và giám sát hệ thống",
-    },
-  ];
+  // State quản lý giao diện
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [feedback, setFeedback] = useState("");
 
-  // State
-  const [selectedEvent, setSelectedEvent] = useState(events[0]);
-  const [showModal, setShowModal] = useState(false);
-  const [tasks, setTasks] = useState(initialTasks);
   const [formData, setFormData] = useState({
     title: "",
     assignee: "",
@@ -91,65 +43,189 @@ const EventTaskManagement = () => {
     description: "",
   });
 
-  // Hàm tính toán thống kê
+  // 1. Fetch Danh sách sự kiện của BCN khi vừa vào trang
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/bcn/events`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const eventList = res.data.data || [];
+      // Chỉ lấy các sự kiện đã tạo thành công (bỏ bản nháp và từ chối)
+      const validEvents = eventList.filter(
+        (e) => e.TrangThai !== "draft" && e.TrangThai !== "tu_choi",
+      );
+      setEvents(validEvents);
+      if (validEvents.length > 0) {
+        setSelectedEvent(validEvents[0]); // Mặc định chọn sự kiện đầu tiên
+      }
+    } catch (error) {
+      console.error("Lỗi lấy sự kiện:", error);
+    }
+  };
+
+  // 2. Fetch Danh sách Task và Members mỗi khi đổi Sự kiện
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchTasks(selectedEvent.MaSK);
+      fetchMembers(selectedEvent.MaCLB);
+    }
+  }, [selectedEvent]);
+
+  const fetchTasks = async (eventId) => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/tasks/event/${eventId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setTasks(res.data.data || []);
+    } catch (error) {
+      console.error("Lỗi lấy nhiệm vụ:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMembers = async (clubId) => {
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/tasks/club-members/${clubId}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+      setMembers(res.data.data || []);
+    } catch (error) {
+      console.error("Lỗi lấy thành viên:", error);
+    }
+  };
+
+  // ================= ACTION HANDLERS (Gọi API) =================
+
+  const handleAddTask = async (e) => {
+    e.preventDefault();
+    if (!formData.title || !formData.assignee || !formData.deadline) {
+      alert("Vui lòng điền đầy đủ thông tin bắt buộc!");
+      return;
+    }
+    try {
+      setLoading(true);
+      await axios.post(
+        `${API_BASE_URL}/tasks`,
+        {
+          MaSK: selectedEvent.MaSK,
+          MaCLB: selectedEvent.MaCLB,
+          title: formData.title,
+          description: formData.description,
+          assigneeId: formData.assignee, // MaTV
+          deadline: formData.deadline,
+        },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+
+      alert("Phân công thành công!");
+      setFormData({ title: "", assignee: "", deadline: "", description: "" });
+      setShowAddModal(false);
+      fetchTasks(selectedEvent.MaSK); // Load lại ds
+    } catch (error) {
+      alert(
+        "Lỗi khi thêm: " +
+          (error.response?.data?.error?.message || error.message),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (confirm("Bạn có chắc chắn muốn xóa công việc này?")) {
+      try {
+        await axios.delete(`${API_BASE_URL}/tasks/${taskId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        fetchTasks(selectedEvent.MaSK);
+      } catch (error) {
+        alert("Lỗi khi xóa!");
+      }
+    }
+  };
+
+  const handleOpenReview = (task) => {
+    setSelectedTask(task);
+    setFeedback(task.bcnFeedback || "");
+    setShowReviewModal(true);
+  };
+
+  const submitTaskReview = async (statusEnum) => {
+    if (statusEnum === "in_progress" && !feedback.trim()) {
+      alert("Vui lòng nhập lý do/feedback để thành viên sửa lại!");
+      return;
+    }
+    try {
+      setLoading(true);
+      await axios.patch(
+        `${API_BASE_URL}/tasks/${selectedTask.id}/review`,
+        {
+          status: statusEnum,
+          feedback: feedback,
+        },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+      alert(
+        statusEnum === "done"
+          ? "Đã duyệt thành công!"
+          : "Đã gửi yêu cầu làm lại!",
+      );
+      setShowReviewModal(false);
+      fetchTasks(selectedEvent.MaSK);
+    } catch (error) {
+      alert("Lỗi khi cập nhật trạng thái!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ================= UI HELPERS =================
   const stats = {
     total: tasks.length,
     todo: tasks.filter((t) => t.status === "todo").length,
     inProgress: tasks.filter((t) => t.status === "in_progress").length,
+    reviewing: tasks.filter((t) => t.status === "reviewing").length,
     done: tasks.filter((t) => t.status === "done").length,
   };
 
-  // Hàm xử lý thêm công việc
-  const handleAddTask = (e) => {
-    e.preventDefault();
-    if (!formData.title || !formData.assignee || !formData.deadline) {
-      alert("Vui lòng điền đầy đủ thông tin!");
-      return;
-    }
-
-    const newTask = {
-      id: Math.max(...tasks.map((t) => t.id), 0) + 1,
-      title: formData.title,
-      assignee: members.find((m) => m.id === parseInt(formData.assignee)),
-      deadline: formData.deadline,
-      status: "todo",
-      description: formData.description,
-    };
-
-    setTasks([...tasks, newTask]);
-    setFormData({ title: "", assignee: "", deadline: "", description: "" });
-    setShowModal(false);
-  };
-
-  // Hàm thay đổi trạng thái công việc
-  const handleChangeStatus = (taskId, newStatus) => {
-    setTasks(
-      tasks.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)),
-    );
-  };
-
-  // Hàm xóa công việc
-  const handleDeleteTask = (taskId) => {
-    setTasks(tasks.filter((t) => t.id !== taskId));
-  };
-
-  // Hàm lấy badge màu theo trạng thái
   const getStatusBadge = (status) => {
-    const styles = {
-      todo: "bg-gray-100 text-gray-700 border border-gray-300",
-      in_progress: "bg-yellow-100 text-yellow-700 border border-yellow-300",
-      done: "bg-green-100 text-green-700 border border-green-300",
+    const configs = {
+      todo: {
+        style: "bg-slate-100 text-slate-700 border-slate-200",
+        label: "📋 Chưa làm",
+      },
+      in_progress: {
+        style: "bg-blue-100 text-blue-700 border-blue-200",
+        label: "⚙️ Đang làm",
+      },
+      reviewing: {
+        style:
+          "bg-amber-100 text-amber-700 border-amber-200 shadow-sm animate-pulse",
+        label: "👀 Chờ BCN duyệt",
+      },
+      done: {
+        style: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        label: "✅ Hoàn thành",
+      },
     };
-    const labels = {
-      todo: "📋 Chưa làm",
-      in_progress: "⚙️ Đang làm",
-      done: "✅ Hoàn thành",
-    };
-    return { style: styles[status], label: labels[status] };
+    return configs[status] || configs.todo;
   };
 
-  // Hàm format ngày
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString("vi-VN", {
       day: "2-digit",
@@ -158,13 +234,30 @@ const EventTaskManagement = () => {
     });
   };
 
-  // Hàm check hạn chót
   const isOverdue = (deadline) => {
+    if (!deadline) return false;
     return (
       new Date(deadline) < new Date() &&
       new Date(deadline).toDateString() !== new Date().toDateString()
     );
   };
+
+  if (events.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 p-8 flex items-center justify-center">
+        <div className="text-center bg-white p-10 rounded-2xl shadow-sm border border-slate-200 max-w-md">
+          <AlertCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-800 mb-2">
+            Chưa có sự kiện nào
+          </h2>
+          <p className="text-slate-500">
+            CLB của bạn chưa có sự kiện nào được tạo. Hãy tạo sự kiện trước khi
+            phân công nhiệm vụ.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -173,28 +266,27 @@ const EventTaskManagement = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
-              Triển khai & Phân công nhiệm vụ
+              Quản lý Tiến độ Sự kiện
             </h1>
             <p className="text-slate-600">
-              Quản lý và giám sát tiến độ công việc sự kiện
+              Ban chủ nhiệm theo dõi và xét duyệt công việc
             </p>
           </div>
 
-          {/* Dropdown chọn sự kiện */}
           <div className="relative min-w-[280px]">
             <div className="relative">
               <select
-                value={selectedEvent.id}
+                value={selectedEvent?.MaSK || ""}
                 onChange={(e) =>
                   setSelectedEvent(
-                    events.find((ev) => ev.id === parseInt(e.target.value)),
+                    events.find((ev) => ev.MaSK === e.target.value),
                   )
                 }
                 className="w-full px-4 py-3 pr-10 bg-white border-2 border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-blue-600 transition-all appearance-none cursor-pointer hover:border-slate-300"
               >
                 {events.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {event.name}
+                  <option key={event.MaSK} value={event.MaSK}>
+                    {event.TenSK}
                   </option>
                 ))}
               </select>
@@ -206,8 +298,7 @@ const EventTaskManagement = () => {
 
       {/* Thống kê nhanh - Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {/* Card Tổng task */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm font-medium mb-2">
@@ -215,55 +306,56 @@ const EventTaskManagement = () => {
               </p>
               <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-slate-600" />
             </div>
           </div>
         </div>
 
-        {/* Card Chưa làm */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm font-medium mb-2">
-                Chưa làm (To-do)
+                Đang làm
               </p>
-              <p className="text-3xl font-bold text-slate-900">{stats.todo}</p>
-            </div>
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-              <Clock className="w-6 h-6 text-gray-600" />
-            </div>
-          </div>
-        </div>
-
-        {/* Card Đang làm */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-600 text-sm font-medium mb-2">
-                Đang làm (In Progress)
-              </p>
-              <p className="text-3xl font-bold text-yellow-600">
+              <p className="text-3xl font-bold text-blue-600">
                 {stats.inProgress}
               </p>
             </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-              <Clock className="w-6 h-6 text-yellow-600" />
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        {/* Card Hoàn thành */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 bg-amber-50/30 relative overflow-hidden">
+          <div className="flex items-center justify-between relative z-10">
+            <div>
+              <p className="text-amber-800 text-sm font-bold mb-2">
+                Cần BCN Duyệt
+              </p>
+              <p className="text-3xl font-bold text-amber-600">
+                {stats.reviewing}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+              <Eye className="w-6 h-6 text-amber-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm font-medium mb-2">
-                Hoàn thành (Done)
+                Hoàn thành
               </p>
-              <p className="text-3xl font-bold text-green-600">{stats.done}</p>
+              <p className="text-3xl font-bold text-emerald-600">
+                {stats.done}
+              </p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
             </div>
           </div>
         </div>
@@ -271,248 +363,395 @@ const EventTaskManagement = () => {
 
       {/* Khu vực chính - Bảng công việc */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        {/* Header của bảng */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
           <h2 className="text-lg font-bold text-slate-900">
-            Danh sách công việc - {selectedEvent.name}
+            Danh sách nhiệm vụ - {selectedEvent?.TenSK}
           </h2>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
           >
-            <Plus className="w-5 h-5" />
-            Thêm công việc
+            <Plus className="w-5 h-5" /> Thêm nhiệm vụ
           </button>
         </div>
 
-        {/* Bảng công việc */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Tên công việc
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Người phụ trách
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Hạn chót
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Trạng thái
-                </th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">
-                  Hành động
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((task, index) => {
-                const badge = getStatusBadge(task.status);
-                const overdue = isOverdue(task.deadline);
+        {loading ? (
+          <div className="p-12 text-center text-slate-500">
+            Đang tải dữ liệu...
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700 w-1/3">
+                    Tên công việc
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Người phụ trách
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Hạn chót
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Trạng thái
+                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">
+                    Hành động
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.map((task) => {
+                  const badge = getStatusBadge(task.status);
+                  const overdue =
+                    isOverdue(task.deadline) && task.status !== "done";
 
-                return (
-                  <tr
-                    key={task.id}
-                    className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
-                      index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                    }`}
-                  >
-                    {/* Tên công việc */}
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {task.title}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {task.description}
-                        </p>
-                      </div>
-                    </td>
-
-                    {/* Người phụ trách */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-sm">
-                          {task.assignee.avatar}
-                        </div>
+                  return (
+                    <tr
+                      key={task.id}
+                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
                         <div>
-                          <p className="font-medium text-slate-900">
-                            {task.assignee.name}
+                          <p className="font-semibold text-slate-900">
+                            {task.title}
                           </p>
-                          <p className="text-xs text-slate-500">
-                            {task.assignee.role}
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                            {task.description}
                           </p>
                         </div>
-                      </div>
-                    </td>
-
-                    {/* Hạn chót */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-slate-400" />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-sm">
+                            {task.assignee?.avatar || "👤"}
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {task.assignee?.name || "Chưa gán"}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {task.assignee?.role || ""}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-slate-400" />
+                          <span
+                            className={`text-sm font-medium ${overdue ? "text-red-600" : "text-slate-700"}`}
+                          >
+                            {formatDate(task.deadline)}
+                            {overdue && (
+                              <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                                Quá hạn
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
                         <span
-                          className={`text-sm font-medium ${overdue ? "text-red-600" : "text-slate-700"}`}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${badge.style}`}
                         >
-                          {formatDate(task.deadline)}
-                          {overdue && (
-                            <span className="ml-2 text-xs text-red-600">
-                              ⚠️ Quá hạn
-                            </span>
-                          )}
+                          {badge.label}
                         </span>
-                      </div>
-                    </td>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleOpenReview(task)}
+                            className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"
+                            title="Xem chi tiết & Cập nhật"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTask(task.id)}
+                            className="p-2 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors"
+                            title="Xóa công việc"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
-                    {/* Trạng thái - Dropdown */}
-                    <td className="px-6 py-4">
-                      <select
-                        value={task.status}
-                        onChange={(e) =>
-                          handleChangeStatus(task.id, e.target.value)
-                        }
-                        className={`px-3 py-1 rounded-lg text-sm font-medium border transition-all cursor-pointer ${badge.style}`}
-                      >
-                        <option value="todo">📋 Chưa làm</option>
-                        <option value="in_progress">⚙️ Đang làm</option>
-                        <option value="done">✅ Hoàn thành</option>
-                      </select>
-                    </td>
-
-                    {/* Hành động */}
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleDeleteTask(task.id)}
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                        title="Xóa công việc"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Empty state */}
-        {tasks.length === 0 && (
-          <div className="px-6 py-12 text-center">
-            <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600 font-medium">Chưa có công việc nào</p>
-            <p className="text-slate-500 text-sm mt-1">
-              Nhấn nút "Thêm công việc" để tạo mới
-            </p>
+            {tasks.length === 0 && (
+              <div className="px-6 py-12 text-center">
+                <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-600 font-medium">
+                  Chưa có công việc nào
+                </p>
+                <p className="text-slate-500 text-sm mt-1">
+                  Nhấn nút "Thêm công việc" để giao việc cho thành viên
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Modal Thêm công việc */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            {/* Header Modal */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 sticky top-0 bg-white">
-              <h3 className="text-lg font-bold text-slate-900">
-                Thêm công việc mới
+      {/* ========================================================================= */}
+      {/* MODAL 1: THÊM CÔNG VIỆC MỚI */}
+      {/* ========================================================================= */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <h3 className="text-xl font-bold text-slate-900">
+                Phân công nhiệm vụ mới
               </h3>
               <button
-                onClick={() => setShowModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+                onClick={() => setShowAddModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
               >
-                <X className="w-5 h-5 text-slate-600" />
+                <X className="w-5 h-5 text-slate-500" />
               </button>
             </div>
-
-            {/* Body Modal */}
             <form onSubmit={handleAddTask} className="p-6 space-y-5">
-              {/* Tên công việc */}
               <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Tên công việc <span className="text-red-500">*</span>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Tên công việc *
                 </label>
                 <input
                   type="text"
-                  placeholder="Nhập tên công việc..."
+                  required
                   value={formData.title}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 transition-all bg-slate-50 hover:bg-white"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Nhập tên nhiệm vụ..."
                 />
               </div>
-
-              {/* Phân công cho ai */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Phân công cho ai <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.assignee}
-                  onChange={(e) =>
-                    setFormData({ ...formData, assignee: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 transition-all bg-slate-50 hover:bg-white appearance-none cursor-pointer"
-                >
-                  <option value="">-- Chọn thành viên --</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name} ({member.role})
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Người phụ trách *
+                  </label>
+                  <select
+                    required
+                    value={formData.assignee}
+                    onChange={(e) =>
+                      setFormData({ ...formData, assignee: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">-- Chọn thành viên --</option>
+                    {members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Hạn chót *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.deadline}
+                    onChange={(e) =>
+                      setFormData({ ...formData, deadline: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
               </div>
-
-              {/* Hạn chót */}
               <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                  Hạn chót <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.deadline}
-                  onChange={(e) =>
-                    setFormData({ ...formData, deadline: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 transition-all bg-slate-50 hover:bg-white"
-                />
-              </div>
-
-              {/* Mô tả chi tiết */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Mô tả chi tiết
                 </label>
                 <textarea
-                  placeholder="Nhập mô tả công việc..."
+                  rows="3"
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  rows="4"
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-blue-600 transition-all bg-slate-50 hover:bg-white resize-none"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                  placeholder="Chi tiết công việc cần làm..."
                 />
               </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-all"
+                  onClick={() => setShowAddModal(false)}
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-all transform active:scale-95"
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Thêm công việc
+                  {loading ? "Đang xử lý..." : "Phân công"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: BCN XEM CHI TIẾT VÀ DUYỆT */}
+      {/* ========================================================================= */}
+      {showReviewModal && selectedTask && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-8 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-t-3xl sticky top-0">
+              <div>
+                <h3 className="text-xl font-bold">Chi tiết & Xét duyệt</h3>
+                <p className="text-blue-100 text-sm opacity-90 mt-1">
+                  Nhiệm vụ: {selectedTask.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-6 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <div>
+                  <p className="text-xs text-slate-500 font-medium uppercase mb-1">
+                    Người phụ trách
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">
+                      {selectedTask.assignee?.avatar || "👤"}
+                    </span>
+                    <span className="font-semibold text-slate-900">
+                      {selectedTask.assignee?.name}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium uppercase mb-1">
+                    Trạng thái hiện tại
+                  </p>
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${getStatusBadge(selectedTask.status).style}`}
+                  >
+                    {getStatusBadge(selectedTask.status).label}
+                  </span>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-slate-500 font-medium uppercase mb-1">
+                    Mô tả công việc
+                  </p>
+                  <p className="text-slate-800 text-sm whitespace-pre-wrap">
+                    {selectedTask.description || "Không có mô tả"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Khu vực Báo cáo của thành viên */}
+              {selectedTask.status === "reviewing" ||
+              selectedTask.status === "done" ? (
+                <div className="border border-amber-200 bg-amber-50/30 p-6 rounded-2xl space-y-4">
+                  <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-amber-600" />
+                    Báo cáo từ thành viên
+                  </h4>
+
+                  {selectedTask.submissionLink && (
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium mb-1">
+                        File đính kèm / Link kết quả:
+                      </p>
+                      <a
+                        href={selectedTask.submissionLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-300 transition-colors text-sm font-medium"
+                      >
+                        <LinkIcon className="w-4 h-4" /> Xem đính kèm
+                      </a>
+                    </div>
+                  )}
+
+                  {selectedTask.submissionNote && (
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium mb-1">
+                        Lời nhắn:
+                      </p>
+                      <div className="p-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 italic">
+                        "{selectedTask.submissionNote}"
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-slate-400 text-right">
+                    Nộp lúc: {formatDate(selectedTask.submittedAt)}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                  <p className="text-slate-500 text-sm">
+                    Thành viên chưa nộp báo cáo công việc.
+                  </p>
+                </div>
+              )}
+
+              {/* BCN Feedback form */}
+              {selectedTask.status === "reviewing" && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800 mb-2">
+                    BCN phản hồi / Yêu cầu sửa đổi (nếu có)
+                  </label>
+                  <textarea
+                    rows="3"
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    placeholder="Nhập nhận xét của BCN..."
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="px-8 py-5 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3 rounded-b-3xl">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                disabled={loading}
+                className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 disabled:opacity-50"
+              >
+                Đóng
+              </button>
+
+              {selectedTask.status === "reviewing" && (
+                <>
+                  <button
+                    onClick={() => submitTaskReview("in_progress")}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-rose-100 text-rose-700 font-semibold rounded-xl hover:bg-rose-200 disabled:opacity-50"
+                  >
+                    <XCircle className="w-5 h-5" /> Yêu cầu làm lại
+                  </button>
+                  <button
+                    onClick={() => submitTaskReview("done")}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 shadow-md disabled:opacity-50"
+                  >
+                    <Check className="w-5 h-5" /> Duyệt (Hoàn thành)
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

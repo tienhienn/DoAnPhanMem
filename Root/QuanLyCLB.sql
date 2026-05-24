@@ -210,6 +210,13 @@ CREATE TABLE NHIEM_VU (
     HanChot DATETIME,
     NgayHoanThanh DATETIME,
     TrangThai NVARCHAR(50),
+    
+    -- ĐÃ THÊM TRỰC TIẾP CÁC TRƯỜNG MỚI VÀO ĐÂY:
+    FileBaoCao NVARCHAR(255) NULL,
+    GhiChuBaoCao NVARCHAR(MAX) NULL,
+    PhanHoiCuaBCN NVARCHAR(MAX) NULL,
+    NgayNopBaoCao DATETIME NULL,
+
     CONSTRAINT FK_NV_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_NV_SK FOREIGN KEY (MaSK) REFERENCES SU_KIEN(MaSK) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT FK_NV_TVPT FOREIGN KEY (MaTV_PhuTrach) REFERENCES THANH_VIEN(MaTV) ON UPDATE NO ACTION ON DELETE NO ACTION,
@@ -405,7 +412,7 @@ INSERT INTO TAI_KHOAN (MaND, hoTen, email, matKhau, soDienThoai, ngaySinh, gioiT
 ('SV220000008', N'Bùi Thị Lan',        'lan.bt@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234568', '2004-04-12', N'Nữ',   1),
 ('SV210000009', N'Trần Văn Khóa',      'khoa.tv@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234569', '2003-06-20', N'Nam',  0),
 ('CB000000001', N'Nguyễn Thị Quản',    'quan.nt@ute.udn.vn',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234570', '1990-03-10', N'Nữ',   1),
-('CB000000002', N'Hoàng Thị Mỹ Lệ',      'le.htm@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234571', '1988-11-05', N'Nam',  1),
+('CB000000002', N'Hoàng Thị Mỹ Lệ',       'le.htm@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234571', '1988-11-05', N'Nam',  1),
 ('CB000000003', N'Nguyễn Hữu Thọ',     'tho.nh@ute.udn.vn',        '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0896998961', '1960-11-05', N'Nam',  1);
 GO
 

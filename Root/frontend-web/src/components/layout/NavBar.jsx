@@ -240,6 +240,43 @@ function FileTextIcon({ className }) {
   );
 }
 
+function BellIcon({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+function CheckIcon({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
 /** Label hiển thị role trong navbar */
 const ROLE_LABELS = {
   SV: "Sinh viên",
@@ -255,6 +292,7 @@ function getNavItems(role) {
   if (role === "SV") {
     return [
       events,
+      { label: "Nhiệm vụ", path: "/my-tasks", icon: ChecklistIcon },
       { label: "Của Tôi", path: "/my-events", icon: BookmarkIcon },
       { label: "Câu lạc bộ", path: "/clubs", icon: UsersGroupIcon },
       { label: "Cá nhân", path: "/profile", icon: UserProfileIcon },
@@ -287,7 +325,7 @@ function getNavItems(role) {
       path: "/periodic-reports",
       icon: FileTextIcon,
     };
-    return [events, manage, members, tasks, finance, reports];
+    return [manage, members, tasks, finance, reports];
   }
 
   if (role === "KHOA") {
@@ -313,7 +351,7 @@ function getNavItems(role) {
 }
 
 export default function NavBar() {
-  const { user, logout } = useAuth();
+  const { user, logout, exitManagementMode } = useAuth();
   const location = useLocation();
   const navItems = getNavItems(user?.role);
 
@@ -504,6 +542,14 @@ export default function NavBar() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {user?.originalRole === "SV" && (
+            <button
+              onClick={exitManagementMode}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-all"
+            >
+              Thoát Quản lý
+            </button>
+          )}
           {renderNotificationBell()}
         </div>
       </div>
@@ -548,6 +594,14 @@ export default function NavBar() {
 
         {/* User Info + Logout — right */}
         <div className="flex items-center gap-3 min-w-[160px] justify-end">
+          {user?.originalRole === "SV" && (
+            <button
+              onClick={exitManagementMode}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-all transform hover:scale-[1.02] flex items-center gap-1"
+            >
+              Thoát Quản lý
+            </button>
+          )}
           {renderNotificationBell()}
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
             <UserIcon className="w-4 h-4 text-indigo-600" />

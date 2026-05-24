@@ -57,18 +57,23 @@ const getTasksByEvent = async (req, res, next) => {
   }
 };
 
-// 2. Lấy danh sách Thành viên CLB
+// 2. Lấy danh sách Thành viên CLB (loại trừ chính người đang phân công)
 const getClubMembersForAssign = async (req, res, next) => {
   try {
     const { clubId } = req.params;
     const pool = await getPool();
+    const currentUserId = req.user.maND; // Lấy ID của BCN hiện tại
 
-    const result = await pool.request().input("MaCLB", sql.NVarChar(13), clubId)
+    const result = await pool.request()
+      .input("MaCLB", sql.NVarChar(13), clubId)
+      .input("MaND", sql.NVarChar(13), currentUserId)
       .query(`
         SELECT TV.MaTV as id, TK.hoTen as name, TV.VaiTroCLB as role, TK.anhDaiDien as avatar
         FROM THANH_VIEN TV
         INNER JOIN TAI_KHOAN TK ON TV.MaND = TK.MaND
-        WHERE TV.MaCLB = @MaCLB AND TV.TrangThai = N'Hoạt động'
+        WHERE TV.MaCLB = @MaCLB 
+          AND TV.TrangThai = N'Hoạt động'
+          AND TV.MaND != @MaND
       `);
 
     res.status(200).json({ success: true, data: result.recordset });

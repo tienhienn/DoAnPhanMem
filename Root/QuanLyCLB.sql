@@ -206,18 +206,17 @@ CREATE TABLE NHIEM_VU (
     MoTa NVARCHAR(MAX),
     MaTV_PhuTrach VARCHAR(13),
     NguoiGiaoID VARCHAR(13),
-    DoUuTien NVARCHAR(50),
     TienDo INT DEFAULT 0,
     NgayBatDau DATE,
     HanChot DATETIME,
-    NgayHoanThanh DATETIME,
     TrangThai NVARCHAR(50),
     
-    -- ĐÃ THÊM TRỰC TIẾP CÁC TRƯỜNG MỚI VÀO ĐÂY:
+    -- Các trường thành viên nộp báo cáo:
     FileBaoCao NVARCHAR(255) NULL,
     GhiChuBaoCao NVARCHAR(MAX) NULL,
     PhanHoiCuaBCN NVARCHAR(MAX) NULL,
     NgayNopBaoCao DATETIME NULL,
+    FileDinhKem NVARCHAR(255) NULL,
 
     CONSTRAINT FK_NV_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_NV_SK FOREIGN KEY (MaSK) REFERENCES SU_KIEN(MaSK) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -558,3 +557,4 @@ select * from THANH_VIEN;
 select * from DONVIQUANLY;
 select * from CANBO;
 select * from TAI_KHOAN
+select * from NHIEM_VU

@@ -292,6 +292,7 @@ function getNavItems(role) {
   if (role === "SV") {
     return [
       events,
+      { label: "Nhiệm vụ", path: "/my-tasks", icon: ChecklistIcon },
       { label: "Của Tôi", path: "/my-events", icon: BookmarkIcon },
       { label: "Câu lạc bộ", path: "/clubs", icon: UsersGroupIcon },
       { label: "Cá nhân", path: "/profile", icon: UserProfileIcon },

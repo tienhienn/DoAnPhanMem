@@ -204,11 +204,9 @@ CREATE TABLE NHIEM_VU (
     MoTa NVARCHAR(MAX),
     MaTV_PhuTrach VARCHAR(13),
     NguoiGiaoID VARCHAR(13),
-    DoUuTien NVARCHAR(50),
     TienDo INT DEFAULT 0,
     NgayBatDau DATE,
     HanChot DATETIME,
-    NgayHoanThanh DATETIME,
     TrangThai NVARCHAR(50),
     
     -- Các trường thành viên nộp báo cáo:
@@ -557,3 +555,4 @@ select * from THANH_VIEN;
 select * from DONVIQUANLY;
 select * from CANBO;
 select * from TAI_KHOAN
+select * from NHIEM_VU

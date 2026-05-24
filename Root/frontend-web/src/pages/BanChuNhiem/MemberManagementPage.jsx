@@ -1,17 +1,4 @@
-/**
- * MemberManagementPage - Quản lý nhân sự Câu lạc bộ
- *
- * Chức năng:
- * - Xem danh sách thành viên theo trạng thái (Thành viên chính thức, Ban chủ nhiệm, Đơn xin gia nhập, Đã rời CLB)
- * - Thêm thành viên mới
- * - Sửa chức vụ thành viên
- * - Xóa thành viên khỏi CLB
- * - Duyệt/Từ chối đơn xin gia nhập
- * - Xuất danh sách thành viên
- * - Giao diện 100% đồng bộ với EventManagementPage.jsx
- */
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FiPlus,
   FiDownload,
@@ -20,73 +7,21 @@ import {
   FiEdit2,
   FiTrash2,
 } from "react-icons/fi";
+import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-// ============================================
-// MOCK DATA
-// ============================================
-const MOCK_MEMBERS = [
-  {
-    id: 1,
-    name: "Nguyễn Văn An",
-    mssv: "2021001",
-    role: "Thành viên",
-    joinDate: "2024-01-15",
-    contribution: 85,
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Trần Thị Bảo",
-    mssv: "2021002",
-    role: "Thành viên",
-    joinDate: "2024-02-20",
-    contribution: 92,
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "Lê Minh Chính",
-    mssv: "2021003",
-    role: "Thành viên",
-    joinDate: "2024-01-10",
-    contribution: 78,
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Phạm Thị Dung",
-    mssv: "2020001",
-    role: "Chủ nhiệm CLB",
-    joinDate: "2023-09-01",
-    contribution: 98,
-    status: "active",
-  },
-  {
-    id: 5,
-    name: "Đỗ Hoàng Em",
-    mssv: "2020002",
-    role: "Phó chủ nhiệm",
-    joinDate: "2023-10-15",
-    contribution: 95,
-    status: "active",
-  },
-  {
-    id: 6,
-    name: "Võ Hữu Tài",
-    mssv: "2023001",
-    role: "Thành viên",
-    joinDate: "2024-05-10",
-    contribution: 0,
-    status: "pending",
-  },
-];
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 // ============================================
 // STATUS BADGE COMPONENT
 // ============================================
 const STATUS_CONFIG = {
-  active: { label: "Đang hoạt động", bg: "bg-emerald-100", text: "text-emerald-700" },
+  active: {
+    label: "Đang hoạt động",
+    bg: "bg-emerald-100",
+    text: "text-emerald-700",
+  },
   pending: { label: "Chờ duyệt", bg: "bg-amber-100", text: "text-amber-700" },
   left: { label: "Đã rời", bg: "bg-rose-100", text: "text-rose-700" },
 };
@@ -94,7 +29,9 @@ const STATUS_CONFIG = {
 const StatusBadge = ({ status }) => {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.active;
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}>
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.text}`}
+    >
       {config.label}
     </span>
   );
@@ -103,28 +40,27 @@ const StatusBadge = ({ status }) => {
 // ============================================
 // ADD/EDIT MEMBER MODAL
 // ============================================
-const MemberFormModal = ({ isOpen, member, onClose, onSave }) => {
-  const [formData, setFormData] = useState(
-    member || {
-      name: "",
-      mssv: "",
-      role: "Thành viên",
-    }
-  );
+const MemberFormModal = ({ isOpen, member, onClose, onSave, loading }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    mssv: "",
+    role: "Thành viên",
+  });
+
+  useEffect(() => {
+    if (member)
+      setFormData({ name: member.name, mssv: member.mssv, role: member.role });
+    else setFormData({ name: "", mssv: "", role: "Thành viên" });
+  }, [member, isOpen]);
 
   if (!isOpen) return null;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = () => {
-    if (!formData.name.trim() || !formData.mssv.trim()) {
-      alert("Vui lòng điền đầy đủ thông tin");
+    if (!formData.mssv.trim()) {
+      alert("Vui lòng điền mã số sinh viên");
       return;
     }
     onSave(formData);
@@ -139,15 +75,11 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
         onClick={onClose}
       />
-
-      {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-500 px-8 py-6 flex items-center justify-between rounded-t-2xl">
           <h2 className="text-xl font-bold text-white">
             {member ? "Sửa chức vụ" : "Thêm thành viên mới"}
@@ -160,9 +92,7 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave }) => {
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-8 space-y-6">
-          {/* Member Info (Read-only if editing) */}
           {member && (
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
               <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
@@ -173,41 +103,25 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave }) => {
             </div>
           )}
 
-          {/* Name Input */}
           {!member && (
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-2">
-                Họ và tên
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Nhập họ và tên"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
-              />
-            </div>
-          )}
-
-          {/* MSSV Input */}
-          {!member && (
-            <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-2">
-                MSSV
+                Mã số sinh viên (MSSV) *
               </label>
               <input
                 type="text"
                 name="mssv"
                 value={formData.mssv}
                 onChange={handleChange}
-                placeholder="Nhập MSSV"
+                placeholder="Nhập MSSV (VD: SV210000001)"
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
               />
+              <p className="text-xs text-slate-500 mt-1">
+                Hệ thống sẽ tự động tìm tên sinh viên theo MSSV.
+              </p>
             </div>
           )}
 
-          {/* Role Select */}
           <div>
             <label className="block text-sm font-semibold text-slate-800 mb-2">
               Vai trò
@@ -227,19 +141,20 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave }) => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="border-t border-slate-200 bg-slate-50 px-8 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-100 transition-all"
+            disabled={loading}
+            className="px-6 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-100 transition-all disabled:opacity-50"
           >
             Hủy
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-sm"
+            disabled={loading}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-sm disabled:opacity-50"
           >
-            {member ? "Cập nhật" : "Thêm thành viên"}
+            {loading ? "Đang lưu..." : member ? "Cập nhật" : "Thêm thành viên"}
           </button>
         </div>
       </div>
@@ -252,30 +167,42 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave }) => {
 // ============================================
 export default function MemberManagementPage() {
   const { user } = useAuth();
-  const [members, setMembers] = useState(MOCK_MEMBERS);
+  const [members, setMembers] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // ============================================
-  // TABS CONFIGURATION
-  // ============================================
-  const tabs = [
-    { key: "all", label: "Tất cả" },
-    { key: "active", label: "Thành viên chính thức" },
-    { key: "bcn", label: "Ban chủ nhiệm" },
-    { key: "pending", label: "Đơn xin gia nhập" },
-    { key: "left", label: "Đã rời CLB" },
-  ];
+  useEffect(() => {
+    fetchMembers();
+  }, []);
 
-  // ============================================
-  // FILTER MEMBERS
-  // ============================================
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/bcn/members`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setMembers(res.data.data || []);
+    } catch (err) {
+      console.error("Lỗi tải danh sách:", err);
+      alert("Không thể tải danh sách thành viên.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getFilteredMembers = () => {
     if (activeTab === "all") return members;
     if (activeTab === "bcn") {
-      return members.filter((m) =>
-        ["Chủ nhiệm CLB", "Phó chủ nhiệm", "Trưởng ban"].includes(m.role)
+      return members.filter(
+        (m) =>
+          [
+            "Chủ nhiệm CLB",
+            "Chủ nhiệm",
+            "Phó chủ nhiệm",
+            "Trưởng ban",
+          ].includes(m.role) && m.status === "active",
       );
     }
     return members.filter((m) => m.status === activeTab);
@@ -283,9 +210,6 @@ export default function MemberManagementPage() {
 
   const filteredMembers = getFilteredMembers();
 
-  // ============================================
-  // STATISTICS
-  // ============================================
   const stats = {
     total: members.length,
     active: members.filter((m) => m.status === "active").length,
@@ -293,9 +217,6 @@ export default function MemberManagementPage() {
     left: members.filter((m) => m.status === "left").length,
   };
 
-  // ============================================
-  // HANDLERS
-  // ============================================
   const handleAddMember = () => {
     setEditingMember(null);
     setIsFormOpen(true);
@@ -306,93 +227,126 @@ export default function MemberManagementPage() {
     setIsFormOpen(true);
   };
 
-  const handleSaveMember = (formData) => {
-    if (editingMember) {
-      setMembers((prev) =>
-        prev.map((m) =>
-          m.id === editingMember.id
-            ? { ...m, ...formData }
-            : m
-        )
-      );
-    } else {
-      setMembers((prev) => [
-        ...prev,
+  const handleSaveMember = async (formData) => {
+    try {
+      setLoading(true);
+      if (editingMember) {
+        await axios.put(
+          `${API_BASE_URL}/bcn/members/${editingMember.id}/role`,
+          { role: formData.role },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          },
+        );
+        alert("Cập nhật chức vụ thành công.");
+      } else {
+        await axios.post(
+          `${API_BASE_URL}/bcn/members`,
+          { mssv: formData.mssv, role: formData.role },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          },
+        );
+        alert("Đã thêm thành viên mới.");
+      }
+      setIsFormOpen(false);
+      fetchMembers();
+    } catch (err) {
+      alert("Lỗi: " + (err.response?.data?.error?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApproveMember = async (id) => {
+    try {
+      await axios.patch(
+        `${API_BASE_URL}/bcn/members/requests/${id}/approve`,
+        {},
         {
-          ...formData,
-          id: Math.max(...prev.map((m) => m.id), 0) + 1,
-          joinDate: new Date().toISOString().split("T")[0],
-          contribution: 0,
-          status: "active",
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         },
-      ]);
-    }
-    setIsFormOpen(false);
-    setEditingMember(null);
-  };
-
-  const handleApproveMember = (id) => {
-    setMembers((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, status: "active" } : m
-      )
-    );
-  };
-
-  const handleRejectMember = (id) => {
-    if (window.confirm("Bạn chắc chắn muốn từ chối đơn xin gia nhập?")) {
-      setMembers((prev) => prev.filter((m) => m.id !== id));
+      );
+      fetchMembers();
+      alert("Đã duyệt đơn gia nhập!");
+    } catch (err) {
+      alert("Lỗi khi duyệt đơn!");
     }
   };
 
-  const handleDeleteMember = (id) => {
+  const handleRejectMember = async (id) => {
+    if (window.confirm("Bạn chắc chắn muốn từ chối đơn xin gia nhập này?")) {
+      try {
+        await axios.patch(
+          `${API_BASE_URL}/bcn/members/requests/${id}/reject`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          },
+        );
+        fetchMembers();
+      } catch (err) {
+        alert("Lỗi khi từ chối đơn!");
+      }
+    }
+  };
+
+  const handleDeleteMember = async (id) => {
     if (window.confirm("Bạn chắc chắn muốn xóa thành viên này khỏi CLB?")) {
-      setMembers((prev) => prev.filter((m) => m.id !== id));
+      try {
+        await axios.delete(`${API_BASE_URL}/bcn/members/${id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        fetchMembers();
+      } catch (err) {
+        alert("Lỗi khi xóa thành viên!");
+      }
     }
   };
 
-  const handleExportList = () => {
-    alert("Xuất danh sách thành viên (tính năng sẽ được cập nhật)");
-  };
-
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="p-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-slate-800">
                 Quản lý nhân sự Câu lạc bộ
               </h1>
               <p className="text-slate-500 mt-1">
-                Quản lý thành viên và vai trò trong CLB
+                Quản lý thành viên và xét duyệt đơn xin gia nhập
               </p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={handleAddMember}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-sm"
               >
-                <FiPlus className="w-5 h-5" />
-                Thêm thành viên
+                <FiPlus className="w-5 h-5" /> Thêm thành viên
               </button>
               <button
-                onClick={handleExportList}
+                onClick={() => window.print()}
                 className="flex items-center gap-2 px-6 py-3 bg-white text-slate-700 font-semibold border border-slate-300 rounded-lg hover:bg-slate-50 transition-all shadow-sm"
               >
-                <FiDownload className="w-5 h-5" />
-                Xuất danh sách
+                <FiDownload className="w-5 h-5" /> Xuất danh sách
               </button>
             </div>
           </div>
 
-          {/* Filter Tabs */}
           <div className="flex gap-3 flex-wrap">
-            {tabs.map((tab) => (
+            {[
+              { key: "all", label: "Tất cả" },
+              { key: "active", label: "Thành viên chính thức" },
+              { key: "bcn", label: "Ban chủ nhiệm" },
+              { key: "pending", label: "Đơn xin gia nhập" },
+              { key: "left", label: "Đã rời CLB" },
+            ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
@@ -407,9 +361,7 @@ export default function MemberManagementPage() {
             ))}
           </div>
 
-          {/* Members Table */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
-            {/* Table Header */}
             <div className="grid grid-cols-7 gap-4 bg-slate-50 px-6 py-4 border-b border-slate-200">
               {[
                 "Họ và tên",
@@ -420,50 +372,46 @@ export default function MemberManagementPage() {
                 "Trạng thái",
                 "Hành động",
               ].map((h) => (
-                <div key={h} className="text-xs font-bold text-slate-500 uppercase">
+                <div
+                  key={h}
+                  className="text-xs font-bold text-slate-500 uppercase"
+                >
                   {h}
                 </div>
               ))}
             </div>
 
-            {/* Table Body */}
-            {filteredMembers.length > 0 ? (
+            {loading ? (
+              <div className="px-6 py-12 text-center text-slate-500">
+                Đang tải dữ liệu...
+              </div>
+            ) : filteredMembers.length > 0 ? (
               <div className="divide-y divide-slate-200">
                 {filteredMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="grid grid-cols-7 gap-4 px-6 py-4 hover:bg-blue-50 transition-colors"
+                    className="grid grid-cols-7 gap-4 px-6 py-4 hover:bg-blue-50 transition-colors items-center"
                   >
-                    {/* Name */}
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-semibold">
-                        {member.name.charAt(0)}
+                        {member.name?.charAt(0) || "U"}
                       </div>
                       <span className="font-semibold text-slate-800 truncate">
                         {member.name}
                       </span>
                     </div>
-
-                    {/* MSSV */}
                     <div className="text-sm text-slate-600">{member.mssv}</div>
-
-                    {/* Role */}
                     <div className="text-sm text-slate-600">{member.role}</div>
-
-                    {/* Join Date */}
                     <div className="text-sm text-slate-600">
                       {new Date(member.joinDate).toLocaleDateString("vi-VN")}
                     </div>
-
-                    {/* Contribution */}
-                    <div className="text-sm text-slate-600">{member.contribution}</div>
-
-                    {/* Status */}
+                    <div className="text-sm text-slate-600">
+                      {member.contribution}
+                    </div>
                     <div className="flex items-center">
                       <StatusBadge status={member.status} />
                     </div>
 
-                    {/* Actions */}
                     <div className="flex items-center gap-2">
                       {member.status === "pending" ? (
                         <>
@@ -482,7 +430,7 @@ export default function MemberManagementPage() {
                             <FiX className="w-4 h-4" />
                           </button>
                         </>
-                      ) : (
+                      ) : member.status === "active" ? (
                         <>
                           <button
                             onClick={() => handleEditMember(member)}
@@ -499,41 +447,51 @@ export default function MemberManagementPage() {
                             <FiTrash2 className="w-4 h-4" />
                           </button>
                         </>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="px-6 py-12 text-center text-slate-500">
-                Không có thành viên nào
+                Không có thành viên nào trong mục này.
               </div>
             )}
           </div>
 
-          {/* Statistics */}
           <div className="grid grid-cols-4 gap-4">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <p className="text-sm text-slate-500 font-medium">Tổng thành viên</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{stats.total}</p>
+              <p className="text-sm text-slate-500 font-medium">Tổng hồ sơ</p>
+              <p className="text-3xl font-bold text-blue-600 mt-2">
+                {stats.total}
+              </p>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <p className="text-sm text-slate-500 font-medium">Đang hoạt động</p>
-              <p className="text-3xl font-bold text-emerald-600 mt-2">{stats.active}</p>
+              <p className="text-sm text-slate-500 font-medium">
+                Đang hoạt động
+              </p>
+              <p className="text-3xl font-bold text-emerald-600 mt-2">
+                {stats.active}
+              </p>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <p className="text-sm text-slate-500 font-medium">Chờ duyệt</p>
-              <p className="text-3xl font-bold text-amber-600 mt-2">{stats.pending}</p>
+              <p className="text-sm text-slate-500 font-medium">
+                Đơn chờ duyệt
+              </p>
+              <p className="text-3xl font-bold text-amber-600 mt-2">
+                {stats.pending}
+              </p>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
               <p className="text-sm text-slate-500 font-medium">Đã rời CLB</p>
-              <p className="text-3xl font-bold text-rose-600 mt-2">{stats.left}</p>
+              <p className="text-3xl font-bold text-rose-600 mt-2">
+                {stats.left}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Modals */}
       <MemberFormModal
         isOpen={isFormOpen}
         member={editingMember}
@@ -542,6 +500,7 @@ export default function MemberManagementPage() {
           setEditingMember(null);
         }}
         onSave={handleSaveMember}
+        loading={loading}
       />
     </div>
   );

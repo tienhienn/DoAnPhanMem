@@ -15,6 +15,7 @@ const bcnEventsRoutes = require("./routes/bcnEvents");
 const khoaEventsRoutes = require("./routes/khoaEvents");
 const ctsvEventsRoutes = require("./routes/ctsvEvents");
 const taskRoutes = require("./routes/tasks");
+const memberRoutes = require("./routes/members");
 
 const app = express();
 
@@ -42,6 +43,8 @@ app.use("/api/bcn/events", bcnEventsRoutes);
 app.use("/api/khoa/events", khoaEventsRoutes);
 app.use("/api/ctsv/events", ctsvEventsRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/bcn/members", memberRoutes);
+
 // Cấp quyền truy cập công khai vào thư mục uploads (sử dụng absolute path)
 const uploadDir = path.join(__dirname, "uploads");
 app.use("/uploads", express.static(uploadDir));

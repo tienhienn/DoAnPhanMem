@@ -345,7 +345,7 @@ const FinalApprovalModal = ({
                     Chi phí dự kiến
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
-                    {event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} đ
+                    {event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} VNĐ
                   </p>
                 </div>
               </div>

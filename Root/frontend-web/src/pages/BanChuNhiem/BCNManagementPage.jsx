@@ -550,7 +550,7 @@ const EventDetailModal = ({ isOpen, event, onClose }) => {
               { label: "Điểm rèn luyện", value: `${event.DiemRenLuyen} điểm` },
               {
                 label: "Chi phí dự kiến",
-                value: `${event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} đ`,
+                value: `${event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} VNĐ`,
               },
               { label: "Loại sự kiện", value: event.LoaiSK || "N/A" },
             ].map(({ label, value }) => (

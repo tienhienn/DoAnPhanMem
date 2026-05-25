@@ -580,6 +580,80 @@ INSERT INTO THONG_BAO_NGUOIDUNG (MaTB, MaND, DaDoc, NgayDoc) VALUES
 ('TB000000002', 'SV210000003', 1, '2026-05-20 10:00');
 GO
 
+INSERT INTO HOSO (MaHoSo, maCLB, maNguoiGui, maNguoiDuyet, loaiHoSo, TieuDe, NoiDung, FileDinhKem, TrangThai, NgayGui, NgayDuyet, LyDoTuChoi) VALUES
+-- 1. Báo cáo đã được CTSV duyệt (Của CLB Lập trình)
+('HS000000001', 'CLB00000001', 'SV210000001', 'CB000000003', N'Báo cáo Tháng', 
+ N'Báo cáo hoạt động tháng 4/2026', 
+ N'Tổng hợp các hoạt động của CLB trong tháng 4 bao gồm: Lên kế hoạch sự kiện Hackathon và tổ chức trainning nội bộ.', 
+ '/uploads/bao-cao-thang-4.pdf', 'approved', '2026-05-02 09:00', '2026-05-05 14:00', NULL),
+
+-- 2. Báo cáo vừa nộp, đang chờ CTSV duyệt (Của CLB Lập trình)
+('HS000000002', 'CLB00000001', 'SV210000001', NULL, N'Báo cáo Tháng', 
+ N'Báo cáo hoạt động tháng 5/2026', 
+ N'Báo cáo các sự kiện đã tổ chức thành công trong tháng 5 như Workshop ReactJS và các thu chi liên quan.', 
+ '/uploads/bao-cao-thang-5.pdf', 'submitted', '2026-05-25 10:30', NULL, NULL),
+
+-- 3. Báo cáo đang viết dở (Bản nháp - Của CLB Lập trình)
+('HS000000003', 'CLB00000001', 'SV210000001', NULL, N'Tổng kết Học kỳ', 
+ N'Báo cáo tổng kết học kỳ II năm học 2025-2026', 
+ N'Đang tổng hợp số liệu thành viên và các thành tích đạt được trong học kỳ vừa qua...', 
+ NULL, 'draft', '2026-05-25 15:00', NULL, NULL),
+
+-- 4. Đơn giải thể (Của CLB Tiếng Anh)
+('HS000000004', 'CLB00000002', 'SV210000004', NULL, N'Đơn giải thể', 
+ N'Đơn xin giải thể CLB Tiếng Anh UTE', 
+ N'Kính gửi Phòng CTSV, do hiện tại Ban chủ nhiệm không còn đủ nhân sự nòng cốt để duy trì các hoạt động định kỳ, chúng em xin phép nộp đơn xin tạm ngừng hoạt động và giải thể CLB.', 
+ '/uploads/don-giai-the.pdf', 'submitted', '2026-05-20 08:00', NULL, NULL),
+
+-- 5. Báo cáo bị từ chối (Yêu cầu làm lại - Của CLB Thể Thao)
+('HS000000005', 'CLB00000003', 'SV220000006', 'CB000000003', N'Tổng kết Nhiệm kỳ', 
+ N'Báo cáo tổng kết nhiệm kỳ 2024-2025', 
+ N'Tổng kết các giải đấu đã tổ chức.', 
+ '/uploads/bao-cao-nhiem-ky.pdf', 'tu_choi', '2026-01-10 09:00', '2026-01-12 10:00', N'Báo cáo thiếu phần kê khai tài chính, yêu cầu bổ sung và nộp lại.');
+
+ -- =============================================
+-- 5.14 Tài sản (cơ sở vật chất)
+-- =============================================
+INSERT INTO TAI_SAN (MaTS, MaDVQL, TenTS, SoLuongTong) VALUES
+('TS000000001', 'DVQL0000001', N'Máy chiếu Epson EB-2250U', 5),
+('TS000000002', 'DVQL0000001', N'Bộ loa di động kèm mic Sony', 3),
+('TS000000003', 'DVQL0000006', N'Bàn ghế nhựa sự kiện (bộ)', 100),
+('TS000000004', 'DVQL0000002', N'Cáp chuyển đổi HDMI/VGA', 10),
+('TS000000005', 'DVQL0000001', N'Bảng Flipchart', 4);
+GO
+
+-- =============================================
+-- 5.15 Quản lý Tài chính (Thu / Chi của CLB)
+-- =============================================
+INSERT INTO TAI_CHINH (MaTC, MaCLB, TenTaiChinh, Nam, TongThu, TongChi, NgayBatDau, TrangThai, NgayTao) VALUES
+('TC000000001', 'CLB00000001', N'Thu quỹ thành viên tháng 4/2026', 2026, 1500000, 0, '2026-04-05', N'Hoạt động', '2026-04-05'),
+('TC000000002', 'CLB00000001', N'Chi mua bánh kẹo, nước sinh hoạt', 2026, 0, 350000, '2026-04-10', N'Hoạt động', '2026-04-10'),
+('TC000000003', 'CLB00000001', N'Tài trợ từ Khoa CNS', 2026, 5000000, 0, '2026-05-15', N'Hoạt động', '2026-05-15'),
+('TC000000004', 'CLB00000001', N'Đặt cọc thuê hội trường', 2026, 0, 1000000, '2026-05-18', N'Hoạt động', '2026-05-18'),
+('TC000000005', 'CLB00000001', N'Chi tiền in banner', 2026, 0, 450000, '2026-05-19', N'Hoạt động', '2026-05-19');
+GO
+
+-- =============================================
+-- 5.16 Phiếu mượn trả cơ sở vật chất
+-- =============================================
+INSERT INTO PHIEU_MUON_TRA (MaPhieu, MaCLB, MaSK, NguoiMuonID, NgayTaoPhieu, NgayTraDuKien, trangThaiPhieu) VALUES
+('PM000000001', 'CLB00000001', 'SK000000001', 'SV210000001', '2026-05-09', '2026-05-10', N'Đã trả'),
+('PM000000002', 'CLB00000001', 'SK000000002', 'SV210000002', '2026-05-19', '2026-05-22', N'Đang mượn'), 
+('PM000000003', 'CLB00000001', NULL, 'SV210000003', '2026-05-10', '2026-05-12', N'Đang mượn'), 
+('PM000000004', 'CLB00000002', 'SK000000003', 'SV210000004', '2026-05-14', '2026-05-16', N'Đã trả');
+GO
+
+-- =============================================
+-- 5.17 Chi tiết phiếu mượn
+-- =============================================
+INSERT INTO CHI_TIET_PHIEU_MUON (MaPhieu, MaTS, SoLuongMuon, tinhTrang) VALUES
+('PM000000001', 'TS000000001', 1, N'Tốt'), 
+('PM000000001', 'TS000000004', 2, N'Tốt'), 
+('PM000000002', 'TS000000002', 2, N'Tốt'), 
+('PM000000002', 'TS000000003', 30, N'Tốt'), 
+('PM000000003', 'TS000000005', 1, N'Tốt'), 
+('PM000000004', 'TS000000002', 1, N'Tốt'); 
+GO
 -- =============================================
 -- KIỂM TRA LẠI DỮ LIỆU
 -- =============================================
@@ -590,3 +664,6 @@ select * from DONVIQUANLY;
 select * from CANBO;
 select * from TAI_KHOAN
 select * from NHIEM_VU
+select * from HOSO
+select * from TAI_SAN
+select * from CHI_TIET_PHIEU_MUON

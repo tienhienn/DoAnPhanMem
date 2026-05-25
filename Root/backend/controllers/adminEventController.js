@@ -58,7 +58,7 @@ exports.getEvents = async (req, res, next) => {
     const countQuery = query;
     query += ` ORDER BY NgayTao DESC OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
 
-    const pool = getPool();
+    const pool = await getPool();
     const request = pool.request();
 
     // Thêm parameters
@@ -164,7 +164,7 @@ exports.createEvent = async (req, res, next) => {
       Math.floor(Math.random() * 10000),
     );
 
-    const pool = getPool();
+    const pool = await getPool();
     const request = pool.request();
 
     // Thêm sự kiện mới (mặc định trạng thái là draft)
@@ -241,7 +241,7 @@ exports.updateEvent = async (req, res, next) => {
       });
     }
 
-    const pool = getPool();
+    const pool = await getPool();
 
     // Lấy thông tin sự kiện hiện tại
     const getQuery = `SELECT * FROM SU_KIEN WHERE MaSK = @maSK`;
@@ -388,7 +388,7 @@ exports.deleteEvent = async (req, res, next) => {
       });
     }
 
-    const pool = getPool();
+    const pool = await getPool();
 
     // Lấy thông tin sự kiện hiện tại
     const getQuery = `SELECT * FROM SU_KIEN WHERE MaSK = @maSK`;
@@ -471,7 +471,7 @@ exports.reviewEvent = async (req, res, next) => {
       });
     }
 
-    const pool = getPool();
+    const pool = await getPool();
 
     // Lấy thông tin sự kiện hiện tại
     const getQuery = `SELECT * FROM SU_KIEN WHERE MaSK = @maSK`;
@@ -508,28 +508,41 @@ exports.reviewEvent = async (req, res, next) => {
     }
 
     // Cập nhật trạng thái sự kiện
-    const updateQuery = `
-            UPDATE SU_KIEN
-            SET
-                TrangThai = @newStatus,
-                LyDoTuChoi = @feedback
-            WHERE MaSK = @maSK
-        `;
+    // ── Tính trạng thái mới theo role + action ──────────────────
+// Flow: draft → pending_faculty → pending_student_affairs → approved
+//                             ↘ rejected              ↘ rejected
+let newStatus;
+if (status === "rejected") {
+  newStatus = "rejected";
+} else if (role === "KHOA") {
+  newStatus = "pending_student_affairs"; // KHOA duyệt → chuyển lên CTSV
+} else if (role === "CTSV") {
+  newStatus = "approved"; // CTSV duyệt → hoàn tất
+}
 
-    const request = pool.request();
-    request
-      .input("maSK", sql.Char(13), id)
-      .input("newStatus", sql.NVarChar(50), status)
-      .input("feedback", sql.NVarChar(sql.MAX), feedback || null);
+// ── Cập nhật DB ──────────────────────────────────────────────
+const updateQuery = `
+  UPDATE SU_KIEN
+  SET
+    TrangThai  = @newStatus,
+    LyDoTuChoi = @feedback
+  WHERE MaSK = @maSK
+`;
+
+const request = pool.request();
+request
+  .input("maSK",      sql.Char(13),         id)
+  .input("newStatus", sql.NVarChar(50),      newStatus)  // ← dùng newStatus thay vì status
+  .input("feedback",  sql.NVarChar(sql.MAX), feedback || null);
 
     await request.query(updateQuery);
 
     return res.status(200).json({
       success: true,
-      message: `Event ${status} successfully`,
+      message: `Event ${newStatus} successfully`,
       data: {
         eventId: id,
-        newStatus: status,
+        newStatus: newStatus,
         feedback: feedback || null,
       },
     });
@@ -547,17 +560,19 @@ exports.getEventDetail = async (req, res, next) => {
     const { id } = req.params;
     const { userId, role, clubId } = req.user;
 
-    const pool = getPool();
+    const pool = await getPool();
 
     // Lấy thông tin sự kiện
     const query = `
-            SELECT 
-                MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
-                DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, DiemRenLuyen,
-                TrangThai, LyDoTuChoi, NgayTao
-            FROM SU_KIEN
-            WHERE MaSK = @maSK
-        `;
+      SELECT 
+        sk.MaSK, sk.MaCLB, sk.TenSK, sk.MoTa, sk.ThoiGianBatDau, sk.ThoiGianKetThuc,
+        sk.DiaDiem, sk.SoNguoiToiDa, sk.ChiPhiDuKien, sk.LoaiSK, sk.DiemRenLuyen,
+        sk.TrangThai, sk.LyDoTuChoi, sk.NgayTao,
+        clb.TenCLB
+      FROM SU_KIEN sk
+      LEFT JOIN CAULACBO clb ON sk.MaCLB = clb.MaCLB
+      WHERE sk.MaSK = @maSK
+    `;
 
     const result = await pool
       .request()

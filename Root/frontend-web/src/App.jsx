@@ -22,7 +22,7 @@ import QRScreen from "./pages/QRScreen";
 import MyEventsPage from "./pages/MyEventsPage";
 import StudentTaskPage from "./pages/StudentTaskPage";
 import BCNManagementPage from "./pages/BanChuNhiem/BCNManagementPage";
-import FacultyManagementPage from "./pages/BanChuNhiem/FacultyManagementPage";
+import FacultyManagementPage from "./pages/Khoa/FacultyManagementPage";
 import StudentAffairsPage from "./pages/BanChuNhiem/StudentAffairsPage";
 import MemberManagementPage from "./pages/BanChuNhiem/MemberManagementPage";
 import FinanceAndLogisticsPage from "./pages/BanChuNhiem/FinanceAndLogisticsPage";

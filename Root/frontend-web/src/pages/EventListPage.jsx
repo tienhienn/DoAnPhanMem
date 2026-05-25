@@ -164,6 +164,8 @@ export default function EventListPage() {
                     location: event.diaDiem,
                     maxCapacity: event.soNguoiToiDa,
                     registeredCount: event.soNguoiDaDangKy,
+                    imageUrl: event.urlAnh,
+                    diemRenLuyen: event.diemRenLuyen,
                   }}
                   registrationStatus="unregistered"
                   onClick={() => navigate(`/events/${event.maSK.trim()}`)}

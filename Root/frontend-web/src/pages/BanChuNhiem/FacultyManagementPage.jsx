@@ -1,18 +1,17 @@
 /**
- * StudentAffairsPage - Phòng Công tác sinh viên (CTSV) cấp phép hoạt động sự kiện
+ * FacultyManagementPage - Cán bộ Khoa duyệt sự kiện
  */
 
 import { useState, useEffect } from "react";
 import {
   FiCheck,
   FiX,
-  FiCalendar,
-  FiUsers,
-  FiCheckCircle,
   FiAlertCircle,
   FiMessageSquare,
-  FiDownload,
   FiChevronRight,
+  FiCalendar,
+  FiMapPin,
+  FiUsers,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
@@ -21,7 +20,7 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 // ============================================
-// STATUS CONFIG
+// STATUS CONFIG — Đầy đủ trạng thái như BCN
 // ============================================
 const STATUS_CONFIG = {
   draft: {
@@ -90,29 +89,40 @@ const STATUS_CONFIG = {
 };
 
 // ============================================
-// FORMAT DATE HELPER
+// STAT CARD COMPONENT
 // ============================================
-const formatDate = (dateString) => {
-  if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+const StatCard = ({ icon: Icon, label, value, color }) => {
+  const colorClasses = {
+    amber: "bg-amber-50 border-amber-200 text-amber-700",
+    emerald: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    rose: "bg-rose-50 border-rose-200 text-rose-700",
+  };
+
+  return (
+    <div
+      className={`rounded-2xl border p-6 backdrop-blur-sm transition-all hover:shadow-lg ${colorClasses[color]}`}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium opacity-75">{label}</p>
+          <p className="text-3xl font-bold mt-2">{value}</p>
+        </div>
+        <Icon className="w-10 h-10 opacity-30" />
+      </div>
+    </div>
+  );
 };
 
 // ============================================
-// APPROVAL STEPPER COMPONENT
+// APPROVAL STEPPER COMPONENT - Chuẩn như BCN
 // ============================================
 const ApprovalStepper = ({ status }) => {
-  // Chỉ định nghĩa 4 bước tới Cấp phép
   const steps = [
     { key: "draft", label: "Tạo mới", icon: "📝" },
     { key: "cho_duyet_khoa", label: "Khoa duyệt", icon: "🏫" },
     { key: "cho_duyet_ctsv", label: "CTSV duyệt", icon: "👥" },
     { key: "da_duyet", label: "Cấp phép", icon: "✅" },
+    { key: "sap_dien_ra", label: "Sắp diễn ra", icon: "🕐" },
   ];
 
   const statusOrder = [
@@ -123,13 +133,8 @@ const ApprovalStepper = ({ status }) => {
     "sap_dien_ra",
     "dang_dien_ra",
     "da_ket_thuc",
-    "huy",
   ];
-
-  let currentIndex = statusOrder.indexOf(status);
-  // Nếu trạng thái đã vượt qua mức "Cấp phép" (VD: đang diễn ra, kết thúc),
-  // vẫn giữ thanh tiến trình sáng full ở bước 4 (Cấp phép).
-  if (currentIndex > 3) currentIndex = 3;
+  const currentIndex = statusOrder.indexOf(status);
 
   return (
     <div className="py-4">
@@ -163,16 +168,15 @@ const ApprovalStepper = ({ status }) => {
         ))}
       </div>
 
-      {/* Hiển thị Badge trạng thái thực tế bên dưới nếu nó đang vận hành (Sắp/Đang diễn ra...) */}
-      {(status === "sap_dien_ra" ||
-        status === "dang_dien_ra" ||
+      {/* Trạng thái ngoài flow duyệt (Đang diễn ra, Đã kết thúc, Hủy) */}
+      {(status === "dang_dien_ra" ||
         status === "da_ket_thuc" ||
         status === "huy") && (
         <div className="mt-4 text-center">
           <div
             className={`text-sm font-semibold px-4 py-2 rounded-full inline-flex items-center justify-center border ${STATUS_CONFIG[status]?.badgeBg} ${STATUS_CONFIG[status]?.text} ${STATUS_CONFIG[status]?.border}`}
           >
-            Trạng thái hiện tại: {STATUS_CONFIG[status]?.label}
+            {STATUS_CONFIG[status]?.label}
           </div>
         </div>
       )}
@@ -181,35 +185,9 @@ const ApprovalStepper = ({ status }) => {
 };
 
 // ============================================
-// STAT CARD COMPONENT
+// APPROVAL MODAL
 // ============================================
-const StatCard = ({ icon: Icon, label, value, color }) => {
-  const colorClasses = {
-    amber: "bg-amber-50 border-amber-200 text-amber-700",
-    emerald: "bg-emerald-50 border-emerald-200 text-emerald-700",
-    rose: "bg-rose-50 border-rose-200 text-rose-700",
-    blue: "bg-blue-50 border-blue-200 text-blue-700",
-  };
-
-  return (
-    <div
-      className={`rounded-2xl border p-6 backdrop-blur-sm transition-all hover:shadow-lg ${colorClasses[color]}`}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium opacity-75">{label}</p>
-          <p className="text-3xl font-bold mt-2">{value}</p>
-        </div>
-        <Icon className="w-10 h-10 opacity-30" />
-      </div>
-    </div>
-  );
-};
-
-// ============================================
-// FINAL APPROVAL MODAL
-// ============================================
-const FinalApprovalModal = ({
+const ApprovalModal = ({
   isOpen,
   event,
   onClose,
@@ -217,41 +195,42 @@ const FinalApprovalModal = ({
   onReject,
   loading,
 }) => {
-  const [opinion, setOpinion] = useState("");
+  const [notes, setNotes] = useState("");
 
   if (!isOpen || !event) return null;
 
   const handleApprove = () => {
-    onApprove(event.MaSK, opinion);
-    setOpinion("");
+    onApprove(event.MaSK, notes);
+    setNotes("");
   };
 
   const handleReject = () => {
-    if (!opinion.trim()) {
-      alert("Vui lòng nhập lý do không cấp phép");
+    if (!notes.trim()) {
+      alert("Vui lòng nhập lý do từ chối");
       return;
     }
-    onReject(event.MaSK, opinion);
-    setOpinion("");
+    onReject(event.MaSK, notes);
+    setNotes("");
   };
 
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleString("vi-VN");
-  };
+  const formatDate = (date) => new Date(date).toLocaleString("vi-VN");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-lg"
         onClick={onClose}
       />
+
+      {/* Modal */}
       <div className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[95vh] overflow-y-auto border border-slate-100">
+        {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 px-8 py-8 flex items-center justify-between rounded-t-3xl z-10">
           <div>
             <h2 className="text-2xl font-bold text-white">Chi Tiết Sự Kiện</h2>
             <p className="text-blue-100 text-sm mt-1">
-              Thông tin chi tiết & Phê duyệt cuối cùng từ Phòng CTSV
+              Thông tin chi tiết & Phê duyệt
             </p>
           </div>
           <button
@@ -262,14 +241,17 @@ const FinalApprovalModal = ({
           </button>
         </div>
 
+        {/* Content */}
         <div className="p-8 space-y-8">
+          {/* Approval Stepper */}
           <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
             <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
-              Tiến trình phê duyệt
+              Tiến trình / Trạng thái
             </h3>
             <ApprovalStepper status={event.TrangThai} />
           </div>
 
+          {/* Event Details */}
           <div className="space-y-6">
             <div>
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">
@@ -351,6 +333,7 @@ const FinalApprovalModal = ({
               </div>
             </div>
 
+            {/* Description */}
             <div>
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
                 Mô tả chi tiết
@@ -362,14 +345,14 @@ const FinalApprovalModal = ({
               </div>
             </div>
 
-            {/* Hiển thị lý do nếu bị từ chối trước đó */}
+            {/* Rejection Reason if rejected */}
             {event.TrangThai === "tu_choi" && event.LyDoTuChoi && (
               <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
                 <div className="flex gap-3">
                   <FiAlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-rose-900 mb-1">
-                      Lý do từ chối trước đó:
+                      Lý do từ chối:
                     </p>
                     <p className="text-sm text-rose-700">{event.LyDoTuChoi}</p>
                   </div>
@@ -378,17 +361,17 @@ const FinalApprovalModal = ({
             )}
           </div>
 
-          {/* Chỉ hiện Ô ghi chú khi đang chờ CTSV duyệt */}
-          {event.TrangThai === "cho_duyet_ctsv" && (
+          {/* ẨN/HIỆN PHẦN GHI CHÚ DUYỆT TÙY VÀO TRẠNG THÁI */}
+          {event.TrangThai === "cho_duyet_khoa" && (
             <div>
               <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
-                <FiMessageSquare className="inline w-4 h-4 mr-2" />Ý kiến chỉ
-                đạo / Lý do từ chối
+                <FiMessageSquare className="inline w-4 h-4 mr-2" />
+                Ghi chú phê duyệt của Khoa
               </label>
               <textarea
-                value={opinion}
-                onChange={(e) => setOpinion(e.target.value)}
-                placeholder="Nhập ý kiến chỉ đạo hoặc lý do không cấp phép..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Nhập ghi chú hoặc lý do từ chối..."
                 rows="5"
                 disabled={loading}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
@@ -397,6 +380,7 @@ const FinalApprovalModal = ({
           )}
         </div>
 
+        {/* Footer */}
         <div className="border-t border-slate-200 bg-slate-50 px-8 py-6 flex items-center justify-end gap-3 rounded-b-3xl">
           <button
             onClick={onClose}
@@ -406,23 +390,24 @@ const FinalApprovalModal = ({
             Đóng
           </button>
 
-          {event.TrangThai === "cho_duyet_ctsv" && (
+          {/* ẨN/HIỆN NÚT DUYỆT/TỪ CHỐI TÙY VÀO TRẠNG THÁI */}
+          {event.TrangThai === "cho_duyet_khoa" && (
             <>
               <button
                 onClick={handleReject}
                 disabled={loading}
-                className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50"
               >
-                <FiX className="w-4 h-4" />{" "}
+                <FiX className="w-4 h-4" />
                 {loading ? "Đang xử lý..." : "Từ chối"}
               </button>
               <button
                 onClick={handleApprove}
                 disabled={loading}
-                className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50"
               >
-                <FiCheck className="w-4 h-4" />{" "}
-                {loading ? "Đang xử lý..." : "Cấp phép hoạt động"}
+                <FiCheck className="w-4 h-4" />
+                {loading ? "Đang xử lý..." : "Phê duyệt bảo trợ"}
               </button>
             </>
           )}
@@ -433,95 +418,59 @@ const FinalApprovalModal = ({
 };
 
 // ============================================
-// EVENT CARD COMPONENT (PENDING)
+// EVENT TABLE ROW
 // ============================================
-const EventCard = ({ event, onSelect }) => {
+const EventTableRow = ({ event, onSelect }) => {
+  const config = STATUS_CONFIG[event.TrangThai] || {
+    badgeBg: "bg-slate-100",
+    text: "text-slate-700",
+    label: "Chưa xác định",
+  };
+  const formatDate = (date) => new Date(date).toLocaleDateString("vi-VN");
+
   return (
     <div
       onClick={() => onSelect(event)}
-      className="group bg-white rounded-2xl border border-slate-200 hover:border-teal-300 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
+      className="grid grid-cols-7 gap-4 px-6 py-4 border-b border-slate-200 hover:bg-teal-50/30 transition-colors cursor-pointer"
     >
-      <div className="h-1 bg-gradient-to-r from-teal-600 to-cyan-600" />
-      <div className="p-6 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-600 transition-colors line-clamp-2">
-              {event.TenSK}
-            </h3>
-            <p className="text-sm font-medium text-teal-600 mt-1">
-              {event.TenCLB || event.MaCLB}
-            </p>
-          </div>
-          <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full whitespace-nowrap">
-            Chờ cấp phép
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-slate-600">
-            <FiCalendar className="w-4 h-4 text-teal-600 flex-shrink-0" />
-            <span className="truncate">{formatDate(event.ThoiGianBatDau)}</span>
-          </div>
-          <div className="flex items-center gap-2 text-slate-600">
-            <span className="text-xs font-semibold">
-              {event.DiemRenLuyen || 0} điểm RL
-            </span>
-          </div>
-        </div>
-        <p className="text-sm text-slate-600 line-clamp-2">{event.MoTa}</p>
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-          <span className="text-xs font-semibold text-slate-600">
-            {event.SoNguoiToiDa || "N/A"} chỗ
-          </span>
-          <FiChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-600 transition-colors" />
-        </div>
+      <div className="font-semibold text-slate-800 truncate">{event.TenSK}</div>
+      <div className="text-sm font-medium text-teal-600 truncate">
+        {event.TenCLB}
       </div>
-    </div>
-  );
-};
-
-// ============================================
-// APPROVED EVENT CARD COMPONENT
-// ============================================
-const ApprovedEventCard = ({ event }) => {
-  const config = STATUS_CONFIG[event.TrangThai] || STATUS_CONFIG.da_duyet;
-
-  return (
-    <div
-      className={`bg-white rounded-xl border p-4 hover:shadow-md transition-all ${config.border}`}
-    >
-      <div className="flex items-start justify-between mb-2 gap-2">
-        <h3 className="font-semibold text-slate-900 line-clamp-2">
-          {event.TenSK}
-        </h3>
+      <div className="text-sm text-slate-600">
+        {formatDate(event.ThoiGianBatDau)}
+      </div>
+      <div className="text-sm text-slate-600 truncate">
+        {event.DiaDiem || "N/A"}
+      </div>
+      <div className="text-sm text-slate-600">
+        {event.SoNguoiToiDa || "N/A"}
+      </div>
+      <div className="text-sm text-slate-600">{event.DiemRenLuyen || 0}</div>
+      <div className="flex items-center justify-between">
         <span
-          className={`px-2 py-1 text-[10px] font-bold rounded-full whitespace-nowrap ${config.badgeBg} ${config.text}`}
+          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${config.badgeBg} ${config.text}`}
         >
           {config.label}
         </span>
-      </div>
-      <p className="text-xs font-medium text-teal-600 mb-3">
-        {event.TenCLB || event.MaCLB}
-      </p>
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>Bắt đầu: {formatDate(event.ThoiGianBatDau)}</span>
-        <span className="font-semibold text-slate-700">
-          {event.SoNguoiToiDa} Slot
-        </span>
+        <FiChevronRight className="w-4 h-4 text-slate-400" />
       </div>
     </div>
   );
 };
 
 // ============================================
-// MAIN PAGE
+// MAIN COMPONENT
 // ============================================
-export default function StudentAffairsPage() {
+export default function FacultyManagementPage() {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  // Fetch data
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -529,85 +478,85 @@ export default function StudentAffairsPage() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/ctsv/events`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      setError(null);
+      const response = await axios.get(
+        `${API_BASE_URL}/khoa/events`, // Đã sửa lại để lấy TẤT CẢ thay vì chỉ lấy trạng thái chờ duyệt
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
       setEvents(response.data.data || []);
     } catch (err) {
-      console.error("Error fetching CTSV events:", err);
+      console.error("Error fetching events:", err);
+      setError("Không thể tải danh sách sự kiện");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (maSK, opinion) => {
+  // Tính toán số liệu
+  const pendingEvents = events.filter((e) => e.TrangThai === "cho_duyet_khoa");
+  const pendingCount = pendingEvents.length;
+  const approvedCount = events.filter(
+    (e) =>
+      e.TrangThai === "cho_duyet_ctsv" ||
+      e.TrangThai === "da_duyet" ||
+      e.TrangThai === "sap_dien_ra" ||
+      e.TrangThai === "dang_dien_ra" ||
+      e.TrangThai === "da_ket_thuc",
+  ).length;
+  const rejectedCount = events.filter((e) => e.TrangThai === "tu_choi").length;
+
+  const handleSelectEvent = (event) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const handleApprove = async (maSK, notes) => {
     try {
       setLoading(true);
       await axios.patch(
-        `${API_BASE_URL}/ctsv/events/${maSK}/approve`,
+        `${API_BASE_URL}/khoa/events/${maSK}/approve`,
         {},
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         },
       );
-      alert("Cấp phép hoạt động thành công!");
+      alert(
+        "Phê duyệt sự kiện thành công! Sự kiện đã được chuyển cho CTSV xét duyệt.",
+      );
       setIsModalOpen(false);
-      fetchEvents();
+      setSelectedEvent(null);
+      await fetchEvents();
     } catch (err) {
+      console.error("Error approving event:", err);
       alert("Lỗi: " + (err.response?.data?.error?.message || err.message));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReject = async (maSK, opinion) => {
+  const handleReject = async (maSK, reason) => {
     try {
       setLoading(true);
       await axios.patch(
-        `${API_BASE_URL}/ctsv/events/${maSK}/reject`,
-        { LyDoTuChoi: opinion },
+        `${API_BASE_URL}/khoa/events/${maSK}/reject`,
+        { LyDoTuChoi: reason },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         },
       );
       alert("Từ chối sự kiện thành công!");
       setIsModalOpen(false);
-      fetchEvents();
+      setSelectedEvent(null);
+      await fetchEvents();
     } catch (err) {
+      console.error("Error rejecting event:", err);
       alert("Lỗi: " + (err.response?.data?.error?.message || err.message));
     } finally {
       setLoading(false);
     }
   };
-
-  const handleExportReport = () => {
-    const month = new Date().toLocaleString("vi-VN", {
-      month: "long",
-      year: "numeric",
-    });
-    alert(
-      `Đang xuất báo cáo tháng ${month}...\nTính năng xuất Excel sẽ được cập nhật sớm.`,
-    );
-  };
-
-  // Lọc dữ liệu
-  const pendingEvents = events.filter((e) => e.TrangThai === "cho_duyet_ctsv");
-  const processedEvents = events.filter(
-    (e) =>
-      e.TrangThai !== "cho_duyet_ctsv" &&
-      e.TrangThai !== "cho_duyet_khoa" &&
-      e.TrangThai !== "draft",
-  );
-
-  // Tính toán chỉ số
-  const totalEventsCount = events.length;
-  const completedEventsCount = events.filter(
-    (e) => e.TrangThai === "da_ket_thuc",
-  ).length;
-  const totalStudentsCount = events.reduce((sum, e) => {
-    // Tạm tính dựa trên số người đã đăng ký thực tế lấy từ DB (nếu có trường soNguoiDaDangKy), nếu không dùng 0
-    return sum + (e.soNguoiDaDangKy || 0);
-  }, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
@@ -616,127 +565,158 @@ export default function StudentAffairsPage() {
           {/* Header */}
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
-              Quản lý cấp phép sự kiện toàn trường
+              Quản Lý Phê Duyệt Sự Kiện
             </h1>
             <p className="text-slate-600 mt-2">
-              Phòng Công Tác Sinh Viên:{" "}
-              <span className="font-semibold">{user?.hoTen}</span>
+              Cán bộ Khoa:{" "}
+              <span className="font-semibold">{user?.hoTen || "N/A"}</span>
             </p>
           </div>
 
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard
-              icon={FiCalendar}
-              label="Tổng sự kiện toàn trường"
-              value={totalEventsCount}
-              color="blue"
-            />
+          {/* Error Message */}
+          {error && (
+            <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex gap-3">
+              <FiAlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-rose-900">Lỗi:</p>
+                <p className="text-sm text-rose-700">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard
               icon={FiAlertCircle}
-              label="Hồ sơ chờ CTSV duyệt"
-              value={pendingEvents.length}
+              label="Cần duyệt (Pending)"
+              value={pendingCount}
               color="amber"
             />
             <StatCard
-              icon={FiCheckCircle}
-              label="Sự kiện hoàn thành"
-              value={completedEventsCount}
+              icon={FiCheck}
+              label="Đã phê duyệt"
+              value={approvedCount}
               color="emerald"
             />
             <StatCard
-              icon={FiUsers}
-              label="Lượt SV đã tham gia"
-              value={totalStudentsCount}
-              color="blue"
+              icon={FiX}
+              label="Hồ sơ bị từ chối"
+              value={rejectedCount}
+              color="rose"
             />
           </div>
 
-          {/* Pending Events */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">
-                  Danh sách chờ cấp phép
-                </h2>
-                <p className="text-slate-600 text-sm mt-1">
-                  {pendingEvents.length} sự kiện chờ xử lý
-                </p>
-              </div>
-              <button
-                onClick={handleExportReport}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-900 transition-all shadow-md hover:shadow-lg"
-              >
-                <FiDownload className="w-4 h-4" /> Xuất báo cáo
-              </button>
+          {/* Events Table (Pending only) */}
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
+            <div className="grid grid-cols-7 gap-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-teal-50 px-6 py-4 border-b border-slate-200">
+              {[
+                "Tên sự kiện",
+                "Câu lạc bộ",
+                "Thời gian",
+                "Địa điểm",
+                "Chỉ tiêu",
+                "Điểm",
+                "Trạng thái",
+              ].map((h) => (
+                <div
+                  key={h}
+                  className="text-xs font-bold text-slate-600 uppercase"
+                >
+                  {h}
+                </div>
+              ))}
             </div>
 
             {loading ? (
-              <div className="text-center py-8 text-slate-500">
+              <div className="px-6 py-12 text-center text-slate-500">
                 Đang tải dữ liệu...
               </div>
             ) : pendingEvents.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="divide-y divide-slate-200">
                 {pendingEvents.map((event) => (
-                  <EventCard
+                  <EventTableRow
                     key={event.MaSK}
                     event={event}
-                    onSelect={(e) => {
-                      setSelectedEvent(e);
-                      setIsModalOpen(true);
-                    }}
+                    onSelect={handleSelectEvent}
                   />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-                <FiCheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-                <p className="text-lg font-semibold text-slate-900 mb-1">
-                  Không có sự kiện chờ duyệt
-                </p>
-                <p className="text-slate-600">Tất cả hồ sơ đã được xử lý</p>
+              <div className="px-6 py-12 text-center text-slate-500">
+                <FiAlertCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>Không có sự kiện nào chờ duyệt</p>
               </div>
             )}
           </div>
 
-          {/* Processed Events */}
-          <div className="space-y-6 pt-6">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">
-                Sự kiện đã xử lý
-              </h2>
-              <p className="text-slate-600 text-sm mt-1">
-                Lịch sử phê duyệt và các hoạt động đang/đã diễn ra
-              </p>
-            </div>
-
-            {processedEvents.length > 0 ? (
+          {/* All Events Summary */}
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-800 mb-4">
+              Tất cả sự kiện
+            </h2>
+            {events.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {processedEvents.map((event) => (
-                  <div
-                    key={event.MaSK}
-                    onClick={() => {
-                      setSelectedEvent(event);
-                      setIsModalOpen(true);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <ApprovedEventCard event={event} />
-                  </div>
-                ))}
+                {events.map((event) => {
+                  const config = STATUS_CONFIG[event.TrangThai] || {
+                    bg: "bg-slate-50",
+                    border: "border-slate-200",
+                    badgeBg: "bg-slate-200",
+                    text: "text-slate-600",
+                    label: "Không xác định",
+                  };
+
+                  return (
+                    <div
+                      key={event.MaSK}
+                      onClick={() => handleSelectEvent(event)}
+                      className={`rounded-xl border p-4 cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-1 ${config.bg} ${config.border}`}
+                    >
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <p className="font-semibold text-slate-800 text-sm line-clamp-2">
+                          {event.TenSK}
+                        </p>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap ${config.badgeBg} ${config.text}`}
+                        >
+                          {config.label}
+                        </span>
+                      </div>
+
+                      <p className="text-xs font-medium text-teal-600 mt-1 flex items-center gap-1.5">
+                        <FiUsers className="w-3.5 h-3.5" />
+                        <span className="truncate">
+                          {event.TenCLB || event.MaCLB}
+                        </span>
+                      </p>
+
+                      <div className="flex items-center justify-between gap-2 mt-4 text-xs text-slate-500">
+                        <span className="flex items-center gap-1.5 whitespace-nowrap">
+                          <FiCalendar className="w-3.5 h-3.5" />
+                          {new Date(event.ThoiGianBatDau).toLocaleDateString(
+                            "vi-VN",
+                          )}
+                        </span>
+                        <span className="flex items-center gap-1.5 truncate">
+                          <FiMapPin className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            {event.DiaDiem || "N/A"}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <div className="text-center py-8 bg-white rounded-xl border border-slate-200">
-                <p className="text-slate-600">
-                  Chưa có sự kiện nào trong lịch sử
-                </p>
-              </div>
+              <p className="text-slate-500 text-center py-8">
+                Không có sự kiện nào
+              </p>
             )}
           </div>
         </div>
       </div>
 
-      <FinalApprovalModal
+      <ApprovalModal
         isOpen={isModalOpen}
         event={selectedEvent}
         onClose={() => {

@@ -20,6 +20,7 @@ import EventListPage from "./pages/EventListPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import QRScreen from "./pages/QRScreen";
 import MyEventsPage from "./pages/MyEventsPage";
+import StudentTaskPage from "./pages/StudentTaskPage";
 import BCNManagementPage from "./pages/BanChuNhiem/BCNManagementPage";
 import FacultyManagementPage from "./pages/Khoa/FacultyManagementPage";
 import StudentAffairsPage from "./pages/BanChuNhiem/StudentAffairsPage";
@@ -61,12 +62,17 @@ export default function App() {
                 <Route path="/events/:id" element={<EventDetailPage />} />
                 <Route path="/events/:id/qr" element={<QRScreen />} />
 
-                {/* Chỉ sinh viên */}
-                <Route element={<ProtectedRoute roles={["SV"]} />}>
+                {/* Chỉ sinh viên hoặc BCN */}
+                <Route element={<ProtectedRoute roles={["SV", "BCN"]} />}>
                   <Route path="/my-events" element={<MyEventsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/clubs" element={<ClubsPage />} />
                   <Route path="/clubs/:id" element={<ClubDetailPage />} />
+                </Route>
+
+                {/* Chỉ Sinh viên */}
+                <Route element={<ProtectedRoute roles={["SV"]} />}>
+                  <Route path="/my-tasks" element={<StudentTaskPage />} />
                 </Route>
 
                 {/* Chỉ Ban chủ nhiệm CLB */}

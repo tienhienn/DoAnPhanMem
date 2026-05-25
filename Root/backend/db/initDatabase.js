@@ -41,7 +41,7 @@ const initDatabase = async () => {
 
     // Chia script thành các batch (GO là delimiter trong SQL Server)
     const batches = sqlScript
-      .split(/\nGO\n/i)
+      .split(/\r?\nGO\r?\n/i)
       .map((batch) => batch.trim())
       .filter((batch) => batch.length > 0);
 
@@ -51,9 +51,6 @@ const initDatabase = async () => {
     for (let i = 0; i < batches.length; i++) {
       try {
         const batch = batches[i];
-        // Bỏ qua các comment
-        if (batch.startsWith("--")) continue;
-
         console.log(`⏳ Executing batch ${i + 1}/${batches.length}...`);
         await connection.request().query(batch);
       } catch (err) {

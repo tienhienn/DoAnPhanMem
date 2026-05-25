@@ -15,7 +15,7 @@ const parseLegacyToken = (token) => {
     throw new Error("Invalid legacy token format");
   }
   return {
-    maSV: userId,
+    maND: userId,  // Changed from maSV to maND
     role,
     clubId: clubId === "null" ? null : clubId,
   };
@@ -37,7 +37,7 @@ const verifyToken = (token) => {
   return parseLegacyToken(token);
 };
 
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
   try {
     const token = getTokenFromHeader(req);
     if (!token) {
@@ -48,7 +48,33 @@ const auth = (req, res, next) => {
       });
     }
 
-    req.user = verifyToken(token);
+    const decoded = verifyToken(token);
+    req.user = decoded;
+
+    if (decoded.role === "SV") {
+      try {
+        const { getPool } = require("../db/index");
+        const sql = require("mssql");
+        const pool = await getPool();
+        const result = await pool.request()
+          .input("maND", sql.NVarChar(50), decoded.maND)
+          .query(`
+            SELECT TOP 1 MaCLB 
+            FROM THANH_VIEN 
+            WHERE MaND = @maND 
+              AND VaiTroCLB IN (N'Chủ nhiệm', N'Phó chủ nhiệm') 
+              AND TrangThai = N'Hoạt động'
+          `);
+        
+        if (result.recordset.length > 0) {
+          req.user.role = "BCN";
+          req.user.clubId = result.recordset[0].MaCLB;
+        }
+      } catch (dbErr) {
+        console.error("Error checking BCN membership in auth middleware:", dbErr);
+      }
+    }
+
     return next();
   } catch (err) {
     return res.status(401).json({
@@ -59,11 +85,36 @@ const auth = (req, res, next) => {
   }
 };
 
-const optionalAuth = (req, res, next) => {
+const optionalAuth = async (req, res, next) => {
   try {
     const token = getTokenFromHeader(req);
     if (token) {
-      req.user = verifyToken(token);
+      const decoded = verifyToken(token);
+      req.user = decoded;
+
+      if (decoded.role === "SV") {
+        try {
+          const { getPool } = require("../db/index");
+          const sql = require("mssql");
+          const pool = await getPool();
+          const result = await pool.request()
+            .input("maND", sql.NVarChar(50), decoded.maND)
+            .query(`
+              SELECT TOP 1 MaCLB 
+              FROM THANH_VIEN 
+              WHERE MaND = @maND 
+                AND VaiTroCLB IN (N'Chủ nhiệm', N'Phó chủ nhiệm') 
+                AND TrangThai = N'Hoạt động'
+            `);
+          
+          if (result.recordset.length > 0) {
+            req.user.role = "BCN";
+            req.user.clubId = result.recordset[0].MaCLB;
+          }
+        } catch (dbErr) {
+          console.error("Error checking BCN membership in optionalAuth:", dbErr);
+        }
+      }
     }
   } catch (err) {
     // Nếu token không hợp lệ, không block request, chỉ không gán user

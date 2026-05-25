@@ -203,8 +203,32 @@ export default function QRScreen() {
           {/* Divider */}
           <div className="mx-5 border-t border-dashed border-slate-200" />
 
+          {/* Ảnh Đại Diện Sinh Viên Kiểm Diện */}
+          <div className="flex flex-col items-center justify-center mt-5 mb-2">
+            <div className="w-20 h-20 rounded-full border-4 border-slate-100 shadow-sm overflow-hidden bg-slate-50 flex items-center justify-center">
+              {qrData.anhDaiDien ? (
+                <img
+                  src={qrData.anhDaiDien}
+                  alt="Ảnh chân dung"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${qrData.hoTen}`;
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-2xl uppercase">
+                  {qrData.hoTen?.charAt(0)}
+                </div>
+              )}
+            </div>
+            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-1.5">
+              Ảnh kiểm diện
+            </span>
+          </div>
+
           {/* Thông tin sinh viên và sự kiện */}
-          <div className="px-5 py-5 space-y-3">
+          <div className="px-5 pb-5 space-y-3">
             {/* Tên sinh viên */}
             <InfoRow
               label="Sinh viên"

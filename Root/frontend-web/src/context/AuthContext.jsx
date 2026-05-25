@@ -15,8 +15,15 @@ export const AuthContext = createContext(null);
  */
 function parseJwt(token) {
   try {
-    const base64Payload = token.split(".")[1];
-    return JSON.parse(atob(base64Payload));
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
   } catch {
     return null;
   }
@@ -127,6 +134,30 @@ export function AuthProvider({ children }) {
     navigate("/login");
   }
 
+  function enterManagementMode(clubId) {
+    if (user) {
+      setUser((prev) => ({
+        ...prev,
+        originalRole: prev.originalRole || prev.role,
+        role: "BCN",
+        clubId: clubId,
+      }));
+    }
+  }
+
+  function exitManagementMode() {
+    if (user) {
+      setUser((prev) => {
+        const updated = { ...prev };
+        updated.role = prev.originalRole || "SV";
+        delete updated.originalRole;
+        delete updated.clubId;
+        return updated;
+      });
+      navigate("/clubs");
+    }
+  }
+
   const value = {
     user,
     token,
@@ -134,6 +165,8 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     login,
     logout,
+    enterManagementMode,
+    exitManagementMode,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

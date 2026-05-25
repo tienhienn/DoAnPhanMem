@@ -22,7 +22,9 @@ async function getMyEvents(req, res, next) {
         sk.DiaDiem              AS diaDiem,
         clb.TenCLB              AS tenCLB,
         sk.TrangThai            AS trangThaiSuKien,
-        dk.TrangThai            AS trangThaiDangKy
+        dk.TrangThai            AS trangThaiDangKy,
+        sk.UrlAnh               AS urlAnh,
+        sk.DiemRenLuyen         AS diemRenLuyen
       FROM DANGKY_SUKIEN dk
       INNER JOIN SU_KIEN sk ON dk.MaSK = sk.MaSK
       INNER JOIN CAULACBO clb ON sk.MaCLB = clb.MaCLB

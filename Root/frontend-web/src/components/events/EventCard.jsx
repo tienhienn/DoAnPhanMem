@@ -153,19 +153,26 @@ export default function EventCard({ event, registrationStatus, onClick }) {
           <span className="line-clamp-1">{event.location}</span>
         </div>
 
-        {/* Số chỗ còn lại */}
-        <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-          {isFull ? (
-            <Badge type="full">Hết chỗ</Badge>
-          ) : (
-            <span className="text-xs text-slate-500">
-              Còn{" "}
-              <span className="font-semibold text-slate-700">
-                {availableSlots}
-              </span>{" "}
-              / {event.maxCapacity} chỗ
-            </span>
-          )}
+        {/* Số chỗ còn lại & Điểm rèn luyện */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div className="flex items-center gap-2">
+            {isFull ? (
+              <Badge type="full">Hết chỗ</Badge>
+            ) : (
+              <span className="text-xs text-slate-500">
+                Còn{" "}
+                <span className="font-semibold text-slate-700">
+                  {availableSlots}
+                </span>{" "}
+                / {event.maxCapacity} chỗ
+              </span>
+            )}
+            {event.diemRenLuyen && (
+              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                ⭐ +{event.diemRenLuyen} ĐRL
+              </span>
+            )}
+          </div>
 
           {/* Mũi tên xem chi tiết */}
           <svg

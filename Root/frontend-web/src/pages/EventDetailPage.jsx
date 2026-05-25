@@ -159,6 +159,8 @@ export default function EventDetailPage() {
   const diaDiem = event.diaDiem;
   const soNguoiToiDa = event.soNguoiToiDa;
   const soNguoiDaDangKy = event.soNguoiDaDangKy;
+  const urlAnh = event.urlAnh;
+  const diemRenLuyen = event.diemRenLuyen;
 
   const availableSlots = soNguoiToiDa - soNguoiDaDangKy;
 
@@ -203,26 +205,34 @@ export default function EventDetailPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 pb-10 sm:px-6">
-        {/* Gradient placeholder thay cho imageUrl */}
-        <div className="mt-4 rounded-2xl overflow-hidden shadow-sm">
-          <div
-            className="w-full h-56 sm:h-72 bg-gradient-to-br from-indigo-500 via-blue-500 to-purple-600 flex items-center justify-center"
-            aria-hidden="true"
-          >
-            <svg
-              className="w-20 h-20 text-white/30"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        {/* Ảnh đại diện sự kiện */}
+        <div className="mt-4 rounded-2xl overflow-hidden shadow-sm relative h-56 sm:h-72 bg-slate-100">
+          {urlAnh ? (
+            <img
+              src={urlAnh}
+              alt={tenSK}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div
+              className="w-full h-full bg-gradient-to-br from-indigo-500 via-blue-500 to-purple-600 flex items-center justify-center"
+              aria-hidden="true"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
+              <svg
+                className="w-20 h-20 text-white/30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          )}
         </div>
 
         {/* Nội dung chính */}
@@ -255,6 +265,15 @@ export default function EventDetailPage() {
               label="Địa điểm"
               value={diaDiem}
             />
+
+            {/* Điểm rèn luyện */}
+            {diemRenLuyen !== undefined && diemRenLuyen !== null && (
+              <InfoRow
+                icon={<StarIcon />}
+                label="Điểm rèn luyện"
+                value={`+${diemRenLuyen} điểm rèn luyện`}
+              />
+            )}
 
             {/* Số lượng chỗ */}
             <div className="flex gap-3">
@@ -528,6 +547,14 @@ function TicketIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+    </svg>
+  );
+}
+
+function StarIcon() {
+  return (
+    <svg className="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
     </svg>
   );
 }

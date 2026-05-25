@@ -24,6 +24,8 @@ async function getEvents(req, res, next) {
         sk.SoNguoiToiDa         AS soNguoiToiDa,
         sk.LoaiSK               AS loaiSK,
         sk.TrangThai            AS trangThai,
+        sk.UrlAnh               AS urlAnh,
+        sk.DiemRenLuyen         AS diemRenLuyen,
         clb.MaCLB               AS maCLB,
         clb.TenCLB              AS tenCLB,
         (
@@ -33,7 +35,9 @@ async function getEvents(req, res, next) {
         ) AS soNguoiDaDangKy
       FROM SU_KIEN sk
       INNER JOIN CAULACBO clb ON sk.MaCLB = clb.MaCLB
-      WHERE 1=1
+      WHERE sk.KhoaDuyet = 1
+        AND sk.PhongCTSVDuyet = 1
+        AND sk.ThoiGianKetThuc > GETDATE()
     `;
 
     const pool = await getPool();
@@ -96,6 +100,8 @@ async function getEventById(req, res, next) {
         sk.SoNguoiToiDa         AS soNguoiToiDa,
         sk.LoaiSK               AS loaiSK,
         sk.TrangThai            AS trangThai,
+        sk.UrlAnh               AS urlAnh,
+        sk.DiemRenLuyen         AS diemRenLuyen,
         clb.MaCLB               AS maCLB,
         clb.TenCLB              AS tenCLB,
         (
@@ -106,6 +112,9 @@ async function getEventById(req, res, next) {
       FROM SU_KIEN sk
       INNER JOIN CAULACBO clb ON sk.MaCLB = clb.MaCLB
       WHERE sk.MaSK = @maSK
+        AND sk.KhoaDuyet = 1
+        AND sk.PhongCTSVDuyet = 1
+        AND sk.ThoiGianKetThuc > GETDATE()
     `);
 
     if (!result.recordset || result.recordset.length === 0) {
@@ -166,7 +175,7 @@ async function registerEvent(req, res, next) {
     const skRequest = pool.request();
     skRequest.input('maSK', sql.Char, maSK);
     const skResult = await skRequest.query(`
-      SELECT MaSK, TrangThai, SoNguoiToiDa
+      SELECT MaSK, TrangThai, SoNguoiToiDa, KhoaDuyet, PhongCTSVDuyet, ThoiGianKetThuc
       FROM SU_KIEN
       WHERE MaSK = @maSK
     `);
@@ -182,6 +191,17 @@ async function registerEvent(req, res, next) {
     }
 
     const event = skResult.recordset[0];
+
+    // Kiểm tra đã duyệt và chưa kết thúc
+    if (!event.KhoaDuyet || !event.PhongCTSVDuyet || new Date(event.ThoiGianKetThuc) <= new Date()) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Sự kiện chưa được duyệt hoặc đã kết thúc',
+        },
+      });
+    }
 
     // 2. Kiểm tra trạng thái sự kiện
     if (event.TrangThai === 'da_ket_thuc' || event.TrangThai === 'da_huy') {
@@ -391,7 +411,7 @@ async function getEventQR(req, res, next) {
     regRequest.input('maSK2', sql.Char, maSK);
     regRequest.input('maND', sql.Char, maND);
     const regResult = await regRequest.query(`
-      SELECT dk.MaDK, dk.TrangThai, tk.hoTen
+      SELECT dk.MaDK, dk.TrangThai, tk.hoTen, tk.anhDaiDien
       FROM DANGKY_SUKIEN dk
       INNER JOIN TAI_KHOAN tk ON dk.MaND = tk.MaND
       WHERE dk.MaSK = @maSK2
@@ -421,7 +441,8 @@ async function getEventQR(req, res, next) {
       data: {
         qrValue,
         maSV: req.user.maSV,
-        hoTen: req.user.hoTen,
+        hoTen: registration.hoTen || req.user.hoTen,
+        anhDaiDien: registration.anhDaiDien,
         tenSK: event.TenSK,
         thoiGianBatDau: event.ThoiGianBatDau,
         trangThaiDangKy: registration.TrangThai,

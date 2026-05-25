@@ -11,31 +11,41 @@ const { generateEventId } = require("../utils/idGenerator");
 // =====================================
 exports.getEvents = async (req, res, next) => {
   try {
-    const { userId, role, clubId } = req.user;
+    const { maND: userId, role, clubId } = req.user;
     const { page = 1, limit = 10, status, search } = req.query;
 
     const offset = (page - 1) * limit;
+    const pool = await getPool();
 
     // Xây dựng câu query dựa trên role
     let query = `
             SELECT 
                 MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
                 DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, DiemRenLuyen,
-                TrangThai, LyDoTuChoi, NgayTao
+                TrangThai, LyDoTuChoi, NgayTao, KhoaDuyet, PhongCTSVDuyet
             FROM SU_KIEN
             WHERE 1=1
         `;
+
+    let maDVQL = null;
 
     // Lọc theo role
     if (role === "BCN" && clubId) {
       // Ban chủ nhiệm: Chỉ lấy sự kiện của CLB của mình
       query += ` AND MaCLB = @clubId`;
     } else if (role === "KHOA") {
-      // Khoa: Chỉ lấy sự kiện ở trạng thái pending_faculty
-      query += ` AND TrangThai = 'pending_faculty'`;
+      // Khoa: Chỉ lấy sự kiện thuộc các CLB do Khoa quản lý
+      const dvqlResult = await pool.request().input("maND", sql.NVarChar(13), userId).query(`
+        SELECT maDVQL FROM CANBO WHERE maCanBo = @maND AND trangThai = 1
+      `);
+      maDVQL = dvqlResult.recordset[0]?.maDVQL;
+      if (maDVQL) {
+        query += ` AND MaCLB IN (SELECT MaCLB FROM CAULACBO WHERE maDVQL = @maDVQL)`;
+      } else {
+        query += ` AND 1=0`;
+      }
     } else if (role === "CTSV") {
-      // CTSV: Chỉ lấy sự kiện ở trạng thái pending_student_affairs
-      query += ` AND TrangThai = 'pending_student_affairs'`;
+      // CTSV: Được xem toàn bộ sự kiện của CLB
     } else if (role !== "ADMIN") {
       return res.status(403).json({
         success: false,
@@ -58,12 +68,14 @@ exports.getEvents = async (req, res, next) => {
     const countQuery = query;
     query += ` ORDER BY NgayTao DESC OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
 
-    const pool = await getPool();
     const request = pool.request();
 
     // Thêm parameters
     if (role === "BCN" && clubId) {
       request.input("clubId", sql.Char(13), clubId);
+    }
+    if (role === "KHOA" && maDVQL) {
+      request.input("maDVQL", sql.NVarChar(50), maDVQL);
     }
     if (status) {
       request.input("status", sql.NVarChar(50), status);
@@ -79,15 +91,24 @@ exports.getEvents = async (req, res, next) => {
     const result = await request.query(query);
 
     // Lấy tổng số bản ghi
-    const countResult = await pool
-      .request()
-      .input("clubId", sql.Char(13), clubId || null)
-      .input("status", sql.NVarChar(50), status || null)
-      .input("search", sql.NVarChar(150), search ? `%${search}%` : null)
-      .query(`SELECT COUNT(*) as total FROM (${countQuery}) as t`);
+    const countRequest = pool.request();
+    if (role === "BCN" && clubId) {
+      countRequest.input("clubId", sql.Char(13), clubId);
+    }
+    if (role === "KHOA" && maDVQL) {
+      countRequest.input("maDVQL", sql.NVarChar(50), maDVQL);
+    }
+    if (status) {
+      countRequest.input("status", sql.NVarChar(50), status);
+    }
+    if (search) {
+      countRequest.input("search", sql.NVarChar(150), `%${search}%`);
+    }
+    const countResult = await countRequest.query(`SELECT COUNT(*) as total FROM (${countQuery}) as t`);
 
     const total = countResult.recordset[0]?.total || 0;
 
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     return res.status(200).json({
       success: true,
       message: "Events retrieved successfully",
@@ -112,7 +133,7 @@ exports.getEvents = async (req, res, next) => {
 // =====================================
 exports.createEvent = async (req, res, next) => {
   try {
-    const { userId, role, clubId } = req.user;
+    const { maND: userId, role, clubId } = req.user;
 
     // Chỉ BCN mới có quyền tạo sự kiện
     if (role !== "BCN" || !clubId) {
@@ -229,7 +250,7 @@ exports.createEvent = async (req, res, next) => {
 // =====================================
 exports.updateEvent = async (req, res, next) => {
   try {
-    const { userId, role, clubId } = req.user;
+    const { maND: userId, role, clubId } = req.user;
     const { id } = req.params;
 
     // Chỉ BCN mới có quyền sửa sự kiện
@@ -376,7 +397,7 @@ exports.updateEvent = async (req, res, next) => {
 // =====================================
 exports.deleteEvent = async (req, res, next) => {
   try {
-    const { userId, role, clubId } = req.user;
+    const { maND: userId, role, clubId } = req.user;
     const { id } = req.params;
 
     // Chỉ BCN mới có quyền xóa sự kiện
@@ -447,7 +468,7 @@ exports.deleteEvent = async (req, res, next) => {
 // =====================================
 exports.reviewEvent = async (req, res, next) => {
   try {
-    const { userId, role, clubId } = req.user;
+    const { maND: userId, role, clubId } = req.user;
     const { id } = req.params;
     const { status, feedback } = req.body;
 
@@ -512,28 +533,51 @@ exports.reviewEvent = async (req, res, next) => {
 // Flow: draft → pending_faculty → pending_student_affairs → approved
 //                             ↘ rejected              ↘ rejected
 let newStatus;
+let khoaDuyetVal = null;
+let phongCtsvDuyetVal = null;
+
 if (status === "rejected") {
   newStatus = "rejected";
+  if (role === "KHOA") {
+    khoaDuyetVal = 0;
+  } else if (role === "CTSV") {
+    phongCtsvDuyetVal = 0;
+  }
 } else if (role === "KHOA") {
   newStatus = "pending_student_affairs"; // KHOA duyệt → chuyển lên CTSV
+  khoaDuyetVal = 1;
 } else if (role === "CTSV") {
   newStatus = "approved"; // CTSV duyệt → hoàn tất
+  phongCtsvDuyetVal = 1;
 }
 
 // ── Cập nhật DB ──────────────────────────────────────────────
-const updateQuery = `
+let updateQuery = `
   UPDATE SU_KIEN
   SET
     TrangThai  = @newStatus,
     LyDoTuChoi = @feedback
-  WHERE MaSK = @maSK
 `;
+if (khoaDuyetVal !== null) {
+  updateQuery += `, KhoaDuyet = @khoaDuyet`;
+}
+if (phongCtsvDuyetVal !== null) {
+  updateQuery += `, PhongCTSVDuyet = @phongCtsvDuyet`;
+}
+updateQuery += ` WHERE MaSK = @maSK`;
 
 const request = pool.request();
 request
   .input("maSK",      sql.Char(13),         id)
   .input("newStatus", sql.NVarChar(50),      newStatus)  // ← dùng newStatus thay vì status
   .input("feedback",  sql.NVarChar(sql.MAX), feedback || null);
+
+if (khoaDuyetVal !== null) {
+  request.input("khoaDuyet", sql.Bit, khoaDuyetVal);
+}
+if (phongCtsvDuyetVal !== null) {
+  request.input("phongCtsvDuyet", sql.Bit, phongCtsvDuyetVal);
+}
 
     await request.query(updateQuery);
 
@@ -558,7 +602,7 @@ request
 exports.getEventDetail = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { userId, role, clubId } = req.user;
+    const { maND: userId, role, clubId } = req.user;
 
     const pool = await getPool();
 
@@ -567,7 +611,7 @@ exports.getEventDetail = async (req, res, next) => {
       SELECT 
         sk.MaSK, sk.MaCLB, sk.TenSK, sk.MoTa, sk.ThoiGianBatDau, sk.ThoiGianKetThuc,
         sk.DiaDiem, sk.SoNguoiToiDa, sk.ChiPhiDuKien, sk.LoaiSK, sk.DiemRenLuyen,
-        sk.TrangThai, sk.LyDoTuChoi, sk.NgayTao,
+        sk.TrangThai, sk.LyDoTuChoi, sk.NgayTao, sk.KhoaDuyet, sk.PhongCTSVDuyet,
         clb.TenCLB
       FROM SU_KIEN sk
       LEFT JOIN CAULACBO clb ON sk.MaCLB = clb.MaCLB

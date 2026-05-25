@@ -110,6 +110,12 @@ CREATE TABLE CAULACBO (
     SoThanhVienToiDa INT,
     LinhVuc NVARCHAR(50),
     TrangThai NVARCHAR(50),
+    TenTiengAnh NVARCHAR(150),
+    TenVietTat NVARCHAR(20),
+    Slogan NVARCHAR(200),
+    TonChiMucDich NVARCHAR(MAX),
+    PhamViHoatDong NVARCHAR(MAX),
+    QuyenLoiTrachNhiem NVARCHAR(MAX),
     CONSTRAINT FK_CLB_DVQL FOREIGN KEY (maDVQL) REFERENCES DONVIQUANLY(maDVQL) 
         ON UPDATE CASCADE ON DELETE NO ACTION
 );
@@ -180,6 +186,26 @@ CREATE TABLE SU_KIEN (
     CONSTRAINT FK_SK_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) 
         ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+CREATE TABLE DANGKY_MO_CLB (
+    MaDKMo VARCHAR(13) PRIMARY KEY,
+    MaND VARCHAR(13) NOT NULL,               -- Sinh viên nộp đơn (Chủ nhiệm tương lai)
+    MaDVQL VARCHAR(13) NOT NULL,             -- Khoa/Đơn vị quản lý duyệt vòng 1
+    TenCLB NVARCHAR(150) NOT NULL,
+    LinhVuc NVARCHAR(50),
+    NoiDungHoSo NVARCHAR(MAX) NOT NULL,      -- Chứa toàn bộ nội dung form (JSON string)
+    
+    -- Trạng thái duyệt
+    KhoaDuyet BIT DEFAULT 0,
+    PhongCTSVDuyet BIT DEFAULT 0,
+    TrangThai NVARCHAR(50) DEFAULT N'pending_faculty', -- pending_faculty, pending_student_affairs, approved, rejected
+    LyDoTuChoi NVARCHAR(MAX),
+    NgayTao DATETIME DEFAULT GETDATE(),
+    
+    CONSTRAINT FK_DKMo_ND FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND),
+    CONSTRAINT FK_DKMo_DVQL FOREIGN KEY (MaDVQL) REFERENCES DONVIQUANLY(maDVQL)
+);
+
 
 -- =============================================
 -- 4. TẠO CÁC BẢNG CHI TIẾT & LỊCH SỬ (CẤP 3)
@@ -462,19 +488,23 @@ GO
 -- ---------------------------------------------
 -- 5.9 Câu lạc bộ (Gán CLB Lập Trình cho Khoa Công Nghệ Số - DVQL0000002)
 -- ---------------------------------------------
-INSERT INTO CAULACBO (MaCLB, maDVQL, TenCLB, MoTa, NgayThanhLap, SoThanhVienToiDa, LinhVuc, TrangThai) VALUES
+INSERT INTO CAULACBO (MaCLB, maDVQL, TenCLB, MoTa, NgayThanhLap, SoThanhVienToiDa, LinhVuc, TrangThai, TenTiengAnh, TenVietTat, Slogan, TonChiMucDich, PhamViHoatDong, QuyenLoiTrachNhiem) VALUES
 ('CLB00000001', 'DVQL0000002', N'CLB Lập trình UTE',
     N'Câu lạc bộ dành cho sinh viên yêu thích lập trình, tổ chức các buổi workshop, hackathon và cuộc thi coding.',
-    '2018-09-01', 100, N'Công nghệ', N'Hoạt động'),
+    '2018-09-01', 100, N'Công nghệ', N'Hoạt động',
+    N'UTE Programming Club', N'UPC', N'Code for Life', N'Tạo môi trường học hỏi lập trình cho sinh viên.', N'Trong phạm vi trường UTE và các cuộc thi lập trình.', N'Học hỏi kiến thức, tham gia đầy đủ hoạt động của câu lạc bộ.'),
 ('CLB00000002', 'DVQL0000001', N'CLB Tiếng Anh UTE',
     N'Câu lạc bộ giúp sinh viên nâng cao kỹ năng tiếng Anh qua các hoạt động giao lưu, thuyết trình và tranh luận.',
-    '2017-03-15', 80,  N'Ngoại ngữ', N'Hoạt động'),
+    '2017-03-15', 80,  N'Ngoại ngữ', N'Hoạt động',
+    N'UTE English Club', N'UEC', N'Speak to Connect', N'Nâng cao khả năng giao tiếp và tự tin sử dụng tiếng Anh.', N'Toàn trường UTE và các buổi giao lưu ngoại khóa.', N'Rèn luyện tiếng Anh, chuẩn bị tốt nội dung bài thuyết trình.'),
 ('CLB00000003', 'DVQL0000001', N'CLB Thể thao UTE',
     N'Câu lạc bộ tổ chức các hoạt động thể dục thể thao: bóng đá, cầu lông, bơi lội và các giải đấu nội bộ.',
-    '2016-10-20', 150, N'Thể thao',  N'Hoạt động'),
+    '2016-10-20', 150, N'Thể thao',  N'Hoạt động',
+    N'UTE Sports Club', N'USC', N'Stronger Together', N'Rèn luyện sức khỏe và tinh thần thể thao cho sinh viên.', N'Tại các sân thể thao của trường UTE.', N'Tham gia tích cực và đúng giờ các buổi tập luyện định kỳ.'),
 ('CLB00000004', 'DVQL0000001', N'CLB Tình nguyện UTE',
     N'Câu lạc bộ tổ chức các hoạt động tình nguyện, từ thiện và hỗ trợ cộng đồng.',
-    '2019-05-01', 120, N'Tình nguyện', N'Hoạt động');
+    '2019-05-01', 120, N'Tình nguyện', N'Hoạt động',
+    N'UTE Volunteer Club', N'UVC', N'Share the Love', N'Đóng góp sức trẻ hỗ trợ cộng đồng và người có hoàn cảnh khó khăn.', N'Trong và ngoài trường UTE, các địa bàn vùng cao.', N'Tham gia tích cực và có trách nhiệm trong các chiến dịch tình nguyện.');
 GO
 
 -- ---------------------------------------------
@@ -482,7 +512,7 @@ GO
 -- ---------------------------------------------
 INSERT INTO THANH_VIEN (MaTV, MaCLB, MaND, VaiTroCLB, NgayThamGia, TrangThai) VALUES
 ('TV000000001', 'CLB00000001', 'SV210000001', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
-('TV000000002', 'CLB00000001', 'SV210000002', N'Phó chủ nhiệm','2021-10-01', N'Hoạt động'),
+('TV000000002', 'CLB00000001', 'SV210000002', N'Thành viên',   '2021-10-01', N'Hoạt động'),
 ('TV000000003', 'CLB00000001', 'SV210000003', N'Thành viên',   '2022-01-15', N'Hoạt động'),
 ('TV000000004', 'CLB00000002', 'SV210000004', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
 ('TV000000005', 'CLB00000002', 'SV220000005', N'Thành viên',   '2022-09-05', N'Hoạt động'),
@@ -502,7 +532,9 @@ INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, 
 ('SK000000005', 'CLB00000004', N'Ngày hội Tình nguyện Hè 2026', N'Hoạt động tình nguyện dọn dẹp môi trường và tặng quà.', '2026-07-15 06:00', '2026-07-15 17:00', N'Huyện Hòa Vang, Đà Nẵng', 50, 0, N'Tình nguyện', N'sap_dien_ra', 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&auto=format&fit=crop&q=60', 15, 1, 1),
 ('SK000000006', 'CLB00000001', N'Khóa học Git & GitHub cơ bản', N'Khóa học 3 buổi về quản lý mã nguồn với Git và GitHub.', '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra', 'https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
 ('SK000000007', 'CLB00000002', N'Cuộc thi hùng biện tiếng Anh 2025', N'Cuộc thi hùng biện tiếng Anh cấp trường năm học 2024-2025.', '2025-12-10 08:00', '2025-12-10 17:00', N'Hội trường B', 80, 0, N'Cuộc thi', N'da_ket_thuc', 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=60', 10, 1, 1),
-('SK000000008', 'CLB00000001', N'Seminar: AI và Machine Learning', N'Buổi seminar về ứng dụng AI trong thực tế.', '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra', 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=60', 5, 1, 1);
+('SK000000008', 'CLB00000001', N'Seminar: AI và Machine Learning', N'Buổi seminar về ứng dụng AI trong thực tế.', '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra', 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
+('SKMOCK000001', 'CLB00000001', N'Sự kiện Mock 1: Chờ Khoa duyệt', N'Mô tả sự kiện mock chờ Khoa phê duyệt', '2026-06-25 09:00', '2026-06-25 12:00', N'Phòng học trực tuyến Zoom', 100, 0, N'Workshop', N'pending_faculty', 'https://example.com/mock1.jpg', 5, 0, 0),
+('SKMOCK000002', 'CLB00000002', N'Sự kiện Mock 2: Chờ CTSV duyệt', N'Mô tả sự kiện mock chờ CTSV phê duyệt', '2026-06-25 09:00', '2026-06-25 12:00', N'Giảng đường A', 200, 500000, N'Seminar', N'pending_student_affairs', 'https://example.com/mock2.jpg', 10, 1, 0);
 GO
 
 -- ---------------------------------------------

@@ -68,11 +68,11 @@ const approveEventByCTSV = async (req, res, next) => {
         });
     }
 
-    // CTSV duyệt -> Chuyển thành Đã duyệt (Cấp phép)
+    // CTSV duyệt -> Chuyển thành Đã duyệt (Cấp phép) và đánh dấu PhongCTSVDuyet = 1
     await pool
       .request()
       .input("MaSK", sql.NVarChar(13), id)
-      .query(`UPDATE SU_KIEN SET TrangThai = 'da_duyet' WHERE MaSK = @MaSK`);
+      .query(`UPDATE SU_KIEN SET PhongCTSVDuyet = 1, TrangThai = 'da_duyet', LyDoTuChoi = NULL WHERE MaSK = @MaSK`);
 
     res
       .status(200)
@@ -117,7 +117,7 @@ const rejectEventByCTSV = async (req, res, next) => {
       .input("MaSK", sql.NVarChar(13), id)
       .input("LyDoTuChoi", sql.NVarChar(sql.MAX), LyDoTuChoi.trim())
       .query(
-        `UPDATE SU_KIEN SET TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi WHERE MaSK = @MaSK`,
+        `UPDATE SU_KIEN SET PhongCTSVDuyet = 0, TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi WHERE MaSK = @MaSK`,
       );
 
     res.status(200).json({ success: true, message: "Đã từ chối sự kiện." });

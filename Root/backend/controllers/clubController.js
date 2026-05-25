@@ -11,6 +11,7 @@ async function getAllClubs(req, res, next) {
     const result = await pool.request().query(`
       SELECT 
         c.MaCLB, c.TenCLB, c.MoTa, c.Logo, c.NgayThanhLap, c.LinhVuc, c.SoThanhVienToiDa, c.TrangThai,
+        c.TenTiengAnh, c.TenVietTat, c.Slogan,
         (SELECT COUNT(*) FROM THANH_VIEN tv WHERE tv.MaCLB = c.MaCLB AND tv.TrangThai = N'Hoạt động') as SoThanhVienHienTai
       FROM CAULACBO c
       WHERE c.TrangThai = N'Hoạt động'
@@ -39,6 +40,7 @@ async function getClubById(req, res, next) {
       .query(`
         SELECT 
           c.MaCLB, c.TenCLB, c.MoTa, c.Logo, c.NgayThanhLap, c.LinhVuc, c.SoThanhVienToiDa, c.TrangThai,
+          c.TenTiengAnh, c.TenVietTat, c.Slogan, c.TonChiMucDich, c.PhamViHoatDong, c.QuyenLoiTrachNhiem,
           (SELECT COUNT(*) FROM THANH_VIEN tv WHERE tv.MaCLB = c.MaCLB AND tv.TrangThai = N'Hoạt động') as SoThanhVienHienTai,
           (SELECT TOP 1 tk.hoTen FROM THANH_VIEN tv JOIN TAI_KHOAN tk ON tv.MaND = tk.MaND WHERE tv.MaCLB = c.MaCLB AND tv.VaiTroCLB = N'Chủ nhiệm' AND tv.TrangThai = N'Hoạt động') as TenChuNhiem
         FROM CAULACBO c

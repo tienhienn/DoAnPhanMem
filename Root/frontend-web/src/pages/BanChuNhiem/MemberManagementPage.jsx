@@ -11,7 +11,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api`;
 
 // ============================================
 // STATUS BADGE COMPONENT
@@ -69,8 +69,7 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave, loading }) => {
   const roleOptions = [
     "Thành viên",
     "Trưởng ban",
-    "Phó chủ nhiệm",
-    "Chủ nhiệm CLB",
+    "Chủ nhiệm",
   ];
 
   return (
@@ -198,9 +197,7 @@ export default function MemberManagementPage() {
       return members.filter(
         (m) =>
           [
-            "Chủ nhiệm CLB",
             "Chủ nhiệm",
-            "Phó chủ nhiệm",
             "Trưởng ban",
           ].includes(m.role) && m.status === "active",
       );

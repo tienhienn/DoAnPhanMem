@@ -107,12 +107,12 @@ const approveEventByFaculty = async (req, res, next) => {
         });
     }
 
-    // Đẩy trạng thái lên cho CTSV duyệt
+    // Đẩy trạng thái lên cho CTSV duyệt và đánh dấu Khoa đã duyệt
     await pool
       .request()
       .input("MaSK", sql.NVarChar(13), id)
       .query(
-        `UPDATE SU_KIEN SET TrangThai = 'cho_duyet_ctsv' WHERE MaSK = @MaSK`,
+        `UPDATE SU_KIEN SET KhoaDuyet = 1, TrangThai = 'cho_duyet_ctsv', LyDoTuChoi = NULL WHERE MaSK = @MaSK`,
       );
 
     res
@@ -172,7 +172,7 @@ const rejectEventByFaculty = async (req, res, next) => {
       .input("MaSK", sql.NVarChar(13), id)
       .input("LyDoTuChoi", sql.NVarChar(sql.MAX), LyDoTuChoi.trim())
       .query(
-        `UPDATE SU_KIEN SET TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi WHERE MaSK = @MaSK`,
+        `UPDATE SU_KIEN SET KhoaDuyet = 0, TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi WHERE MaSK = @MaSK`,
       );
 
     res.status(200).json({ success: true, message: "Đã từ chối sự kiện." });

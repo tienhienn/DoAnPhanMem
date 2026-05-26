@@ -68,7 +68,8 @@ const getEventsByClub = async (req, res, next) => {
       SELECT
         MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
         DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai,
-        UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao
+        UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao,
+        KhoaDuyet, PhongCTSVDuyet
       FROM SU_KIEN
       WHERE MaCLB = @MaCLB
     `;
@@ -124,7 +125,8 @@ const getEventDetail = async (req, res, next) => {
         SELECT
           MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
           DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai,
-          UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao
+          UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao,
+          KhoaDuyet, PhongCTSVDuyet
         FROM SU_KIEN
         WHERE MaSK = @MaSK AND MaCLB = @MaCLB
       `);

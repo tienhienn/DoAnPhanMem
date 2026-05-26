@@ -16,13 +16,12 @@ const sql = require("mssql");
 // =====================================
 exports.getClubs = async (req, res, next) => {
   try {
-    const { role } = req.user;
+    const { role, maND } = req.user;
 
     if (role !== "KHOA" && role !== "ADMIN") {
       return res.status(403).json({
         success: false,
         message: "Chỉ Cán bộ Khoa mới có quyền xem danh sách CLB",
-        data: null,
       });
     }
 
@@ -30,36 +29,34 @@ exports.getClubs = async (req, res, next) => {
     const pool = await getPool();
     const request = pool.request();
 
+    // Lấy maDVQL của cán bộ đang đăng nhập
+    const cbResult = await pool
+      .request()
+      .input("maND", sql.VarChar(13), maND)
+      .query(`SELECT maDVQL FROM CANBO WHERE maCanBo = @maND`);
+
+    if (cbResult.recordset.length === 0) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không tìm thấy thông tin cán bộ" });
+    }
+
+    const maDVQL = cbResult.recordset[0].maDVQL;
+    request.input("maDVQL", sql.VarChar(13), maDVQL);
+
     let query = `
       SELECT
-        c.MaCLB,
-        c.TenCLB,
-        c.MoTa,
-        c.LinhVuc,
-        c.NgayThanhLap,
-        c.SoThanhVienToiDa,
-        c.TrangThai,
-        -- Số thành viên đang hoạt động
+        c.MaCLB, c.TenCLB, c.MoTa, c.LinhVuc, c.NgayThanhLap,
+        c.SoThanhVienToiDa, c.TrangThai,
+        (SELECT COUNT(*) FROM THANH_VIEN tv WHERE tv.MaCLB = c.MaCLB AND tv.TrangThai = N'Hoạt động') AS SoThanhVien,
+        (SELECT COUNT(*) FROM SU_KIEN sk WHERE sk.MaCLB = c.MaCLB) AS SoSuKien,
         (
-          SELECT COUNT(*) FROM THANH_VIEN tv
-          WHERE tv.MaCLB = c.MaCLB AND tv.TrangThai = N'Hoạt động'
-        ) AS SoThanhVien,
-        -- Số sự kiện đã tổ chức
-        (
-          SELECT COUNT(*) FROM SU_KIEN sk
-          WHERE sk.MaCLB = c.MaCLB
-        ) AS SoSuKien,
-        -- Tên chủ nhiệm
-        (
-          SELECT TOP 1 tk.hoTen
-          FROM THANH_VIEN tv
+          SELECT TOP 1 tk.hoTen FROM THANH_VIEN tv
           JOIN TAI_KHOAN tk ON tv.MaND = tk.MaND
-          WHERE tv.MaCLB = c.MaCLB
-            AND tv.VaiTroCLB = N'Chủ nhiệm'
-            AND tv.TrangThai = N'Hoạt động'
+          WHERE tv.MaCLB = c.MaCLB AND tv.VaiTroCLB = N'Chủ nhiệm' AND tv.TrangThai = N'Hoạt động'
         ) AS TenChuNhiem
       FROM CAULACBO c
-      WHERE 1=1
+      WHERE c.maDVQL = @maDVQL
     `;
 
     if (search) {
@@ -76,13 +73,8 @@ exports.getClubs = async (req, res, next) => {
 
     const result = await request.query(query);
 
-    return res.status(200).json({
-      success: true,
-      message: "Lấy danh sách CLB thành công",
-      data: result.recordset,
-    });
+    return res.status(200).json({ success: true, data: result.recordset });
   } catch (err) {
-    console.error("❌ Error fetching clubs:", err);
     next(err);
   }
 };
@@ -107,9 +99,7 @@ exports.getClubDetail = async (req, res, next) => {
     const pool = await getPool();
 
     // Thông tin CLB
-    const clubResult = await pool
-      .request()
-      .input("maCLB", sql.VarChar(13), id)
+    const clubResult = await pool.request().input("maCLB", sql.VarChar(13), id)
       .query(`
         SELECT
           c.MaCLB, c.TenCLB, c.MoTa, c.LinhVuc,
@@ -135,9 +125,7 @@ exports.getClubDetail = async (req, res, next) => {
     }
 
     // Danh sách Ban chủ nhiệm
-    const bcnResult = await pool
-      .request()
-      .input("maCLB2", sql.VarChar(13), id)
+    const bcnResult = await pool.request().input("maCLB2", sql.VarChar(13), id)
       .query(`
         SELECT
           tv.MaTV, tv.VaiTroCLB, tv.NgayThamGia,
@@ -153,8 +141,7 @@ exports.getClubDetail = async (req, res, next) => {
     // Sự kiện gần đây (5 cái mới nhất)
     const eventResult = await pool
       .request()
-      .input("maCLB3", sql.VarChar(13), id)
-      .query(`
+      .input("maCLB3", sql.VarChar(13), id).query(`
         SELECT TOP 5
           MaSK, TenSK, ThoiGianBatDau, TrangThai
         FROM SU_KIEN
@@ -196,7 +183,7 @@ exports.updateClubStatus = async (req, res, next) => {
     }
 
     // Validate status
-    const validStatuses = ["Hoạt động", "Bị khóa",  "Không hoạt động"];
+    const validStatuses = ["Hoạt động", "Bị khóa", "Không hoạt động"];
     const validStatusesArr = ["Hoạt động", "Bị khóa", "Không hoạt động"];
     if (!status || !validStatusesArr.includes(status)) {
       return res.status(400).json({
@@ -212,7 +199,9 @@ exports.updateClubStatus = async (req, res, next) => {
     const checkResult = await pool
       .request()
       .input("maCLB", sql.VarChar(13), id)
-      .query(`SELECT MaCLB, TenCLB, TrangThai FROM CAULACBO WHERE MaCLB = @maCLB`);
+      .query(
+        `SELECT MaCLB, TenCLB, TrangThai FROM CAULACBO WHERE MaCLB = @maCLB`,
+      );
 
     if (checkResult.recordset.length === 0) {
       return res.status(404).json({
@@ -227,8 +216,8 @@ exports.updateClubStatus = async (req, res, next) => {
     // Cập nhật trạng thái
     await pool
       .request()
-      .input("maCLB2",   sql.VarChar(13),  id)
-      .input("status",   sql.NVarChar(50), status)
+      .input("maCLB2", sql.VarChar(13), id)
+      .input("status", sql.NVarChar(50), status)
       .query(`UPDATE CAULACBO SET TrangThai = @status WHERE MaCLB = @maCLB2`);
 
     return res.status(200).json({

@@ -655,11 +655,11 @@ GO
 -- KIỂM TRA LẠI DỮ LIỆU
 -- =============================================
 select * from SU_KIEN;
+select * from CANBO;
+select * from DONVIQUANLY;
 select * from CAULACBO;
 select * from TAI_KHOAN
 select * from THANH_VIEN;
-select * from DONVIQUANLY;
-select * from CANBO;
 select * from NHIEM_VU
 select * from HOSO
 select * from TAI_SAN

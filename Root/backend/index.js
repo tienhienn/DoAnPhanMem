@@ -25,9 +25,11 @@ const app = express();
 // Middleware logger
 app.use((req, res, next) => {
   const start = Date.now();
-  res.on('finish', () => {
+  res.on("finish", () => {
     const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`);
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`,
+    );
   });
   next();
 });
@@ -60,6 +62,7 @@ app.use("/api/bcn/members", memberRoutes);
 app.use("/api/khoa/clubs", khoaClubsRouter);
 app.use("/api/bcn/reports", require("./routes/reports"));
 app.use("/api/bcn/finance-logistics", financeLogisticsRoutes);
+app.use("/api/ctsv/reports", require("./routes/ctsvReports"));
 
 // Cấp quyền truy cập công khai vào thư mục uploads (sử dụng absolute path)
 const uploadDir = path.join(__dirname, "uploads");
@@ -88,7 +91,9 @@ const startServer = async () => {
     let dbReady = false;
 
     if (process.env.SKIP_DB_INIT === "true") {
-      console.log("⚠️  SKIP_DB_INIT is true — skipping database initialization");
+      console.log(
+        "⚠️  SKIP_DB_INIT is true — skipping database initialization",
+      );
     } else {
       try {
         await initDatabase();
@@ -96,7 +101,10 @@ const startServer = async () => {
         dbReady = true;
         console.log("✓ Database initialized — proceeding to start server");
       } catch (dbErr) {
-        console.warn("⚠️  Database initialization failed — starting server anyway:", dbErr.message || dbErr);
+        console.warn(
+          "⚠️  Database initialization failed — starting server anyway:",
+          dbErr.message || dbErr,
+        );
       }
     }
 
@@ -104,7 +112,9 @@ const startServer = async () => {
       console.log(`✓ Server is running on port ${PORT}`);
       console.log(`✓ Environment: ${process.env.NODE_ENV || "development"}`);
       if (!dbReady) {
-        console.log("⚠️  Warning: Database not connected. Some endpoints may be unavailable.");
+        console.log(
+          "⚠️  Warning: Database not connected. Some endpoints may be unavailable.",
+        );
       }
     });
   } catch (err) {

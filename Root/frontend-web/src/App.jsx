@@ -32,6 +32,7 @@ import ClubsPage from "./pages/ClubsPage";
 import ClubDetailPage from "./pages/ClubDetailPage";
 import EventTaskManagement from "./pages/BanChuNhiem/EventTaskManagement";
 import ClubManagementPage from "./pages/Khoa/ClubManagementPage";
+import CTSVReportsPage from "./pages/CTSV/CTSVReportManagementPage";
 
 /**
  * App - Root component
@@ -107,10 +108,7 @@ export default function App() {
                     path="/faculty-management"
                     element={<FacultyManagementPage />}
                   />
-                  <Route 
-                    path="/khoa/clubs" 
-                    element={<ClubManagementPage />} 
-                  />
+                  <Route path="/khoa/clubs" element={<ClubManagementPage />} />
                 </Route>
 
                 {/* Chỉ Phòng CTSV */}
@@ -119,6 +117,7 @@ export default function App() {
                     path="/student-affairs"
                     element={<StudentAffairsPage />}
                   />
+                  <Route path="/ctsv/reports" element={<CTSVReportsPage />} />
                 </Route>
               </Route>
             </Route>

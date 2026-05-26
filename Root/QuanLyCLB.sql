@@ -656,10 +656,10 @@ GO
 -- =============================================
 select * from SU_KIEN;
 select * from CAULACBO;
+select * from TAI_KHOAN
 select * from THANH_VIEN;
 select * from DONVIQUANLY;
 select * from CANBO;
-select * from TAI_KHOAN
 select * from NHIEM_VU
 select * from HOSO
 select * from TAI_SAN

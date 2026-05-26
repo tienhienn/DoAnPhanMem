@@ -335,9 +335,9 @@ function getNavItems(role) {
       icon: ManageIcon,
     };
     const clubs = {
-    label: "Quản lý CLB",
-    path: "/khoa/clubs",
-    icon: UsersGroupIcon,
+      label: "Quản lý CLB",
+      path: "/khoa/clubs",
+      icon: UsersGroupIcon,
     };
     return [events, manage, clubs];
   }
@@ -348,7 +348,12 @@ function getNavItems(role) {
       path: "/student-affairs",
       icon: ManageIcon,
     };
-    return [events, manage];
+    const reports = {
+      label: "Xem Báo cáo",
+      path: "/ctsv/reports",
+      icon: FileTextIcon,
+    };
+    return [events, manage, reports];
   }
 
   // Default

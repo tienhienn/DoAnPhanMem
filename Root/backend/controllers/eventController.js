@@ -133,9 +133,8 @@ async function getEventById(req, res, next) {
     if (req.user) {
       const regRequest = pool.request();
       regRequest.input('maSK2', sql.Char, maSK);
-      regRequest.input('maND', sql.Char, req.user.maSV);
+      regRequest.input('maND', sql.Char, req.user.maND);
 
-      // Lấy bản ghi mới nhất: ưu tiên TrangThai khác 'da_huy', sau đó theo NgayDangKy DESC
       const regResult = await regRequest.query(`
         SELECT TOP 1 TrangThai
         FROM DANGKY_SUKIEN
@@ -167,7 +166,7 @@ async function getEventById(req, res, next) {
 async function registerEvent(req, res, next) {
   try {
     const { maSK } = req.params;
-    const maND = req.user.maSV;
+    const maND = req.user.maND;
 
     const pool = await getPool();
 
@@ -235,12 +234,12 @@ async function registerEvent(req, res, next) {
       });
     }
 
-    // 4. Kiểm tra đã đăng ký chưa
+    // 4. Kiểm tra đã đăng ký chưa (khóa đôi MaSK + MaND)
     const checkRequest = pool.request();
     checkRequest.input('maSK3', sql.Char, maSK);
     checkRequest.input('maND', sql.Char, maND);
     const checkResult = await checkRequest.query(`
-      SELECT MaDK FROM DANGKY_SUKIEN
+      SELECT MaSK FROM DANGKY_SUKIEN
       WHERE MaSK = @maSK3
         AND MaND = @maND
         AND TrangThai != 'da_huy'
@@ -256,24 +255,22 @@ async function registerEvent(req, res, next) {
       });
     }
 
-    // 5. Tạo MaDK mới (13 ký tự): DK + 9 số cuối timestamp + 2 số random
-    const maDK = 'DK' + Date.now().toString().slice(-9) + Math.floor(Math.random() * 100).toString().padStart(2, '0');
-
-    // 6. INSERT vào DANGKY_SUKIEN
+    // 5. INSERT vào DANGKY_SUKIEN (khóa chính là (MaSK, MaND))
     const insertRequest = pool.request();
-    insertRequest.input('maDK', sql.Char, maDK);
     insertRequest.input('maSK4', sql.Char, maSK);
     insertRequest.input('maND2', sql.Char, maND);
     await insertRequest.query(`
-      INSERT INTO DANGKY_SUKIEN (MaDK, MaSK, MaND, NgayDangKy, TrangThai)
-      VALUES (@maDK, @maSK4, @maND2, GETDATE(), 'da_duyet')
+      INSERT INTO DANGKY_SUKIEN (MaSK, MaND, NgayDangKy, TrangThai)
+      VALUES (@maSK4, @maND2, GETDATE(), 'da_duyet')
     `);
 
-    // 7. Lấy NgayDangKy vừa insert để trả về
+    // 6. Lấy NgayDangKy vừa insert để trả về
     const fetchRequest = pool.request();
-    fetchRequest.input('maDK2', sql.Char, maDK);
+    fetchRequest.input('maSKf', sql.Char, maSK);
+    fetchRequest.input('maNDf', sql.Char, maND);
     const fetchResult = await fetchRequest.query(`
-      SELECT NgayDangKy FROM DANGKY_SUKIEN WHERE MaDK = @maDK2
+      SELECT NgayDangKy FROM DANGKY_SUKIEN
+      WHERE MaSK = @maSKf AND MaND = @maNDf
     `);
 
     const ngayDangKy = fetchResult.recordset[0]?.NgayDangKy || new Date();
@@ -281,7 +278,6 @@ async function registerEvent(req, res, next) {
     return res.status(201).json({
       success: true,
       data: {
-        maDK,
         maSK,
         maSV: maND,
         ngayDangKy,
@@ -300,7 +296,7 @@ async function registerEvent(req, res, next) {
 async function cancelRegistration(req, res, next) {
   try {
     const { maSK } = req.params;
-    const maND = req.user.maSV;
+    const maND = req.user.maND;
 
     const pool = await getPool();
 
@@ -321,12 +317,12 @@ async function cancelRegistration(req, res, next) {
       });
     }
 
-    // 2. Tìm đăng ký hợp lệ
+    // 2. Tìm đăng ký hợp lệ (khóa đôi)
     const regRequest = pool.request();
     regRequest.input('maSK2', sql.Char, maSK);
     regRequest.input('maND', sql.Char, maND);
     const regResult = await regRequest.query(`
-      SELECT MaDK, TrangThai
+      SELECT TrangThai
       FROM DANGKY_SUKIEN
       WHERE MaSK = @maSK2
         AND MaND = @maND
@@ -357,11 +353,13 @@ async function cancelRegistration(req, res, next) {
       });
     }
 
-    // 5. UPDATE TrangThai = 'da_huy'
+    // 5. UPDATE TrangThai = 'da_huy' (dùng khóa đôi)
     const updateRequest = pool.request();
-    updateRequest.input('maDK', sql.Char, registration.MaDK);
+    updateRequest.input('maSK3', sql.Char, maSK);
+    updateRequest.input('maND2', sql.Char, maND);
     await updateRequest.query(`
-      UPDATE DANGKY_SUKIEN SET TrangThai = 'da_huy' WHERE MaDK = @maDK
+      UPDATE DANGKY_SUKIEN SET TrangThai = 'da_huy'
+      WHERE MaSK = @maSK3 AND MaND = @maND2
     `);
 
     // 6. Trả về thành công
@@ -383,7 +381,7 @@ async function cancelRegistration(req, res, next) {
 async function getEventQR(req, res, next) {
   try {
     const { maSK } = req.params;
-    const maND = req.user.maSV;
+    const maND = req.user.maND;
 
     const pool = await getPool();
 
@@ -406,12 +404,12 @@ async function getEventQR(req, res, next) {
 
     const event = skResult.recordset[0];
 
-    // 2. Kiểm tra đăng ký hợp lệ
+    // 2. Kiểm tra đăng ký hợp lệ (khóa đôi)
     const regRequest = pool.request();
     regRequest.input('maSK2', sql.Char, maSK);
     regRequest.input('maND', sql.Char, maND);
     const regResult = await regRequest.query(`
-      SELECT dk.MaDK, dk.TrangThai, tk.hoTen, tk.anhDaiDien
+      SELECT dk.TrangThai, tk.hoTen, tk.anhDaiDien
       FROM DANGKY_SUKIEN dk
       INNER JOIN TAI_KHOAN tk ON dk.MaND = tk.MaND
       WHERE dk.MaSK = @maSK2
@@ -433,14 +431,14 @@ async function getEventQR(req, res, next) {
     const registration = regResult.recordset[0];
 
     // 4. Tạo qrValue
-    const qrValue = `UTE-UDN-${req.user.maSV}-${maSK}`;
+    const qrValue = `UTE-UDN-${maND}-${maSK}`;
 
     // 5. Trả về
     return res.status(200).json({
       success: true,
       data: {
         qrValue,
-        maSV: req.user.maSV,
+        maSV: maND,
         hoTen: registration.hoTen || req.user.hoTen,
         anhDaiDien: registration.anhDaiDien,
         tenSK: event.TenSK,

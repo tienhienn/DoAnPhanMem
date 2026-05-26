@@ -31,6 +31,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ClubsPage from "./pages/ClubsPage";
 import ClubDetailPage from "./pages/ClubDetailPage";
 import EventTaskManagement from "./pages/BanChuNhiem/EventTaskManagement";
+import ClubManagementPage from "./pages/Khoa/ClubManagementPage";
 
 /**
  * App - Root component
@@ -44,6 +45,7 @@ import EventTaskManagement from "./pages/BanChuNhiem/EventTaskManagement";
  * - /bcn-management            → BCN (ban chủ nhiệm CLB)
  * - /faculty-management        → KHOA (cán bộ khoa)
  * - /student-affairs           → CTSV (phòng công tác sinh viên)
+ * - /club-management           → KHOA (cán bộ khoa)
  */
 
 export default function App() {
@@ -104,6 +106,10 @@ export default function App() {
                   <Route
                     path="/faculty-management"
                     element={<FacultyManagementPage />}
+                  />
+                  <Route 
+                    path="/khoa/clubs" 
+                    element={<ClubManagementPage />} 
                   />
                 </Route>
 

@@ -11,7 +11,7 @@ import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api`;
 
 // ============================================
 // STATUS BADGE COMPONENT
@@ -46,12 +46,103 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave, loading }) => {
     mssv: "",
     role: "Thành viên",
   });
+  const [khoas, setKhoas] = useState([]);
+  const [lops, setLops] = useState([]);
+  const [sinhViens, setSinhViens] = useState([]);
+  const [selectedKhoa, setSelectedKhoa] = useState("");
+  const [selectedLop, setSelectedLop] = useState("");
+  const [loadingData, setLoadingData] = useState(false);
 
   useEffect(() => {
-    if (member)
+    if (member) {
       setFormData({ name: member.name, mssv: member.mssv, role: member.role });
-    else setFormData({ name: "", mssv: "", role: "Thành viên" });
+    } else {
+      setFormData({ name: "", mssv: "", role: "Thành viên" });
+      setSelectedKhoa("");
+      setSelectedLop("");
+      setSinhViens([]);
+    }
   }, [member, isOpen]);
+
+  // Lấy danh sách Khoa khi modal mở
+  useEffect(() => {
+    if (isOpen && !member) {
+      fetchKhoas();
+    }
+  }, [isOpen, member]);
+
+  const fetchKhoas = async () => {
+    try {
+      setLoadingData(true);
+      const res = await axios.get(`${API_BASE_URL}/bcn/members/khoas`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setKhoas(res.data.data || []);
+    } catch (err) {
+      console.error("Lỗi tải danh sách khoa:", err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleKhoaChange = async (e) => {
+    const maKhoa = e.target.value;
+    setSelectedKhoa(maKhoa);
+    setSelectedLop("");
+    setSinhViens([]);
+
+    if (!maKhoa) return;
+
+    try {
+      setLoadingData(true);
+      const res = await axios.get(
+        `${API_BASE_URL}/bcn/members/khoas/${maKhoa}/lops`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+      setLops(res.data.data || []);
+    } catch (err) {
+      console.error("Lỗi tải danh sách lớp:", err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleLopChange = async (e) => {
+    const maLop = e.target.value;
+    setSelectedLop(maLop);
+    setSinhViens([]);
+
+    if (!maLop) return;
+
+    try {
+      setLoadingData(true);
+      const res = await axios.get(
+        `${API_BASE_URL}/bcn/members/lops/${maLop}/sinhviens`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+      );
+      setSinhViens(res.data.data || []);
+    } catch (err) {
+      console.error("Lỗi tải danh sách sinh viên:", err);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleSinhVienSelect = (e) => {
+    const selectedId = e.target.value;
+    const selected = sinhViens.find((sv) => sv.id === selectedId);
+    if (selected) {
+      setFormData({
+        ...formData,
+        name: selected.name,
+        mssv: selected.mssv,
+      });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -60,7 +151,7 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave, loading }) => {
 
   const handleSubmit = () => {
     if (!formData.mssv.trim()) {
-      alert("Vui lòng điền mã số sinh viên");
+      alert("Vui lòng chọn sinh viên");
       return;
     }
     onSave(formData);
@@ -69,8 +160,7 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave, loading }) => {
   const roleOptions = [
     "Thành viên",
     "Trưởng ban",
-    "Phó chủ nhiệm",
-    "Chủ nhiệm CLB",
+    "Chủ nhiệm",
   ];
 
   return (
@@ -104,22 +194,80 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave, loading }) => {
           )}
 
           {!member && (
-            <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-2">
-                Mã số sinh viên (MSSV) *
-              </label>
-              <input
-                type="text"
-                name="mssv"
-                value={formData.mssv}
-                onChange={handleChange}
-                placeholder="Nhập MSSV (VD: SV210000001)"
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Hệ thống sẽ tự động tìm tên sinh viên theo MSSV.
-              </p>
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                  Chọn Khoa *
+                </label>
+                <select
+                  value={selectedKhoa}
+                  onChange={handleKhoaChange}
+                  disabled={loadingData}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all disabled:bg-slate-100"
+                >
+                  <option value="">-- Chọn Khoa --</option>
+                  {khoas.map((khoa) => (
+                    <option key={khoa.id} value={khoa.id}>
+                      {khoa.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                  Chọn Lớp *
+                </label>
+                <select
+                  value={selectedLop}
+                  onChange={handleLopChange}
+                  disabled={!selectedKhoa || loadingData}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all disabled:bg-slate-100"
+                >
+                  <option value="">-- Chọn Lớp --</option>
+                  {lops.map((lop) => (
+                    <option key={lop.id} value={lop.id}>
+                      {lop.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-2">
+                  Chọn Sinh viên *
+                </label>
+                <select
+                  onChange={handleSinhVienSelect}
+                  disabled={!selectedLop || loadingData}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all disabled:bg-slate-100"
+                >
+                  <option value="">-- Chọn Sinh viên --</option>
+                  {sinhViens.map((sv) => (
+                    <option key={sv.id} value={sv.id}>
+                      {sv.name} ({sv.mssv})
+                    </option>
+                  ))}
+                </select>
+                {sinhViens.length === 0 && selectedLop && !loadingData && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    Tất cả sinh viên trong lớp này đã là thành viên của CLB.
+                  </p>
+                )}
+              </div>
+
+              {formData.mssv && (
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-600 uppercase mb-2">
+                    Sinh viên được chọn
+                  </p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {formData.name}
+                  </p>
+                  <p className="text-sm text-slate-600 mt-1">{formData.mssv}</p>
+                </div>
+              )}
+            </>
           )}
 
           <div>
@@ -144,14 +292,14 @@ const MemberFormModal = ({ isOpen, member, onClose, onSave, loading }) => {
         <div className="border-t border-slate-200 bg-slate-50 px-8 py-4 flex items-center justify-end gap-3 rounded-b-2xl">
           <button
             onClick={onClose}
-            disabled={loading}
+            disabled={loading || loadingData}
             className="px-6 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-100 transition-all disabled:opacity-50"
           >
             Hủy
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || loadingData}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-sm disabled:opacity-50"
           >
             {loading ? "Đang lưu..." : member ? "Cập nhật" : "Thêm thành viên"}
@@ -198,9 +346,7 @@ export default function MemberManagementPage() {
       return members.filter(
         (m) =>
           [
-            "Chủ nhiệm CLB",
             "Chủ nhiệm",
-            "Phó chủ nhiệm",
             "Trưởng ban",
           ].includes(m.role) && m.status === "active",
       );

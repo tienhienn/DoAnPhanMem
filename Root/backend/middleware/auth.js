@@ -62,7 +62,7 @@ const auth = async (req, res, next) => {
             SELECT TOP 1 MaCLB 
             FROM THANH_VIEN 
             WHERE MaND = @maND 
-              AND VaiTroCLB IN (N'Chủ nhiệm', N'Phó chủ nhiệm') 
+              AND VaiTroCLB IN (N'Chủ nhiệm') 
               AND TrangThai = N'Hoạt động'
           `);
         
@@ -103,7 +103,7 @@ const optionalAuth = async (req, res, next) => {
               SELECT TOP 1 MaCLB 
               FROM THANH_VIEN 
               WHERE MaND = @maND 
-                AND VaiTroCLB IN (N'Chủ nhiệm', N'Phó chủ nhiệm') 
+                AND VaiTroCLB IN (N'Chủ nhiệm') 
                 AND TrangThai = N'Hoạt động'
             `);
           

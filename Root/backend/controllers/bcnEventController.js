@@ -28,14 +28,14 @@ const parseDate = (value, fieldName) => {
   return d;
 };
 
-// ─── Helper: Lấy MaCLB của người dùng (chủ nhiệm / phó chủ nhiệm) ──────────
+// ─── Helper: Lấy MaCLB của người dùng (chủ nhiệm) ──────────
 const getClubOfUser = async (pool, maND) => {
   const clubResult = await pool.request().input("MaND", sql.NVarChar(50), maND)
     .query(`
       SELECT MaCLB
       FROM THANH_VIEN
       WHERE MaND = @MaND
-        AND VaiTroCLB IN (N'Chủ nhiệm', N'Phó chủ nhiệm')
+        AND VaiTroCLB IN (N'Chủ nhiệm')
         AND TrangThai = N'Hoạt động'
     `);
 
@@ -59,7 +59,7 @@ const getEventsByClub = async (req, res, next) => {
         error: {
           code: "FORBIDDEN",
           message:
-            "Bạn không phải là chủ nhiệm hoặc phó chủ nhiệm của bất kỳ câu lạc bộ nào",
+            "Bạn không phải là chủ nhiệm của bất kỳ câu lạc bộ nào",
         },
       });
     }
@@ -68,7 +68,8 @@ const getEventsByClub = async (req, res, next) => {
       SELECT
         MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
         DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai,
-        UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao
+        UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao,
+        KhoaDuyet, PhongCTSVDuyet
       FROM SU_KIEN
       WHERE MaCLB = @MaCLB
     `;
@@ -112,7 +113,7 @@ const getEventDetail = async (req, res, next) => {
         error: {
           code: "FORBIDDEN",
           message:
-            "Bạn không phải là chủ nhiệm hoặc phó chủ nhiệm của bất kỳ câu lạc bộ nào",
+            "Bạn không phải là chủ nhiệm của bất kỳ câu lạc bộ nào",
         },
       });
     }
@@ -124,7 +125,8 @@ const getEventDetail = async (req, res, next) => {
         SELECT
           MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
           DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai,
-          UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao
+          UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao,
+          KhoaDuyet, PhongCTSVDuyet
         FROM SU_KIEN
         WHERE MaSK = @MaSK AND MaCLB = @MaCLB
       `);
@@ -161,6 +163,7 @@ const getEventDetail = async (req, res, next) => {
  */
 const createEvent = async (req, res, next) => {
   try {
+    console.log("[DEBUG] createEvent req.body:", JSON.stringify(req.body, null, 2));
     const {
       TenSK,
       MoTa,
@@ -218,7 +221,7 @@ const createEvent = async (req, res, next) => {
         error: {
           code: "FORBIDDEN",
           message:
-            "Bạn không phải là chủ nhiệm hoặc phó chủ nhiệm của bất kỳ câu lạc bộ nào",
+            "Bạn không phải là chủ nhiệm của bất kỳ câu lạc bộ nào",
         },
       });
     }
@@ -247,7 +250,7 @@ const createEvent = async (req, res, next) => {
       )
       .input("LoaiSK", sql.NVarChar(50), LoaiSK || null)
       .input("TrangThai", sql.NVarChar(50), "draft")
-      .input("UrlAnh", sql.NVarChar(255), UrlAnh || null)
+      .input("UrlAnh", sql.NVarChar(sql.MAX), UrlAnh || null)
       .input("DiemRenLuyen", sql.Int, DiemRenLuyen ? parseInt(DiemRenLuyen) : 5)
       .input("NgayTao", sql.DateTime, new Date()).query(`
         INSERT INTO SU_KIEN (
@@ -335,7 +338,7 @@ const updateEvent = async (req, res, next) => {
         error: {
           code: "FORBIDDEN",
           message:
-            "Bạn không phải là chủ nhiệm hoặc phó chủ nhiệm của bất kỳ câu lạc bộ nào",
+            "Bạn không phải là chủ nhiệm của bất kỳ câu lạc bộ nào",
         },
       });
     }
@@ -389,7 +392,7 @@ const updateEvent = async (req, res, next) => {
         ChiPhiDuKien ? parseFloat(ChiPhiDuKien) : 0,
       )
       .input("LoaiSK", sql.NVarChar(50), LoaiSK || null)
-      .input("UrlAnh", sql.NVarChar(255), UrlAnh || null)
+      .input("UrlAnh", sql.NVarChar(sql.MAX), UrlAnh || null)
       .input("DiemRenLuyen", sql.Int, DiemRenLuyen ? parseInt(DiemRenLuyen) : 5)
       .query(`
         UPDATE SU_KIEN SET
@@ -432,7 +435,7 @@ const deleteEvent = async (req, res, next) => {
         error: {
           code: "FORBIDDEN",
           message:
-            "Bạn không phải là chủ nhiệm hoặc phó chủ nhiệm của bất kỳ câu lạc bộ nào",
+            "Bạn không phải là chủ nhiệm của bất kỳ câu lạc bộ nào",
         },
       });
     }

@@ -26,7 +26,7 @@ import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/api`;
 
 // ============================================
 // STATUS CONFIG — đầy đủ tất cả trạng thái DB
@@ -515,12 +515,27 @@ const EventDetailModal = ({ isOpen, event, onClose }) => {
         </div>
 
         <div className="p-8 space-y-6">
-          {/* Approval Stepper */}
+          {/* Approval Status */}
           <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
-            <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
-              Tiến trình phê duyệt
+            <h3 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wide">
+              Trạng thái phê duyệt
             </h3>
-            <ApprovalStepper status={event.TrangThai} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className={`rounded-xl p-4 border text-center ${event.KhoaDuyet ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}>
+                <p className="text-2xl mb-1">{event.KhoaDuyet ? "✅" : "⏳"}</p>
+                <p className="text-xs font-bold text-slate-600 uppercase mb-1">Khoa / Đơn vị</p>
+                <p className={`text-sm font-semibold ${event.KhoaDuyet ? "text-green-700" : "text-gray-500"}`}>
+                  {event.KhoaDuyet ? "Đã duyệt" : "Chờ duyệt"}
+                </p>
+              </div>
+              <div className={`rounded-xl p-4 border text-center ${event.PhongCTSVDuyet ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}>
+                <p className="text-2xl mb-1">{event.PhongCTSVDuyet ? "✅" : "⏳"}</p>
+                <p className="text-xs font-bold text-slate-600 uppercase mb-1">Phòng CTSV</p>
+                <p className={`text-sm font-semibold ${event.PhongCTSVDuyet ? "text-green-700" : "text-gray-500"}`}>
+                  {event.PhongCTSVDuyet ? "Đã duyệt" : "Chờ duyệt"}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
@@ -550,7 +565,7 @@ const EventDetailModal = ({ isOpen, event, onClose }) => {
               { label: "Điểm rèn luyện", value: `${event.DiemRenLuyen} điểm` },
               {
                 label: "Chi phí dự kiến",
-                value: `${event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} đ`,
+                value: `${event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} VNĐ`,
               },
               { label: "Loại sự kiện", value: event.LoaiSK || "N/A" },
             ].map(({ label, value }) => (
@@ -620,16 +635,21 @@ const EventDetailModal = ({ isOpen, event, onClose }) => {
 // ============================================
 const EventCard = ({ event, onEdit, onDelete, onView, onSubmit }) => {
   const formatDate = (date) => new Date(date).toLocaleDateString("vi-VN");
-  const statusCfg = STATUS_CONFIG[event.TrangThai] || {
-    label: event.TrangThai,
-    bg: "bg-slate-100",
-    text: "text-slate-600",
+
+  // Badge phê duyệt dựa trên KhoaDuyet + PhongCTSVDuyet
+  const getApprovalBadge = (e) => {
+    if (e.TrangThai === "draft") return { label: "Bản nháp", bg: "bg-slate-100", text: "text-slate-600" };
+    if (e.TrangThai === "tu_choi") return { label: "✗ Bị từ chối", bg: "bg-rose-100", text: "text-rose-700" };
+    if (!e.KhoaDuyet && !e.PhongCTSVDuyet) return { label: "⏳ Chờ Khoa duyệt", bg: "bg-blue-100", text: "text-blue-700" };
+    if (e.KhoaDuyet && !e.PhongCTSVDuyet) return { label: "⏳ Chờ CTSV duyệt", bg: "bg-purple-100", text: "text-purple-700" };
+    if (e.KhoaDuyet && e.PhongCTSVDuyet) return { label: "✅ Đã cấp phép", bg: "bg-emerald-100", text: "text-emerald-700" };
+    return { label: e.TrangThai, bg: "bg-slate-100", text: "text-slate-600" };
   };
 
+  const approvalBadge = getApprovalBadge(event);
   const canEdit = EDITABLE_STATUSES.includes(event.TrangThai);
   const canDelete = DELETABLE_STATUSES.includes(event.TrangThai);
   const canSubmit = SUBMITTABLE_STATUSES.includes(event.TrangThai);
-  const isReadonly = READONLY_STATUSES.includes(event.TrangThai);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all">
@@ -638,6 +658,15 @@ const EventCard = ({ event, onEdit, onDelete, onView, onSubmit }) => {
           <h3 className="text-lg font-bold text-slate-900 mb-2">
             {event.TenSK}
           </h3>
+          {/* Indicator Khoa / CTSV */}
+          <div className="flex gap-2 mb-2">
+            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${event.KhoaDuyet ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+              {event.KhoaDuyet ? "✓" : "○"} Khoa
+            </span>
+            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${event.PhongCTSVDuyet ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+              {event.PhongCTSVDuyet ? "✓" : "○"} CTSV
+            </span>
+          </div>
           <div className="space-y-1.5 text-sm text-slate-600">
             <div className="flex items-center gap-2">
               <FiCalendar className="w-4 h-4 text-blue-600 flex-shrink-0" />
@@ -654,9 +683,9 @@ const EventCard = ({ event, onEdit, onDelete, onView, onSubmit }) => {
           </div>
         </div>
         <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 ${statusCfg.bg} ${statusCfg.text}`}
+          className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 ${approvalBadge.bg} ${approvalBadge.text}`}
         >
-          {statusCfg.label}
+          {approvalBadge.label}
         </span>
       </div>
 
@@ -752,15 +781,27 @@ export default function BCNManagementPage() {
     }
   };
 
-  // Statistics
+  // Định nghĩa logic lọc theo KhoaDuyet + PhongCTSVDuyet
+  const getEventGroup = (e) => {
+    if (e.TrangThai === "draft") return "draft";
+    if (e.TrangThai === "tu_choi") return "tu_choi";
+    if (!e.KhoaDuyet && !e.PhongCTSVDuyet) return "cho_khoa";
+    if (e.KhoaDuyet && !e.PhongCTSVDuyet) return "cho_ctsv";
+    if (e.KhoaDuyet && e.PhongCTSVDuyet) return "da_duyet";
+    return "khac";
+  };
+
+  // Statistics dựa trên nhóm mới
   const totalEvents = events.length;
-  const draftCount = events.filter((e) => e.TrangThai === "draft").length;
+  const draftCount = events.filter((e) => getEventGroup(e) === "draft").length;
   const pendingCount = events.filter(
-    (e) => e.TrangThai === "cho_duyet_khoa" || e.TrangThai === "cho_duyet_ctsv",
+    (e) => getEventGroup(e) === "cho_khoa" || getEventGroup(e) === "cho_ctsv"
   ).length;
 
   const filteredEvents =
-    filter === "all" ? events : events.filter((e) => e.TrangThai === filter);
+    filter === "all"
+      ? events
+      : events.filter((e) => getEventGroup(e) === filter);
 
   const handleCreateEvent = () => {
     setEditingEvent(null);
@@ -913,17 +954,14 @@ export default function BCNManagementPage() {
     }
   };
 
-  // Tab filters — chỉ hiện tab có dữ liệu + "Tất cả"
+  // Tab filters dựa trên trạng thái phê duyệt KhoaDuyet / PhongCTSVDuyet
   const filterTabs = [
-    { key: "all", label: "Tất cả" },
-    { key: "draft", label: "Bản nháp" },
-    { key: "cho_duyet_khoa", label: "Chờ Khoa duyệt" },
-    { key: "cho_duyet_ctsv", label: "Chờ CTSV duyệt" },
+    { key: "all",      label: "Tất cả" },
+    { key: "draft",    label: "Bản nháp" },
+    { key: "cho_khoa", label: "Chờ Khoa" },
+    { key: "cho_ctsv", label: "Chờ CTSV" },
     { key: "da_duyet", label: "Đã cấp phép" },
-    { key: "sap_dien_ra", label: "Sắp diễn ra" },
-    { key: "dang_dien_ra", label: "Đang diễn ra" },
-    { key: "da_ket_thuc", label: "Đã kết thúc" },
-    { key: "tu_choi", label: "Bị từ chối" },
+    { key: "tu_choi",  label: "Bị từ chối" },
   ];
 
   return (
@@ -992,7 +1030,7 @@ export default function BCNManagementPage() {
               const count =
                 tab.key === "all"
                   ? events.length
-                  : events.filter((e) => e.TrangThai === tab.key).length;
+                  : events.filter((e) => getEventGroup(e) === tab.key).length;
               if (tab.key !== "all" && count === 0) return null; // Ẩn tab không có dữ liệu
               return (
                 <button

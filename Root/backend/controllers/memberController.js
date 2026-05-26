@@ -10,6 +10,43 @@ const getClubOfUser = async (pool, maND) => {
   return result.recordset.length > 0 ? result.recordset[0].MaCLB : null;
 };
 
+// Helper: Lấy danh sách Khoa
+const getKhoas = async (pool) => {
+  const result = await pool.request().query(`
+    SELECT maKhoa as id, tenKhoa as name FROM Khoa ORDER BY tenKhoa
+  `);
+  return result.recordset;
+};
+
+// Helper: Lấy danh sách Lớp theo Khoa
+const getLopsByKhoa = async (pool, maKhoa) => {
+  const result = await pool.request().input("MaKhoa", sql.VARCHAR(13), maKhoa)
+    .query(`
+      SELECT maLop as id, tenLop as name FROM Lop 
+      WHERE maKhoa = @MaKhoa ORDER BY tenLop
+    `);
+  return result.recordset;
+};
+
+// Helper: Lấy danh sách Sinh viên theo Lớp (chỉ những sinh viên chưa là thành viên của CLB)
+const getSinhVienByLop = async (pool, maLop, maCLB) => {
+  const result = await pool.request()
+    .input("MaLop", sql.VARCHAR(13), maLop)
+    .input("MaCLB", sql.VARCHAR(13), maCLB)
+    .query(`
+      SELECT DISTINCT
+        SV.maSV as id, TK.hoTen as name, TK.MaND as mssv
+      FROM SINHVIEN SV
+      INNER JOIN TAI_KHOAN TK ON SV.maSV = TK.MaND
+      WHERE SV.maLop = @MaLop 
+        AND SV.maSV NOT IN (
+          SELECT MaND FROM THANH_VIEN WHERE MaCLB = @MaCLB AND TrangThai = N'Hoạt động'
+        )
+      ORDER BY TK.hoTen
+    `);
+  return result.recordset;
+};
+
 // Helper: Sinh mã Thành Viên (MaTV) tự động tăng
 const generateMaTV = async (pool) => {
   const result = await pool
@@ -243,6 +280,50 @@ const rejectRequest = async (req, res, next) => {
   }
 };
 
+// 7. Lấy danh sách Khoa
+const getKhoaList = async (req, res, next) => {
+  try {
+    const pool = await getPool();
+    const khoas = await getKhoas(pool);
+    res.status(200).json({ success: true, data: khoas });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 8. Lấy danh sách Lớp theo Khoa
+const getLopList = async (req, res, next) => {
+  try {
+    const { maKhoa } = req.params;
+    const pool = await getPool();
+    const lops = await getLopsByKhoa(pool, maKhoa);
+    res.status(200).json({ success: true, data: lops });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 9. Lấy danh sách Sinh viên theo Lớp
+const getSinhVienList = async (req, res, next) => {
+  try {
+    const { maLop } = req.params;
+    const pool = await getPool();
+    const MaCLB = await getClubOfUser(pool, req.user.maND);
+    if (!MaCLB)
+      return res
+        .status(403)
+        .json({
+          success: false,
+          error: { message: "Bạn không có quyền quản lý CLB này" },
+        });
+
+    const sinhViens = await getSinhVienByLop(pool, maLop, MaCLB);
+    res.status(200).json({ success: true, data: sinhViens });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getAllMembers,
   addMember,
@@ -250,4 +331,7 @@ module.exports = {
   removeMember,
   approveRequest,
   rejectRequest,
+  getKhoaList,
+  getLopList,
+  getSinhVienList,
 };

@@ -18,8 +18,19 @@ const taskRoutes = require("./routes/tasks");
 const memberRoutes = require("./routes/members");
 const khoaClubsRouter = require("./routes/khoaClubs");
 
+const financeLogisticsRoutes = require("./routes/financeLogistics");
 
 const app = express();
+
+// Middleware logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`);
+  });
+  next();
+});
 
 // Middleware
 app.use(cors());
@@ -47,6 +58,8 @@ app.use("/api/ctsv/events", ctsvEventsRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/bcn/members", memberRoutes);
 app.use("/api/khoa/clubs", khoaClubsRouter);
+app.use("/api/bcn/reports", require("./routes/reports"));
+app.use("/api/bcn/finance-logistics", financeLogisticsRoutes);
 
 // Cấp quyền truy cập công khai vào thư mục uploads (sử dụng absolute path)
 const uploadDir = path.join(__dirname, "uploads");

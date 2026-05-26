@@ -124,7 +124,17 @@ export default function ClubDetailPage() {
             
             <div className="flex-1 space-y-2 mb-2">
               <h1 className="text-3xl font-extrabold text-gray-900">{club.TenCLB}</h1>
-              <div className="flex flex-wrap items-center gap-3 text-sm">
+              {club.TenTiengAnh && (
+                <p className="text-gray-500 font-medium text-base -mt-1">
+                  {club.TenTiengAnh} {club.TenVietTat && `(${club.TenVietTat})`}
+                </p>
+              )}
+              {club.Slogan && (
+                <p className="italic text-indigo-600 font-medium text-sm">
+                  "{club.Slogan}"
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-3 text-sm mt-2">
                 <span className="bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-lg">
                   {club.LinhVuc || 'Khác'}
                 </span>
@@ -140,7 +150,7 @@ export default function ClubDetailPage() {
                   <button disabled className="w-full md:w-auto px-6 py-3 bg-green-50 text-green-600 font-bold rounded-xl flex items-center justify-center gap-2 border border-green-200">
                     <CheckCircle className="w-5 h-5" /> Đã tham gia
                   </button>
-                  {(userClubRole === 'Chủ nhiệm' || userClubRole === 'Phó chủ nhiệm') && (
+                  {userClubRole === 'Chủ nhiệm' && (
                     <button 
                       onClick={() => {
                         enterManagementMode(id);
@@ -186,7 +196,7 @@ export default function ClubDetailPage() {
             <div className="md:col-span-2 space-y-8">
               <section>
                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <Info className="w-5 h-5 text-indigo-500" /> Giới thiệu
+                  <Info className="w-5 h-5 text-indigo-500" /> Giới thiệu khái quát
                 </h2>
                 <div className="prose prose-indigo text-gray-600 bg-gray-50 p-6 rounded-2xl border border-gray-100">
                   {club.MoTa ? (
@@ -196,6 +206,39 @@ export default function ClubDetailPage() {
                   )}
                 </div>
               </section>
+
+              {club.TonChiMucDich && (
+                <section>
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <Flag className="w-5 h-5 text-indigo-500" /> Tôn chỉ & Mục đích hoạt động
+                  </h2>
+                  <div className="prose prose-indigo text-gray-600 bg-gray-50 p-6 rounded-2xl border border-gray-100 whitespace-pre-line">
+                    {club.TonChiMucDich}
+                  </div>
+                </section>
+              )}
+
+              {club.PhamViHoatDong && (
+                <section>
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-500" /> Lĩnh vực & Phạm vi hoạt động
+                  </h2>
+                  <div className="prose prose-indigo text-gray-600 bg-gray-50 p-6 rounded-2xl border border-gray-100 whitespace-pre-line">
+                    {club.PhamViHoatDong}
+                  </div>
+                </section>
+              )}
+
+              {club.QuyenLoiTrachNhiem && (
+                <section>
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-indigo-500" /> Quyền lợi & Trách nhiệm thành viên
+                  </h2>
+                  <div className="prose prose-indigo text-gray-600 bg-gray-50 p-6 rounded-2xl border border-gray-100 whitespace-pre-line">
+                    {club.QuyenLoiTrachNhiem}
+                  </div>
+                </section>
+              )}
             </div>
 
             <div className="space-y-6">

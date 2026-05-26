@@ -110,6 +110,12 @@ CREATE TABLE CAULACBO (
     SoThanhVienToiDa INT,
     LinhVuc NVARCHAR(50),
     TrangThai NVARCHAR(50),
+    TenTiengAnh NVARCHAR(150),
+    TenVietTat NVARCHAR(20),
+    Slogan NVARCHAR(200),
+    TonChiMucDich NVARCHAR(MAX),
+    PhamViHoatDong NVARCHAR(MAX),
+    QuyenLoiTrachNhiem NVARCHAR(MAX),
     CONSTRAINT FK_CLB_DVQL FOREIGN KEY (maDVQL) REFERENCES DONVIQUANLY(maDVQL) 
         ON UPDATE CASCADE ON DELETE NO ACTION
 );
@@ -180,6 +186,26 @@ CREATE TABLE SU_KIEN (
     CONSTRAINT FK_SK_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) 
         ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+CREATE TABLE DANGKY_MO_CLB (
+    MaDKMo VARCHAR(13) PRIMARY KEY,
+    MaND VARCHAR(13) NOT NULL,               -- Sinh viên nộp đơn (Chủ nhiệm tương lai)
+    MaDVQL VARCHAR(13) NOT NULL,             -- Khoa/Đơn vị quản lý duyệt vòng 1
+    TenCLB NVARCHAR(150) NOT NULL,
+    LinhVuc NVARCHAR(50),
+    NoiDungHoSo NVARCHAR(MAX) NOT NULL,      -- Chứa toàn bộ nội dung form (JSON string)
+    
+    -- Trạng thái duyệt
+    KhoaDuyet BIT DEFAULT 0,
+    PhongCTSVDuyet BIT DEFAULT 0,
+    TrangThai NVARCHAR(50) DEFAULT N'pending_faculty', -- pending_faculty, pending_student_affairs, approved, rejected
+    LyDoTuChoi NVARCHAR(MAX),
+    NgayTao DATETIME DEFAULT GETDATE(),
+    
+    CONSTRAINT FK_DKMo_ND FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND),
+    CONSTRAINT FK_DKMo_DVQL FOREIGN KEY (MaDVQL) REFERENCES DONVIQUANLY(maDVQL)
+);
+
 
 -- =============================================
 -- 4. TẠO CÁC BẢNG CHI TIẾT & LỊCH SỬ (CẤP 3)
@@ -253,7 +279,6 @@ CREATE TABLE YEU_CAU_THAM_GIA_CLB (
 );
 
 CREATE TABLE DANGKY_SUKIEN (
-    MaDK VARCHAR(13) PRIMARY KEY,
     MaSK VARCHAR(13),
     MaND VARCHAR(13),
     NgayDangKy DATETIME DEFAULT GETDATE(),
@@ -262,6 +287,7 @@ CREATE TABLE DANGKY_SUKIEN (
     NgayDuyet DATETIME,
     TrangThai NVARCHAR(50),
     GhiChu NVARCHAR(255),
+    CONSTRAINT PK_DK_SK PRIMARY KEY (MaSK, MaND),
     CONSTRAINT FK_DK_SK FOREIGN KEY (MaSK) REFERENCES SU_KIEN(MaSK) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT FK_DK_TaiKhoan FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION,
     CONSTRAINT FK_DK_NguoiDuyet FOREIGN KEY (NguoiDuyetID) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
@@ -462,19 +488,23 @@ GO
 -- ---------------------------------------------
 -- 5.9 Câu lạc bộ (Gán CLB Lập Trình cho Khoa Công Nghệ Số - DVQL0000002)
 -- ---------------------------------------------
-INSERT INTO CAULACBO (MaCLB, maDVQL, TenCLB, MoTa, NgayThanhLap, SoThanhVienToiDa, LinhVuc, TrangThai) VALUES
+INSERT INTO CAULACBO (MaCLB, maDVQL, TenCLB, MoTa, NgayThanhLap, SoThanhVienToiDa, LinhVuc, TrangThai, TenTiengAnh, TenVietTat, Slogan, TonChiMucDich, PhamViHoatDong, QuyenLoiTrachNhiem) VALUES
 ('CLB00000001', 'DVQL0000002', N'CLB Lập trình UTE',
     N'Câu lạc bộ dành cho sinh viên yêu thích lập trình, tổ chức các buổi workshop, hackathon và cuộc thi coding.',
-    '2018-09-01', 100, N'Công nghệ', N'Hoạt động'),
+    '2018-09-01', 100, N'Công nghệ', N'Hoạt động',
+    N'UTE Programming Club', N'UPC', N'Code for Life', N'Tạo môi trường học hỏi lập trình cho sinh viên.', N'Trong phạm vi trường UTE và các cuộc thi lập trình.', N'Học hỏi kiến thức, tham gia đầy đủ hoạt động của câu lạc bộ.'),
 ('CLB00000002', 'DVQL0000001', N'CLB Tiếng Anh UTE',
     N'Câu lạc bộ giúp sinh viên nâng cao kỹ năng tiếng Anh qua các hoạt động giao lưu, thuyết trình và tranh luận.',
-    '2017-03-15', 80,  N'Ngoại ngữ', N'Hoạt động'),
+    '2017-03-15', 80,  N'Ngoại ngữ', N'Hoạt động',
+    N'UTE English Club', N'UEC', N'Speak to Connect', N'Nâng cao khả năng giao tiếp và tự tin sử dụng tiếng Anh.', N'Toàn trường UTE và các buổi giao lưu ngoại khóa.', N'Rèn luyện tiếng Anh, chuẩn bị tốt nội dung bài thuyết trình.'),
 ('CLB00000003', 'DVQL0000001', N'CLB Thể thao UTE',
     N'Câu lạc bộ tổ chức các hoạt động thể dục thể thao: bóng đá, cầu lông, bơi lội và các giải đấu nội bộ.',
-    '2016-10-20', 150, N'Thể thao',  N'Hoạt động'),
+    '2016-10-20', 150, N'Thể thao',  N'Hoạt động',
+    N'UTE Sports Club', N'USC', N'Stronger Together', N'Rèn luyện sức khỏe và tinh thần thể thao cho sinh viên.', N'Tại các sân thể thao của trường UTE.', N'Tham gia tích cực và đúng giờ các buổi tập luyện định kỳ.'),
 ('CLB00000004', 'DVQL0000001', N'CLB Tình nguyện UTE',
     N'Câu lạc bộ tổ chức các hoạt động tình nguyện, từ thiện và hỗ trợ cộng đồng.',
-    '2019-05-01', 120, N'Tình nguyện', N'Hoạt động');
+    '2019-05-01', 120, N'Tình nguyện', N'Hoạt động',
+    N'UTE Volunteer Club', N'UVC', N'Share the Love', N'Đóng góp sức trẻ hỗ trợ cộng đồng và người có hoàn cảnh khó khăn.', N'Trong và ngoài trường UTE, các địa bàn vùng cao.', N'Tham gia tích cực và có trách nhiệm trong các chiến dịch tình nguyện.');
 GO
 
 -- ---------------------------------------------
@@ -482,7 +512,7 @@ GO
 -- ---------------------------------------------
 INSERT INTO THANH_VIEN (MaTV, MaCLB, MaND, VaiTroCLB, NgayThamGia, TrangThai) VALUES
 ('TV000000001', 'CLB00000001', 'SV210000001', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
-('TV000000002', 'CLB00000001', 'SV210000002', N'Phó chủ nhiệm','2021-10-01', N'Hoạt động'),
+('TV000000002', 'CLB00000001', 'SV210000002', N'Thành viên',   '2021-10-01', N'Hoạt động'),
 ('TV000000003', 'CLB00000001', 'SV210000003', N'Thành viên',   '2022-01-15', N'Hoạt động'),
 ('TV000000004', 'CLB00000002', 'SV210000004', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
 ('TV000000005', 'CLB00000002', 'SV220000005', N'Thành viên',   '2022-09-05', N'Hoạt động'),
@@ -498,37 +528,36 @@ INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, 
 ('SK000000001', 'CLB00000001', N'Workshop: Nhập môn ReactJS', N'Buổi workshop thực hành xây dựng ứng dụng web với ReactJS.', '2026-06-10 08:00', '2026-06-10 11:30', N'Phòng Lab 201 - Nhà A', 40, 0, N'Workshop', N'sap_dien_ra', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
 ('SK000000002', 'CLB00000001', N'Hackathon UTE 2026', N'Cuộc thi lập trình 24 giờ với chủ đề "Chuyển đổi số trong giáo dục".', '2026-06-20 07:00', '2026-06-21 07:00', N'Hội trường A - Tầng 1', 60, 5000000, N'Cuộc thi', N'sap_dien_ra', 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&auto=format&fit=crop&q=60', 15, 1, 1),
 ('SK000000003', 'CLB00000002', N'English Speaking Club - Tháng 6', N'Buổi sinh hoạt tiếng Anh hàng tháng.', '2026-06-15 14:00', '2026-06-15 16:30', N'Phòng 305 - Nhà B', 30, 0, N'Sinh hoạt', N'sap_dien_ra', 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
-('SK000000004', 'CLB00000003', N'Giải bóng đá mini UTE Cup 2026', N'Giải đấu bóng đá mini dành cho sinh viên toàn trường.', '2026-07-05 07:30', '2026-07-05 17:00', N'Sân thể thao trường', 100, 200000, N'Thể thao', N'sap_dien_ra', 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=60', 10, 1, 1),
+('SK000000004', 'CLB00000003', N'Giải bóng đá mini UTE Cup 2026', N'Giải đấu bóng đá mini dành cho sinh viên toàn trường.', '2026-07-05 07:30', '2026-07-05 17:00', N'Sân thể thao trường', 100, 200000, N'Thể thao', N'sap_dien_ra', 'https://file3.qdnd.vn/data/images/0/2023/03/23/hieu_tv/ronaldo.jpg', 10, 1, 1),
 ('SK000000005', 'CLB00000004', N'Ngày hội Tình nguyện Hè 2026', N'Hoạt động tình nguyện dọn dẹp môi trường và tặng quà.', '2026-07-15 06:00', '2026-07-15 17:00', N'Huyện Hòa Vang, Đà Nẵng', 50, 0, N'Tình nguyện', N'sap_dien_ra', 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&auto=format&fit=crop&q=60', 15, 1, 1),
-('SK000000006', 'CLB00000001', N'Khóa học Git & GitHub cơ bản', N'Khóa học 3 buổi về quản lý mã nguồn với Git và GitHub.', '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra', 'https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
+('SK000000006', 'CLB00000001', N'Khóa học Git & GitHub cơ bản', N'Khóa học 3 buổi về quản lý mã nguồn với Git và GitHub.', '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra', 'https://files.fullstack.edu.vn/f8-prod/blog_posts/5919/63a5914b95264.png', 5, 1, 1),
 ('SK000000007', 'CLB00000002', N'Cuộc thi hùng biện tiếng Anh 2025', N'Cuộc thi hùng biện tiếng Anh cấp trường năm học 2024-2025.', '2025-12-10 08:00', '2025-12-10 17:00', N'Hội trường B', 80, 0, N'Cuộc thi', N'da_ket_thuc', 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=60', 10, 1, 1),
-('SK000000008', 'CLB00000001', N'Seminar: AI và Machine Learning', N'Buổi seminar về ứng dụng AI trong thực tế.', '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra', 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800&auto=format&fit=crop&q=60', 5, 1, 1);
+('SK000000008', 'CLB00000001', N'Seminar: AI và Machine Learning', N'Buổi seminar về ứng dụng AI trong thực tế.', '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra', 'https://base.vn/wp-content/uploads/2025/03/cong-nghe-ai.webp', 5, 1, 1);
 GO
 
 -- ---------------------------------------------
 -- 5.12 Đăng ký sự kiện mẫu
 -- ---------------------------------------------
-INSERT INTO DANGKY_SUKIEN (MaDK, MaSK, MaND, NgayDangKy, NguoiDuyetID, NgayDuyet, TrangThai, LyDoDangKy) VALUES
-('DK000000001', 'SK000000001', 'SV210000001', '2026-05-20 09:00', 'CB000000001', '2026-05-20 10:00', N'da_duyet',      N'Muốn học ReactJS'),
-('DK000000002', 'SK000000002', 'SV210000001', '2026-05-21 10:00', 'CB000000001', '2026-05-21 11:00', N'da_duyet',      N'Muốn tham gia hackathon'),
-('DK000000003', 'SK000000001', 'SV210000002', '2026-05-20 11:00', 'CB000000001', '2026-05-20 12:00', N'da_duyet',      N'Quan tâm đến ReactJS'),
-('DK000000004', 'SK000000001', 'SV210000003', '2026-05-22 08:30', NULL,          NULL,               N'cho_duyet',     N'Muốn học lập trình web'),
-('DK000000005', 'SK000000003', 'SV210000004', '2026-05-23 14:00', 'CB000000001', '2026-05-23 15:00', N'da_duyet',      N'Muốn luyện tiếng Anh'),
-('DK000000006', 'SK000000003', 'SV220000005', '2026-05-24 09:00', NULL,          NULL,               N'da_huy',        N'Đăng ký thử'),
-('DK000000007', 'SK000000004', 'SV220000006', '2026-05-25 10:00', 'CB000000001', '2026-05-25 11:00', N'da_duyet',      N'Thích bóng đá'),
-('DK000000008', 'SK000000006', 'SV220000007', '2026-04-30 08:00', 'CB000000001', '2026-04-30 09:00', N'da_diem_danh',  N'Muốn học Git'),
-('DK000000009', 'SK000000008', 'SV210000001', '2026-05-01 08:00', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000010', 'SK000000008', 'SV210000002', '2026-05-01 08:05', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000011', 'SK000000008', 'SV210000003', '2026-05-01 08:10', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000012', 'SK000000008', 'SV210000004', '2026-05-01 08:15', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000013', 'SK000000008', 'SV220000005', '2026-05-01 08:20', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000014', 'SK000000008', 'SV220000006', '2026-05-01 08:25', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000015', 'SK000000008', 'SV220000007', '2026-05-01 08:30', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000016', 'SK000000008', 'SV220000008', '2026-05-01 08:35', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000017', 'SK000000008', 'SV210000009', '2026-05-01 08:40', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000018', 'SK000000008', 'CB000000001', '2026-05-01 08:45', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000019', 'SK000000008', 'CB000000002', '2026-05-01 08:50', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('DK000000020', 'SK000000008', 'SV210000001', NULL, NULL, NULL, N'da_duyet', N'Quan tâm AI');
+INSERT INTO DANGKY_SUKIEN (MaSK, MaND, NgayDangKy, NguoiDuyetID, NgayDuyet, TrangThai, LyDoDangKy) VALUES
+('SK000000001', 'SV210000001', '2026-05-20 09:00', 'CB000000001', '2026-05-20 10:00', N'da_duyet',      N'Muốn học ReactJS'),
+('SK000000002', 'SV210000001', '2026-05-21 10:00', 'CB000000001', '2026-05-21 11:00', N'da_duyet',      N'Muốn tham gia hackathon'),
+('SK000000001', 'SV210000002', '2026-05-20 11:00', 'CB000000001', '2026-05-20 12:00', N'da_duyet',      N'Quan tâm đến ReactJS'),
+('SK000000001', 'SV210000003', '2026-05-22 08:30', NULL,          NULL,               N'cho_duyet',     N'Muốn học lập trình web'),
+('SK000000003', 'SV210000004', '2026-05-23 14:00', 'CB000000001', '2026-05-23 15:00', N'da_duyet',      N'Muốn luyện tiếng Anh'),
+('SK000000003', 'SV220000005', '2026-05-24 09:00', NULL,          NULL,               N'da_huy',        N'Đăng ký thử'),
+('SK000000004', 'SV220000006', '2026-05-25 10:00', 'CB000000001', '2026-05-25 11:00', N'da_duyet',      N'Thích bóng đá'),
+('SK000000006', 'SV220000007', '2026-04-30 08:00', 'CB000000001', '2026-04-30 09:00', N'da_diem_danh',  N'Muốn học Git'),
+('SK000000008', 'SV210000001', '2026-05-01 08:00', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'SV210000002', '2026-05-01 08:05', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'SV210000003', '2026-05-01 08:10', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'SV210000004', '2026-05-01 08:15', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'SV220000005', '2026-05-01 08:20', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'SV220000006', '2026-05-01 08:25', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'SV220000007', '2026-05-01 08:30', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'SV220000008', '2026-05-01 08:35', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'SV210000009', '2026-05-01 08:40', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'CB000000001', '2026-05-01 08:45', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', 'CB000000002', '2026-05-01 08:50', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI');
 GO
 
 -- ---------------------------------------------
@@ -548,6 +577,80 @@ INSERT INTO THONG_BAO_NGUOIDUNG (MaTB, MaND, DaDoc, NgayDoc) VALUES
 ('TB000000002', 'SV210000003', 1, '2026-05-20 10:00');
 GO
 
+INSERT INTO HOSO (MaHoSo, maCLB, maNguoiGui, maNguoiDuyet, loaiHoSo, TieuDe, NoiDung, FileDinhKem, TrangThai, NgayGui, NgayDuyet, LyDoTuChoi) VALUES
+-- 1. Báo cáo đã được CTSV duyệt (Của CLB Lập trình)
+('HS000000001', 'CLB00000001', 'SV210000001', 'CB000000003', N'Báo cáo Tháng', 
+ N'Báo cáo hoạt động tháng 4/2026', 
+ N'Tổng hợp các hoạt động của CLB trong tháng 4 bao gồm: Lên kế hoạch sự kiện Hackathon và tổ chức trainning nội bộ.', 
+ '/uploads/bao-cao-thang-4.pdf', 'approved', '2026-05-02 09:00', '2026-05-05 14:00', NULL),
+
+-- 2. Báo cáo vừa nộp, đang chờ CTSV duyệt (Của CLB Lập trình)
+('HS000000002', 'CLB00000001', 'SV210000001', NULL, N'Báo cáo Tháng', 
+ N'Báo cáo hoạt động tháng 5/2026', 
+ N'Báo cáo các sự kiện đã tổ chức thành công trong tháng 5 như Workshop ReactJS và các thu chi liên quan.', 
+ '/uploads/bao-cao-thang-5.pdf', 'submitted', '2026-05-25 10:30', NULL, NULL),
+
+-- 3. Báo cáo đang viết dở (Bản nháp - Của CLB Lập trình)
+('HS000000003', 'CLB00000001', 'SV210000001', NULL, N'Tổng kết Học kỳ', 
+ N'Báo cáo tổng kết học kỳ II năm học 2025-2026', 
+ N'Đang tổng hợp số liệu thành viên và các thành tích đạt được trong học kỳ vừa qua...', 
+ NULL, 'draft', '2026-05-25 15:00', NULL, NULL),
+
+-- 4. Đơn giải thể (Của CLB Tiếng Anh)
+('HS000000004', 'CLB00000002', 'SV210000004', NULL, N'Đơn giải thể', 
+ N'Đơn xin giải thể CLB Tiếng Anh UTE', 
+ N'Kính gửi Phòng CTSV, do hiện tại Ban chủ nhiệm không còn đủ nhân sự nòng cốt để duy trì các hoạt động định kỳ, chúng em xin phép nộp đơn xin tạm ngừng hoạt động và giải thể CLB.', 
+ '/uploads/don-giai-the.pdf', 'submitted', '2026-05-20 08:00', NULL, NULL),
+
+-- 5. Báo cáo bị từ chối (Yêu cầu làm lại - Của CLB Thể Thao)
+('HS000000005', 'CLB00000003', 'SV220000006', 'CB000000003', N'Tổng kết Nhiệm kỳ', 
+ N'Báo cáo tổng kết nhiệm kỳ 2024-2025', 
+ N'Tổng kết các giải đấu đã tổ chức.', 
+ '/uploads/bao-cao-nhiem-ky.pdf', 'tu_choi', '2026-01-10 09:00', '2026-01-12 10:00', N'Báo cáo thiếu phần kê khai tài chính, yêu cầu bổ sung và nộp lại.');
+
+ -- =============================================
+-- 5.14 Tài sản (cơ sở vật chất)
+-- =============================================
+INSERT INTO TAI_SAN (MaTS, MaDVQL, TenTS, SoLuongTong) VALUES
+('TS000000001', 'DVQL0000001', N'Máy chiếu Epson EB-2250U', 5),
+('TS000000002', 'DVQL0000001', N'Bộ loa di động kèm mic Sony', 3),
+('TS000000003', 'DVQL0000006', N'Bàn ghế nhựa sự kiện (bộ)', 100),
+('TS000000004', 'DVQL0000002', N'Cáp chuyển đổi HDMI/VGA', 10),
+('TS000000005', 'DVQL0000001', N'Bảng Flipchart', 4);
+GO
+
+-- =============================================
+-- 5.15 Quản lý Tài chính (Thu / Chi của CLB)
+-- =============================================
+INSERT INTO TAI_CHINH (MaTC, MaCLB, TenTaiChinh, Nam, TongThu, TongChi, NgayBatDau, TrangThai, NgayTao) VALUES
+('TC000000001', 'CLB00000001', N'Thu quỹ thành viên tháng 4/2026', 2026, 1500000, 0, '2026-04-05', N'Hoạt động', '2026-04-05'),
+('TC000000002', 'CLB00000001', N'Chi mua bánh kẹo, nước sinh hoạt', 2026, 0, 350000, '2026-04-10', N'Hoạt động', '2026-04-10'),
+('TC000000003', 'CLB00000001', N'Tài trợ từ Khoa CNS', 2026, 5000000, 0, '2026-05-15', N'Hoạt động', '2026-05-15'),
+('TC000000004', 'CLB00000001', N'Đặt cọc thuê hội trường', 2026, 0, 1000000, '2026-05-18', N'Hoạt động', '2026-05-18'),
+('TC000000005', 'CLB00000001', N'Chi tiền in banner', 2026, 0, 450000, '2026-05-19', N'Hoạt động', '2026-05-19');
+GO
+
+-- =============================================
+-- 5.16 Phiếu mượn trả cơ sở vật chất
+-- =============================================
+INSERT INTO PHIEU_MUON_TRA (MaPhieu, MaCLB, MaSK, NguoiMuonID, NgayTaoPhieu, NgayTraDuKien, trangThaiPhieu) VALUES
+('PM000000001', 'CLB00000001', 'SK000000001', 'SV210000001', '2026-05-09', '2026-05-10', N'Đã trả'),
+('PM000000002', 'CLB00000001', 'SK000000002', 'SV210000002', '2026-05-19', '2026-05-22', N'Đang mượn'), 
+('PM000000003', 'CLB00000001', NULL, 'SV210000003', '2026-05-10', '2026-05-12', N'Đang mượn'), 
+('PM000000004', 'CLB00000002', 'SK000000003', 'SV210000004', '2026-05-14', '2026-05-16', N'Đã trả');
+GO
+
+-- =============================================
+-- 5.17 Chi tiết phiếu mượn
+-- =============================================
+INSERT INTO CHI_TIET_PHIEU_MUON (MaPhieu, MaTS, SoLuongMuon, tinhTrang) VALUES
+('PM000000001', 'TS000000001', 1, N'Tốt'), 
+('PM000000001', 'TS000000004', 2, N'Tốt'), 
+('PM000000002', 'TS000000002', 2, N'Tốt'), 
+('PM000000002', 'TS000000003', 30, N'Tốt'), 
+('PM000000003', 'TS000000005', 1, N'Tốt'), 
+('PM000000004', 'TS000000002', 1, N'Tốt'); 
+GO
 -- =============================================
 -- KIỂM TRA LẠI DỮ LIỆU
 -- =============================================
@@ -558,3 +661,6 @@ select * from DONVIQUANLY;
 select * from CANBO;
 select * from TAI_KHOAN
 select * from NHIEM_VU
+select * from HOSO
+select * from TAI_SAN
+select * from CHI_TIET_PHIEU_MUON

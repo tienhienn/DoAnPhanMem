@@ -1,8 +1,8 @@
 /**
- * StudentAffairsPage - Phòng Công tác sinh viên (CTSV) cấp phép hoạt động sự kiện
+ * StudentAffairsPage - Phòng Công tác sinh viên (CTSV) cấp phép hoạt động sự kiện & thành lập CLB
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   FiCheck,
   FiX,
@@ -13,12 +13,13 @@ import {
   FiMessageSquare,
   FiDownload,
   FiChevronRight,
+  FiFileText,
+  FiBookOpen,
+  FiRefreshCw,
+  FiLoader,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
-import axios from "axios";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+import apiClient from "../../utils/apiClient";
 
 // ============================================
 // STATUS CONFIG
@@ -31,28 +32,28 @@ const STATUS_CONFIG = {
     badgeBg: "bg-slate-100",
     text: "text-slate-700",
   },
-  cho_duyet_khoa: {
+  pending_faculty: {
     label: "Chờ Khoa duyệt",
     bg: "bg-amber-50",
     border: "border-amber-200",
     badgeBg: "bg-amber-100",
     text: "text-amber-700",
   },
-  cho_duyet_ctsv: {
+  pending_student_affairs: {
     label: "Chờ CTSV duyệt",
     bg: "bg-blue-50",
     border: "border-blue-200",
     badgeBg: "bg-blue-100",
     text: "text-blue-700",
   },
-  da_duyet: {
-    label: "Đã cấp phép",
+  approved: {
+    label: "Đã phê duyệt",
     bg: "bg-emerald-50",
     border: "border-emerald-200",
     badgeBg: "bg-emerald-100",
     text: "text-emerald-700",
   },
-  tu_choi: {
+  rejected: {
     label: "Bị từ chối",
     bg: "bg-rose-50",
     border: "border-rose-200",
@@ -89,9 +90,6 @@ const STATUS_CONFIG = {
   },
 };
 
-// ============================================
-// FORMAT DATE HELPER
-// ============================================
 const formatDate = (dateString) => {
   if (!dateString) return "N/A";
   return new Date(dateString).toLocaleString("vi-VN", {
@@ -104,86 +102,9 @@ const formatDate = (dateString) => {
 };
 
 // ============================================
-// APPROVAL STEPPER COMPONENT
-// ============================================
-const ApprovalStepper = ({ status }) => {
-  // Chỉ định nghĩa 4 bước tới Cấp phép
-  const steps = [
-    { key: "draft", label: "Tạo mới", icon: "📝" },
-    { key: "cho_duyet_khoa", label: "Khoa duyệt", icon: "🏫" },
-    { key: "cho_duyet_ctsv", label: "CTSV duyệt", icon: "👥" },
-    { key: "da_duyet", label: "Cấp phép", icon: "✅" },
-  ];
-
-  const statusOrder = [
-    "draft",
-    "cho_duyet_khoa",
-    "cho_duyet_ctsv",
-    "da_duyet",
-    "sap_dien_ra",
-    "dang_dien_ra",
-    "da_ket_thuc",
-    "huy",
-  ];
-
-  let currentIndex = statusOrder.indexOf(status);
-  // Nếu trạng thái đã vượt qua mức "Cấp phép" (VD: đang diễn ra, kết thúc),
-  // vẫn giữ thanh tiến trình sáng full ở bước 4 (Cấp phép).
-  if (currentIndex > 3) currentIndex = 3;
-
-  return (
-    <div className="py-4">
-      <div className="flex items-center gap-1">
-        {steps.map((step, idx) => (
-          <div key={step.key} className="flex items-center flex-1">
-            <div
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all flex-shrink-0 ${
-                idx <= currentIndex
-                  ? "bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600 text-white shadow-lg"
-                  : "bg-slate-200 text-slate-500"
-              }`}
-            >
-              {step.icon}
-            </div>
-            <span
-              className={`ml-1 text-xs font-semibold whitespace-nowrap ${
-                idx <= currentIndex ? "text-cyan-600" : "text-slate-400"
-              }`}
-            >
-              {step.label}
-            </span>
-            {idx < steps.length - 1 && (
-              <div
-                className={`mx-2 flex-1 h-1 transition-all ${
-                  idx < currentIndex ? "bg-cyan-600" : "bg-slate-200"
-                }`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Hiển thị Badge trạng thái thực tế bên dưới nếu nó đang vận hành (Sắp/Đang diễn ra...) */}
-      {(status === "sap_dien_ra" ||
-        status === "dang_dien_ra" ||
-        status === "da_ket_thuc" ||
-        status === "huy") && (
-        <div className="mt-4 text-center">
-          <div
-            className={`text-sm font-semibold px-4 py-2 rounded-full inline-flex items-center justify-center border ${STATUS_CONFIG[status]?.badgeBg} ${STATUS_CONFIG[status]?.text} ${STATUS_CONFIG[status]?.border}`}
-          >
-            Trạng thái hiện tại: {STATUS_CONFIG[status]?.label}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ============================================
 // STAT CARD COMPONENT
 // ============================================
-const StatCard = ({ icon: Icon, label, value, color }) => {
+const StatCard = ({ icon: Icon, label, value, color, active, onClick }) => {
   const colorClasses = {
     amber: "bg-amber-50 border-amber-200 text-amber-700",
     emerald: "bg-emerald-50 border-emerald-200 text-emerald-700",
@@ -193,7 +114,11 @@ const StatCard = ({ icon: Icon, label, value, color }) => {
 
   return (
     <div
-      className={`rounded-2xl border p-6 backdrop-blur-sm transition-all hover:shadow-lg ${colorClasses[color]}`}
+      onClick={onClick}
+      className={`rounded-2xl border p-6 backdrop-blur-sm transition-all hover:shadow-lg cursor-pointer select-none
+        ${colorClasses[color]}
+        ${active ? "ring-2 ring-offset-2 ring-current shadow-lg scale-[1.02]" : ""}
+      `}
     >
       <div className="flex items-center justify-between">
         <div>
@@ -207,7 +132,7 @@ const StatCard = ({ icon: Icon, label, value, color }) => {
 };
 
 // ============================================
-// FINAL APPROVAL MODAL
+// FINAL APPROVAL MODAL (EVENTS)
 // ============================================
 const FinalApprovalModal = ({
   isOpen,
@@ -219,11 +144,14 @@ const FinalApprovalModal = ({
 }) => {
   const [opinion, setOpinion] = useState("");
 
+  useEffect(() => {
+    if (isOpen) setOpinion("");
+  }, [isOpen, event?.MaSK]);
+
   if (!isOpen || !event) return null;
 
   const handleApprove = () => {
     onApprove(event.MaSK, opinion);
-    setOpinion("");
   };
 
   const handleReject = () => {
@@ -232,154 +160,79 @@ const FinalApprovalModal = ({
       return;
     }
     onReject(event.MaSK, opinion);
-    setOpinion("");
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleString("vi-VN");
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-lg"
-        onClick={onClose}
+        onClick={!loading ? onClose : undefined}
       />
       <div className="relative bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[95vh] overflow-y-auto border border-slate-100">
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 px-8 py-8 flex items-center justify-between rounded-t-3xl z-10">
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 px-8 py-6 flex items-center justify-between rounded-t-3xl z-10 text-white">
           <div>
-            <h2 className="text-2xl font-bold text-white">Chi Tiết Sự Kiện</h2>
+            <h2 className="text-2xl font-bold">Phê Duyệt Sự Kiện Cuối Cùng</h2>
             <p className="text-blue-100 text-sm mt-1">
-              Thông tin chi tiết & Phê duyệt cuối cùng từ Phòng CTSV
+              Phê duyệt cấp Phòng CTSV
             </p>
           </div>
           <button
             onClick={onClose}
+            disabled={loading}
             className="p-2 rounded-lg hover:bg-white/20 transition-colors"
           >
-            <FiX className="w-6 h-6 text-white" />
+            <FiX className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-8 space-y-8">
-          <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 rounded-2xl p-6 border border-blue-100">
-            <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
-              Tiến trình phê duyệt
-            </h3>
-            <ApprovalStepper status={event.TrangThai} />
+        <div className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2 bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                Tên sự kiện
+              </p>
+              <p className="text-lg font-bold text-slate-900">{event.TenSK}</p>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                CLB tổ chức
+              </p>
+              <p className="text-sm font-semibold text-teal-700">
+                {event.TenCLB || event.MaCLB}
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                Thời gian
+              </p>
+              <p className="text-sm font-semibold text-slate-900">
+                {formatDate(event.ThoiGianBatDau)}
+              </p>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-1">
+                Địa điểm
+              </p>
+              <p className="text-sm font-semibold text-slate-900">
+                {event.DiaDiem}
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-6">
+          {event.MoTa && (
             <div>
-              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">
-                Thông tin sự kiện
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Tên sự kiện
-                  </p>
-                  <p className="text-lg font-bold text-slate-900">
-                    {event.TenSK}
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    CLB tổ chức
-                  </p>
-                  <p className="text-sm font-semibold text-teal-700">
-                    {event.TenCLB || event.MaCLB}
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Loại sự kiện
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {event.LoaiSK || "N/A"}
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Thời gian bắt đầu
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {formatDate(event.ThoiGianBatDau)}
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Thời gian kết thúc
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {formatDate(event.ThoiGianKetThuc)}
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Địa điểm
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {event.DiaDiem || "N/A"}
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Chỉ tiêu sinh viên
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {event.SoNguoiToiDa || "N/A"} sinh viên
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Điểm rèn luyện
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {event.DiemRenLuyen || 0} điểm
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Chi phí dự kiến
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} đ
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">
                 Mô tả chi tiết
               </h3>
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                  {event.MoTa || "Không có mô tả"}
+                  {event.MoTa}
                 </p>
               </div>
             </div>
+          )}
 
-            {/* Hiển thị lý do nếu bị từ chối trước đó */}
-            {event.TrangThai === "tu_choi" && event.LyDoTuChoi && (
-              <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
-                <div className="flex gap-3">
-                  <FiAlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-rose-900 mb-1">
-                      Lý do từ chối trước đó:
-                    </p>
-                    <p className="text-sm text-rose-700">{event.LyDoTuChoi}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Chỉ hiện Ô ghi chú khi đang chờ CTSV duyệt */}
-          {event.TrangThai === "cho_duyet_ctsv" && (
+          {event.TrangThai === "pending_student_affairs" && (
             <div>
               <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
                 <FiMessageSquare className="inline w-4 h-4 mr-2" />Ý kiến chỉ
@@ -389,7 +242,7 @@ const FinalApprovalModal = ({
                 value={opinion}
                 onChange={(e) => setOpinion(e.target.value)}
                 placeholder="Nhập ý kiến chỉ đạo hoặc lý do không cấp phép..."
-                rows="5"
+                rows="4"
                 disabled={loading}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
               />
@@ -405,24 +258,21 @@ const FinalApprovalModal = ({
           >
             Đóng
           </button>
-
-          {event.TrangThai === "cho_duyet_ctsv" && (
+          {event.TrangThai === "pending_student_affairs" && (
             <>
               <button
                 onClick={handleReject}
                 disabled={loading}
-                className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md flex items-center gap-2"
               >
-                <FiX className="w-4 h-4" />{" "}
-                {loading ? "Đang xử lý..." : "Từ chối"}
+                <FiX className="w-4 h-4" /> Từ chối cấp phép
               </button>
               <button
                 onClick={handleApprove}
                 disabled={loading}
-                className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md flex items-center gap-2"
               >
-                <FiCheck className="w-4 h-4" />{" "}
-                {loading ? "Đang xử lý..." : "Cấp phép hoạt động"}
+                <FiCheck className="w-4 h-4" /> Đồng ý cấp phép
               </button>
             </>
           )}
@@ -433,80 +283,288 @@ const FinalApprovalModal = ({
 };
 
 // ============================================
-// EVENT CARD COMPONENT (PENDING)
+// CLUB REGISTRATION APPROVAL MODAL (CTSV)
 // ============================================
-const EventCard = ({ event, onSelect }) => {
+const ClubApprovalModal = ({
+  isOpen,
+  reg,
+  onClose,
+  onApprove,
+  onReject,
+  loading,
+}) => {
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (isOpen) setNotes("");
+  }, [isOpen, reg?.MaDKMo]);
+
+  if (!isOpen || !reg) return null;
+
+  const data = reg.NoiDungHoSo || {};
+  const step1 = data.step1 || {};
+  const step2 = data.step2 || {};
+  const step3 = data.step3 || {};
+  const step4 = data.step4 || {};
+
   return (
-    <div
-      onClick={() => onSelect(event)}
-      className="group bg-white rounded-2xl border border-slate-200 hover:border-teal-300 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer"
-    >
-      <div className="h-1 bg-gradient-to-r from-teal-600 to-cyan-600" />
-      <div className="p-6 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-600 transition-colors line-clamp-2">
-              {event.TenSK}
-            </h3>
-            <p className="text-sm font-medium text-teal-600 mt-1">
-              {event.TenCLB || event.MaCLB}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-lg"
+        onClick={!loading ? onClose : undefined}
+      />
+      <div className="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-slate-100 flex flex-col">
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 flex items-center justify-between rounded-t-3xl z-10 text-white flex-shrink-0">
+          <div>
+            <h2 className="text-2xl font-bold">
+              Thẩm Định Quyết Định Thành Lập CLB
+            </h2>
+            <p className="text-blue-100 text-sm mt-1">
+              Hồ sơ: {reg.TenCLB} (Đơn vị quản lý: {reg.tenDVQL})
             </p>
           </div>
-          <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full whitespace-nowrap">
-            Chờ cấp phép
-          </span>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="p-2 rounded-lg hover:bg-white/20 transition-colors"
+          >
+            <FiX className="w-6 h-6" />
+          </button>
         </div>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-slate-600">
-            <FiCalendar className="w-4 h-4 text-teal-600 flex-shrink-0" />
-            <span className="truncate">{formatDate(event.ThoiGianBatDau)}</span>
-          </div>
-          <div className="flex items-center gap-2 text-slate-600">
-            <span className="text-xs font-semibold">
-              {event.DiemRenLuyen || 0} điểm RL
-            </span>
-          </div>
-        </div>
-        <p className="text-sm text-slate-600 line-clamp-2">{event.MoTa}</p>
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-          <span className="text-xs font-semibold text-slate-600">
-            {event.SoNguoiToiDa || "N/A"} chỗ
-          </span>
-          <FiChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-600 transition-colors" />
-        </div>
-      </div>
-    </div>
-  );
-};
 
-// ============================================
-// APPROVED EVENT CARD COMPONENT
-// ============================================
-const ApprovedEventCard = ({ event }) => {
-  const config = STATUS_CONFIG[event.TrangThai] || STATUS_CONFIG.da_duyet;
+        {/* Content */}
+        <div className="p-8 space-y-8 overflow-y-auto flex-1">
+          {/* Tờ trình */}
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+              <FiFileText className="text-blue-600" /> 1. Tờ trình thành lập
+              (BM-CLB-01)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Tên Câu lạc bộ dự kiến
+                </p>
+                <p className="text-sm font-bold text-slate-800 mt-1">
+                  {reg.TenCLB}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Lĩnh vực hoạt động
+                </p>
+                <p className="text-sm font-semibold text-slate-800 mt-1">
+                  {reg.LinhVuc}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Tính cấp thiết
+                </p>
+                <p className="text-sm text-slate-700 leading-relaxed mt-1 whitespace-pre-wrap">
+                  {step1.tinhCapThiet || reg.MoTa}
+                </p>
+              </div>
+            </div>
+          </div>
 
-  return (
-    <div
-      className={`bg-white rounded-xl border p-4 hover:shadow-md transition-all ${config.border}`}
-    >
-      <div className="flex items-start justify-between mb-2 gap-2">
-        <h3 className="font-semibold text-slate-900 line-clamp-2">
-          {event.TenSK}
-        </h3>
-        <span
-          className={`px-2 py-1 text-[10px] font-bold rounded-full whitespace-nowrap ${config.badgeBg} ${config.text}`}
-        >
-          {config.label}
-        </span>
-      </div>
-      <p className="text-xs font-medium text-teal-600 mb-3">
-        {event.TenCLB || event.MaCLB}
-      </p>
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>Bắt đầu: {formatDate(event.ThoiGianBatDau)}</span>
-        <span className="font-semibold text-slate-700">
-          {event.SoNguoiToiDa} Slot
-        </span>
+          {/* Điều lệ */}
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+              <FiBookOpen className="text-blue-600" /> 2. Điều lệ hoạt động CLB
+              (BM-CLB-02)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Tên tiếng Anh
+                </p>
+                <p className="text-sm text-slate-800 mt-1">
+                  {step2.tenTiengAnh || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Tên viết tắt
+                </p>
+                <p className="text-sm text-slate-800 mt-1">
+                  {step2.tenVietTat || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Slogan
+                </p>
+                <p className="text-sm text-slate-800 mt-1">
+                  {step2.slogan || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-3">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Giới thiệu chung
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step2.gioiThieu || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-3">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Tôn chỉ, mục đích
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step2.tonChiMucDich || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-3">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Nguyên tắc & Quyền lợi thành viên
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step2.quyenLoiTrachNhiem || "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* BCN lâm thời */}
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+              <FiUsers className="text-blue-600" /> 3. Danh sách Ban chủ nhiệm
+              lâm thời (BM-CLB-03)
+            </h3>
+            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+              <table className="min-w-full divide-y divide-slate-200 text-sm text-left">
+                <thead className="bg-slate-50 font-semibold text-slate-600">
+                  <tr>
+                    <th className="px-4 py-2">STT</th>
+                    <th className="px-4 py-2">Họ và tên</th>
+                    <th className="px-4 py-2">Giới tính</th>
+                    <th className="px-4 py-2">Số điện thoại</th>
+                    <th className="px-4 py-2">Email</th>
+                    <th className="px-4 py-2">Chức vụ dự kiến</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {step3.bcnLamThoi?.map((m, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-2.5 font-medium">{idx + 1}</td>
+                      <td className="px-4 py-2.5 font-semibold text-slate-900">
+                        {m.hoTen}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600">
+                        {m.gioiTinh}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600">
+                        {m.sdt || "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600">{m.email}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-bold">
+                          {m.chucVu}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Kế hoạch */}
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+              <FiCalendar className="text-blue-600" /> 4. Kế hoạch hoạt động &
+              Kinh phí (BM-CLB-05)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Mục đích yêu cầu
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step4.mucDichYeuCau || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Tiến độ thực hiện
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step4.tienDo || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Nội dung chi tiết
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step4.noiDungHoatDong || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Kinh phí dự toán
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step4.kinhPhiHoatDong || "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          {reg.TrangThai === "pending_student_affairs" && (
+            <div className="space-y-3">
+              <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide">
+                Ghi chú phê duyệt cuối cùng (Bắt buộc khi từ chối)
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Nhập ý kiến chỉ đạo hoặc lý do từ chối quyết định thành lập..."
+                rows="4"
+                disabled={loading}
+                className="w-full px-4 py-3 border border-slate-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-slate-200 bg-slate-50 px-8 py-6 flex items-center justify-end gap-3 rounded-b-3xl flex-shrink-0">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="px-6 py-2.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-100 transition-all disabled:opacity-50"
+          >
+            Đóng
+          </button>
+          {reg.TrangThai === "pending_student_affairs" && (
+            <>
+              <button
+                onClick={() => {
+                  if (!notes.trim()) {
+                    alert("Vui lòng điền lý do từ chối quyết định.");
+                    return;
+                  }
+                  onReject(reg.MaDKMo, notes);
+                }}
+                disabled={loading}
+                className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md flex items-center gap-2"
+              >
+                <FiX className="w-4 h-4" /> Từ chối mở CLB
+              </button>
+              <button
+                onClick={() => onApprove(reg.MaDKMo, notes)}
+                disabled={loading}
+                className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md flex items-center gap-2"
+              >
+                <FiCheck className="w-4 h-4" /> Quyết định thành lập CLB
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -517,234 +575,435 @@ const ApprovedEventCard = ({ event }) => {
 // ============================================
 export default function StudentAffairsPage() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("events"); // "events" | "clubs"
   const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Modals
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+
+  const [selectedReg, setSelectedReg] = useState(null);
+  const [isRegModalOpen, setIsRegModalOpen] = useState(false);
+
+  const [activeFilter, setActiveFilter] = useState("pending_student_affairs");
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      if (activeTab === "events") {
+        const statuses = ["pending_student_affairs", "approved", "rejected"];
+        const responses = await Promise.all(
+          statuses.map((s) =>
+            apiClient.get("/api/admin/events", {
+              params: { limit: 100, status: s },
+            }),
+          ),
+        );
+        const all = responses.flatMap((r) => r.data?.data?.events || []);
+        const map = new Map();
+        all.forEach((e) => map.set(e.MaSK, e));
+        setEvents([...map.values()]);
+      } else {
+        const res = await apiClient.get("/api/clubs/admin/registrations");
+        if (res.data.success) {
+          setRegistrations(res.data.data);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching admin data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab]);
+
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
-  const fetchEvents = async () => {
+  // ── Stats (Events) ─────────────────────────────────────────────
+  const eventPendingCount = events.filter(
+    (e) =>
+      e.TrangThai === "pending_student_affairs" &&
+      e.KhoaDuyet &&
+      !e.PhongCTSVDuyet,
+  ).length;
+  const eventApprovedCount = events.filter(
+    (e) =>
+      (e.TrangThai === "approved" ||
+        e.TrangThai === "sap_dien_ra" ||
+        e.TrangThai === "dang_dien_ra") &&
+      e.KhoaDuyet &&
+      e.PhongCTSVDuyet,
+  ).length;
+  const eventRejectedCount = events.filter(
+    (e) => e.TrangThai === "rejected",
+  ).length;
+
+  const filteredEvents = events.filter((e) => {
+    if (activeFilter === "pending_student_affairs") {
+      return (
+        e.TrangThai === "pending_student_affairs" &&
+        e.KhoaDuyet &&
+        !e.PhongCTSVDuyet
+      );
+    }
+    if (activeFilter === "approved") {
+      return (
+        (e.TrangThai === "approved" ||
+          e.TrangThai === "sap_dien_ra" ||
+          e.TrangThai === "dang_dien_ra") &&
+        e.KhoaDuyet &&
+        e.PhongCTSVDuyet
+      );
+    }
+    return e.TrangThai === "rejected";
+  });
+
+  // ── Stats (Clubs) ──────────────────────────────────────────────
+  const clubPendingCount = registrations.filter(
+    (r) => r.TrangThai === "pending_student_affairs",
+  ).length;
+  const clubApprovedCount = registrations.filter(
+    (r) => r.TrangThai === "approved",
+  ).length;
+  const clubRejectedCount = registrations.filter(
+    (r) => r.TrangThai === "rejected",
+  ).length;
+
+  const filteredRegistrations = registrations.filter(
+    (r) => r.TrangThai === activeFilter,
+  );
+
+  const filterLabel = {
+    pending_student_affairs: "Chờ CTSV duyệt",
+    approved: "Đã phê duyệt thành lập",
+    rejected: "Bị từ chối",
+  };
+
+  // ── Handlers (Events) ──────────────────────────────────────────
+  const handleEventApprove = async (maSK, opinion) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/ctsv/events`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      await apiClient.patch(`/api/admin/events/${maSK}/review`, {
+        status: "approved",
+        feedback: opinion,
       });
-      setEvents(response.data.data || []);
+      alert("Cấp phép hoạt động sự kiện thành công!");
+      setIsEventModalOpen(false);
+      fetchData();
     } catch (err) {
-      console.error("Error fetching CTSV events:", err);
+      alert("Lỗi: " + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (maSK, opinion) => {
+  const handleEventReject = async (maSK, opinion) => {
     try {
       setLoading(true);
-      await axios.patch(
-        `${API_BASE_URL}/ctsv/events/${maSK}/approve`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
-      );
-      alert("Cấp phép hoạt động thành công!");
-      setIsModalOpen(false);
-      fetchEvents();
-    } catch (err) {
-      alert("Lỗi: " + (err.response?.data?.error?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReject = async (maSK, opinion) => {
-    try {
-      setLoading(true);
-      await axios.patch(
-        `${API_BASE_URL}/ctsv/events/${maSK}/reject`,
-        { LyDoTuChoi: opinion },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
-      );
+      await apiClient.patch(`/api/admin/events/${maSK}/review`, {
+        status: "rejected",
+        feedback: opinion,
+      });
       alert("Từ chối sự kiện thành công!");
-      setIsModalOpen(false);
-      fetchEvents();
+      setIsEventModalOpen(false);
+      fetchData();
     } catch (err) {
-      alert("Lỗi: " + (err.response?.data?.error?.message || err.message));
+      alert("Lỗi: " + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Handlers (Clubs) ───────────────────────────────────────────
+  const handleRegApprove = async (regId, opinion) => {
+    try {
+      setLoading(true);
+      await apiClient.patch(`/api/clubs/admin/registrations/${regId}/review`, {
+        status: "approved",
+        feedback: opinion,
+      });
+      alert(
+        "Quyết định thành lập câu lạc bộ thành công! CLB đã được thêm vào danh sách hoạt động.",
+      );
+      setIsRegModalOpen(false);
+      fetchData();
+    } catch (err) {
+      alert("Lỗi: " + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegReject = async (regId, opinion) => {
+    try {
+      setLoading(true);
+      await apiClient.patch(`/api/clubs/admin/registrations/${regId}/review`, {
+        status: "rejected",
+        feedback: opinion,
+      });
+      alert("Từ chối đơn đăng ký thành lập CLB thành công!");
+      setIsRegModalOpen(false);
+      fetchData();
+    } catch (err) {
+      alert("Lỗi: " + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
   };
 
   const handleExportReport = () => {
-    const month = new Date().toLocaleString("vi-VN", {
-      month: "long",
-      year: "numeric",
-    });
     alert(
-      `Đang xuất báo cáo tháng ${month}...\nTính năng xuất Excel sẽ được cập nhật sớm.`,
+      "Đang trích xuất báo cáo. Chức năng xuất Excel sẽ tự động tải xuống.",
     );
   };
-
-  // Lọc dữ liệu
-  const pendingEvents = events.filter((e) => e.TrangThai === "cho_duyet_ctsv");
-  const processedEvents = events.filter(
-    (e) =>
-      e.TrangThai !== "cho_duyet_ctsv" &&
-      e.TrangThai !== "cho_duyet_khoa" &&
-      e.TrangThai !== "draft",
-  );
-
-  // Tính toán chỉ số
-  const totalEventsCount = events.length;
-  const completedEventsCount = events.filter(
-    (e) => e.TrangThai === "da_ket_thuc",
-  ).length;
-  const totalStudentsCount = events.reduce((sum, e) => {
-    // Tạm tính dựa trên số người đã đăng ký thực tế lấy từ DB (nếu có trường soNguoiDaDangKy), nếu không dùng 0
-    return sum + (e.soNguoiDaDangKy || 0);
-  }, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
       <div className="p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800">
-              Quản lý cấp phép sự kiện toàn trường
-            </h1>
-            <p className="text-slate-600 mt-2">
-              Phòng Công Tác Sinh Viên:{" "}
-              <span className="font-semibold">{user?.hoTen}</span>
-            </p>
-          </div>
-
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard
-              icon={FiCalendar}
-              label="Tổng sự kiện toàn trường"
-              value={totalEventsCount}
-              color="blue"
-            />
-            <StatCard
-              icon={FiAlertCircle}
-              label="Hồ sơ chờ CTSV duyệt"
-              value={pendingEvents.length}
-              color="amber"
-            />
-            <StatCard
-              icon={FiCheckCircle}
-              label="Sự kiện hoàn thành"
-              value={completedEventsCount}
-              color="emerald"
-            />
-            <StatCard
-              icon={FiUsers}
-              label="Lượt SV đã tham gia"
-              value={totalStudentsCount}
-              color="blue"
-            />
-          </div>
-
-          {/* Pending Events */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">
-                  Danh sách chờ cấp phép
-                </h2>
-                <p className="text-slate-600 text-sm mt-1">
-                  {pendingEvents.length} sự kiện chờ xử lý
-                </p>
-              </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800">
+                Quản lý Cấp phép cấp Trường
+              </h1>
+              <p className="text-slate-600 mt-2">
+                Phòng Công Tác Sinh Viên:{" "}
+                <span className="font-semibold">{user?.hoTen}</span>
+              </p>
+            </div>
+            <div className="flex gap-2">
               <button
                 onClick={handleExportReport}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-900 transition-all shadow-md hover:shadow-lg"
+                className="flex items-center gap-2 px-4 py-2 border border-slate-300 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-900 transition-all shadow-sm"
               >
                 <FiDownload className="w-4 h-4" /> Xuất báo cáo
               </button>
+              <button
+                onClick={fetchData}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition-all disabled:opacity-50"
+              >
+                <FiRefreshCw
+                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                />
+                Làm mới
+              </button>
             </div>
-
-            {loading ? (
-              <div className="text-center py-8 text-slate-500">
-                Đang tải dữ liệu...
-              </div>
-            ) : pendingEvents.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {pendingEvents.map((event) => (
-                  <EventCard
-                    key={event.MaSK}
-                    event={event}
-                    onSelect={(e) => {
-                      setSelectedEvent(e);
-                      setIsModalOpen(true);
-                    }}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-                <FiCheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-                <p className="text-lg font-semibold text-slate-900 mb-1">
-                  Không có sự kiện chờ duyệt
-                </p>
-                <p className="text-slate-600">Tất cả hồ sơ đã được xử lý</p>
-              </div>
-            )}
           </div>
 
-          {/* Processed Events */}
-          <div className="space-y-6 pt-6">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">
-                Sự kiện đã xử lý
-              </h2>
-              <p className="text-slate-600 text-sm mt-1">
-                Lịch sử phê duyệt và các hoạt động đang/đã diễn ra
-              </p>
-            </div>
+          {/* Top level tabs */}
+          <div className="flex border-b border-slate-200">
+            <button
+              onClick={() => {
+                setActiveTab("events");
+                setActiveFilter("pending_student_affairs");
+              }}
+              className={`px-6 py-3 font-bold text-sm border-b-2 transition-all ${
+                activeTab === "events"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Phê duyệt Sự kiện
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("clubs");
+                setActiveFilter("pending_student_affairs");
+              }}
+              className={`px-6 py-3 font-bold text-sm border-b-2 transition-all ${
+                activeTab === "clubs"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Phê duyệt Thành lập CLB
+            </button>
+          </div>
 
-            {processedEvents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {processedEvents.map((event) => (
-                  <div
-                    key={event.MaSK}
-                    onClick={() => {
-                      setSelectedEvent(event);
-                      setIsModalOpen(true);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <ApprovedEventCard event={event} />
+          {/* Stat Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard
+              icon={FiAlertCircle}
+              label="Đơn chờ duyệt (Pending)"
+              value={
+                activeTab === "events" ? eventPendingCount : clubPendingCount
+              }
+              color="amber"
+              active={activeFilter === "pending_student_affairs"}
+              onClick={() => setActiveFilter("pending_student_affairs")}
+            />
+            <StatCard
+              icon={FiCheckCircle}
+              label="Đơn đã phê duyệt"
+              value={
+                activeTab === "events" ? eventApprovedCount : clubApprovedCount
+              }
+              color="emerald"
+              active={activeFilter === "approved"}
+              onClick={() => setActiveFilter("approved")}
+            />
+            <StatCard
+              icon={FiX}
+              label="Đơn đã từ chối"
+              value={
+                activeTab === "events" ? eventRejectedCount : clubRejectedCount
+              }
+              color="rose"
+              active={activeFilter === "rejected"}
+              onClick={() => setActiveFilter("rejected")}
+            />
+          </div>
+
+          {/* List Section */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {activeTab === "events" ? (
+              // Events table
+              <>
+                <div className="grid grid-cols-6 gap-4 bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-4 border-b font-bold text-xs text-slate-600 uppercase">
+                  <div>Tên sự kiện</div>
+                  <div>CLB tổ chức</div>
+                  <div>Thời gian bắt đầu</div>
+                  <div>Địa điểm</div>
+                  <div>Quy mô</div>
+                  <div>Trạng thái</div>
+                </div>
+
+                {loading ? (
+                  <div className="px-6 py-12 text-center text-slate-500">
+                    Đang tải...
                   </div>
-                ))}
-              </div>
+                ) : filteredEvents.length > 0 ? (
+                  <div className="divide-y divide-slate-200">
+                    {filteredEvents.map((event) => (
+                      <div
+                        key={event.MaSK}
+                        onClick={() => {
+                          setSelectedEvent(event);
+                          setIsEventModalOpen(true);
+                        }}
+                        className="grid grid-cols-6 gap-4 px-6 py-4 border-b hover:bg-slate-50/50 cursor-pointer text-sm items-center"
+                      >
+                        <div className="font-semibold text-slate-800 truncate">
+                          {event.TenSK}
+                        </div>
+                        <div className="text-teal-700 font-medium truncate">
+                          {event.TenCLB || event.MaCLB}
+                        </div>
+                        <div className="text-slate-600">
+                          {formatDate(event.ThoiGianBatDau)}
+                        </div>
+                        <div className="text-slate-600 truncate">
+                          {event.DiaDiem}
+                        </div>
+                        <div className="text-slate-600">
+                          {event.SoNguoiToiDa} slot
+                        </div>
+                        <div>
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              STATUS_CONFIG[event.TrangThai]?.bg ||
+                              "bg-slate-100"
+                            } ${STATUS_CONFIG[event.TrangThai]?.text || "text-slate-700"}`}
+                          >
+                            {STATUS_CONFIG[event.TrangThai]?.label}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-6 py-12 text-center text-slate-500">
+                    Không có sự kiện nào trong danh sách.
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="text-center py-8 bg-white rounded-xl border border-slate-200">
-                <p className="text-slate-600">
-                  Chưa có sự kiện nào trong lịch sử
-                </p>
-              </div>
+              // Club Registrations table
+              <>
+                <div className="grid grid-cols-5 gap-4 bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b font-bold text-xs text-slate-600 uppercase">
+                  <div>Tên Câu lạc bộ dự kiến</div>
+                  <div>Lĩnh vực</div>
+                  <div>Đơn vị quản lý</div>
+                  <div>Ngày nộp đơn</div>
+                  <div>Trạng thái</div>
+                </div>
+
+                {loading ? (
+                  <div className="px-6 py-12 text-center text-slate-500">
+                    Đang tải...
+                  </div>
+                ) : filteredRegistrations.length > 0 ? (
+                  <div className="divide-y divide-slate-200">
+                    {filteredRegistrations.map((reg) => (
+                      <div
+                        key={reg.MaDKMo}
+                        onClick={() => {
+                          setSelectedReg(reg);
+                          setIsRegModalOpen(true);
+                        }}
+                        className="grid grid-cols-5 gap-4 px-6 py-4 border-b hover:bg-slate-50/50 cursor-pointer text-sm items-center"
+                      >
+                        <div className="font-semibold text-slate-800 truncate">
+                          {reg.TenCLB}
+                        </div>
+                        <div className="text-slate-600">{reg.LinhVuc}</div>
+                        <div className="text-slate-600 truncate">
+                          {reg.tenDVQL}
+                        </div>
+                        <div className="text-slate-600">
+                          {new Date(reg.NgayTao).toLocaleDateString("vi-VN")}
+                        </div>
+                        <div>
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              STATUS_CONFIG[reg.TrangThai]?.bg || "bg-slate-100"
+                            } ${STATUS_CONFIG[reg.TrangThai]?.text || "text-slate-700"}`}
+                          >
+                            {STATUS_CONFIG[reg.TrangThai]?.label}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-6 py-12 text-center text-slate-500">
+                    Không có hồ sơ đăng ký thành lập CLB nào trong danh sách.
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
 
+      {/* Events approval modal */}
       <FinalApprovalModal
-        isOpen={isModalOpen}
+        isOpen={isEventModalOpen}
         event={selectedEvent}
         onClose={() => {
-          setIsModalOpen(false);
+          setIsEventModalOpen(false);
           setSelectedEvent(null);
         }}
-        onApprove={handleApprove}
-        onReject={handleReject}
+        onApprove={handleEventApprove}
+        onReject={handleEventReject}
+        loading={loading}
+      />
+
+      {/* Club registrations approval modal */}
+      <ClubApprovalModal
+        isOpen={isRegModalOpen}
+        reg={selectedReg}
+        onClose={() => {
+          setIsRegModalOpen(false);
+          setSelectedReg(null);
+        }}
+        onApprove={handleRegApprove}
+        onReject={handleRegReject}
         loading={loading}
       />
     </div>

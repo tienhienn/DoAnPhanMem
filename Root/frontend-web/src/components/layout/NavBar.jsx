@@ -334,7 +334,12 @@ function getNavItems(role) {
       path: "/faculty-management",
       icon: ManageIcon,
     };
-    return [events, manage];
+    const clubs = {
+    label: "Quản lý CLB",
+    path: "/khoa/clubs",
+    icon: UsersGroupIcon,
+    };
+    return [events, manage, clubs];
   }
 
   if (role === "CTSV") {

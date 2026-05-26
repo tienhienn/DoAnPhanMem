@@ -35,9 +35,13 @@ const fmt = (dt) =>
 
 const STATUS_CONFIG = {
   pending_faculty:         { label: "Chờ Khoa duyệt", bg: "bg-amber-100",   text: "text-amber-700"   },
+  cho_duyet_khoa:          { label: "Chờ Khoa duyệt", bg: "bg-amber-100",   text: "text-amber-700"   },
   pending_student_affairs: { label: "Chờ CTSV duyệt", bg: "bg-blue-100",    text: "text-blue-700"    },
+  cho_duyet_ctsv:          { label: "Chờ CTSV duyệt", bg: "bg-blue-100",    text: "text-blue-700"    },
   approved:                { label: "Đã phê duyệt",   bg: "bg-emerald-100", text: "text-emerald-700" },
+  da_duyet:                { label: "Đã phê duyệt",   bg: "bg-emerald-100", text: "text-emerald-700" },
   rejected:                { label: "Bị từ chối",     bg: "bg-rose-100",    text: "text-rose-700"    },
+  tu_choi:                 { label: "Bị từ chối",     bg: "bg-rose-100",    text: "text-rose-700"    },
   sap_dien_ra:             { label: "Sắp diễn ra",    bg: "bg-cyan-100",    text: "text-cyan-700"    },
   dang_dien_ra:            { label: "Đang diễn ra",   bg: "bg-green-100",   text: "text-green-700"   },
   da_ket_thuc:             { label: "Đã kết thúc",    bg: "bg-gray-100",    text: "text-gray-700"    },
@@ -137,32 +141,51 @@ const ApprovalModal = ({ isOpen, event, onClose, onApprove, onReject, loading })
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
-              <FiMessageSquare className="inline w-4 h-4 mr-2" />
-              Ghi chú phê duyệt của Khoa
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Nhập ghi chú (bắt buộc khi từ chối)..."
-              rows="4"
-              disabled={loading}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
-            />
-          </div>
+          {(event.TrangThai === "cho_duyet_khoa" || event.TrangThai === "pending_faculty") ? (
+            <div>
+              <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
+                <FiMessageSquare className="inline w-4 h-4 mr-2" />
+                Ghi chú phê duyệt của Khoa
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Nhập ghi chú (bắt buộc khi từ chối)..."
+                rows="4"
+                disabled={loading}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
+              />
+            </div>
+          ) : (
+            event.LyDoTuChoi && (
+              <div>
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">
+                  <FiMessageSquare className="inline w-4 h-4 mr-2" />Lý do từ chối
+                </h3>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {event.LyDoTuChoi}
+                  </p>
+                </div>
+              </div>
+            )
+          )}
         </div>
 
         <div className="border-t border-slate-200 bg-slate-50 px-8 py-6 flex items-center justify-end gap-3 rounded-b-3xl">
           <button onClick={onClose} disabled={loading} className="px-6 py-2.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-100 transition-all disabled:opacity-50">
             Đóng
           </button>
-          <button onClick={handleReject} disabled={loading} className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md flex items-center gap-2">
-            <FiX className="w-4 h-4" /> Từ chối
-          </button>
-          <button onClick={handleApprove} disabled={loading} className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md flex items-center gap-2">
-            <FiCheck className="w-4 h-4" /> Phê duyệt bảo trợ
-          </button>
+          {(event.TrangThai === "cho_duyet_khoa" || event.TrangThai === "pending_faculty") && (
+            <>
+              <button onClick={handleReject} disabled={loading} className="px-6 py-2.5 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-all shadow-md flex items-center gap-2">
+                <FiX className="w-4 h-4" /> Từ chối
+              </button>
+              <button onClick={handleApprove} disabled={loading} className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md flex items-center gap-2">
+                <FiCheck className="w-4 h-4" /> Phê duyệt bảo trợ
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -394,23 +417,18 @@ export default function FacultyManagementPage() {
     setFetchError(null);
     try {
       if (activeTab === "events") {
-        const statuses = ["pending_faculty", "pending_student_affairs", "approved", "rejected"];
-        const responses = await Promise.all(
-          statuses.map((s) =>
-            apiClient.get("/api/admin/events", { params: { limit: 100, status: s } })
-          )
-        );
-        const all = responses.flatMap((r) => r.data?.data?.events || []);
-        const map = new Map();
-        all.forEach((e) => map.set(e.MaSK, e));
-        setEvents([...map.values()]);
+        // Lấy tất cả sự kiện thuộc Khoa (sử dụng endpoint khoa-specific)
+        const res = await apiClient.get("/api/khoa/events");
+        const all = res.data?.data || [];
+        setEvents(all);
       } else {
         const res = await apiClient.get("/api/clubs/admin/registrations");
         if (res.data.success) {
           setRegistrations(res.data.data);
         }
       }
-    } catch {
+    } catch (err) {
+      console.error("fetchData error:", err.response?.data || err.message);
       setFetchError("Không thể tải danh sách. Vui lòng thử lại.");
     } finally {
       setFetchLoading(false);
@@ -422,26 +440,41 @@ export default function FacultyManagementPage() {
   }, [fetchData]);
 
   // ── Stats (Events) ─────────────────────────────────────────────
-  const eventPendingCount  = events.filter((e) => e.TrangThai === "pending_faculty" && !e.KhoaDuyet && !e.PhongCTSVDuyet).length;
-  const eventApprovedCount = events.filter((e) => e.TrangThai === "pending_student_affairs" && e.KhoaDuyet && !e.PhongCTSVDuyet).length;
-  const eventRejectedCount = events.filter((e) => e.TrangThai === "rejected").length;
+  // Status mapping: backend uses Vietnamese values
+  const eventPendingCount  = events.filter((e) => e.TrangThai === "cho_duyet_khoa").length;
+  const eventApprovedCount = events.filter((e) => e.TrangThai === "cho_duyet_ctsv").length;
+  const eventRejectedCount = events.filter((e) => e.TrangThai === "tu_choi").length;
 
   const filteredEvents = events.filter((e) => {
     if (activeFilter === "pending_faculty") {
-      return e.TrangThai === "pending_faculty" && !e.KhoaDuyet && !e.PhongCTSVDuyet;
+      return e.TrangThai === "cho_duyet_khoa";
     }
     if (activeFilter === "pending_student_affairs") {
-      return e.TrangThai === "pending_student_affairs" && e.KhoaDuyet && !e.PhongCTSVDuyet;
+      return e.TrangThai === "cho_duyet_ctsv";
+    }
+    if (activeFilter === "rejected") {
+      return e.TrangThai === "tu_choi";
     }
     return e.TrangThai === activeFilter;
   });
 
   // ── Stats (Clubs) ──────────────────────────────────────────────
-  const clubPendingCount  = registrations.filter((r) => r.TrangThai === "pending_faculty").length;
-  const clubApprovedCount = registrations.filter((r) => r.TrangThai === "pending_student_affairs").length;
-  const clubRejectedCount = registrations.filter((r) => r.TrangThai === "rejected").length;
+  const clubPendingCount  = registrations.filter((r) => r.TrangThai === "cho_duyet_khoa" || r.TrangThai === "pending_faculty").length;
+  const clubApprovedCount = registrations.filter((r) => r.TrangThai === "cho_duyet_ctsv" || r.TrangThai === "pending_student_affairs").length;
+  const clubRejectedCount = registrations.filter((r) => r.TrangThai === "tu_choi" || r.TrangThai === "rejected").length;
 
-  const filteredRegistrations = registrations.filter((r) => r.TrangThai === activeFilter);
+  const filteredRegistrations = registrations.filter((r) => {
+    if (activeFilter === "pending_faculty") {
+      return r.TrangThai === "cho_duyet_khoa" || r.TrangThai === "pending_faculty";
+    }
+    if (activeFilter === "pending_student_affairs") {
+      return r.TrangThai === "cho_duyet_ctsv" || r.TrangThai === "pending_student_affairs";
+    }
+    if (activeFilter === "rejected") {
+      return r.TrangThai === "tu_choi" || r.TrangThai === "rejected";
+    }
+    return r.TrangThai === activeFilter;
+  });
 
   const filterLabel = {
     pending_faculty:         "Chờ Khoa duyệt",
@@ -450,39 +483,55 @@ export default function FacultyManagementPage() {
   };
 
   // ── Handlers (Events) ─────────────────────────────────────────────
-  const handleSelectEvent = async (event) => {
-    try {
-      const res = await apiClient.get(`/api/admin/events/${event.MaSK}`);
-      setSelectedEvent(res.data?.data || event);
-    } catch {
-      setSelectedEvent(event);
-    }
+  const handleSelectEvent = (event) => {
+    // Use event data directly from list, no need for additional fetch
+    setSelectedEvent(event);
     setIsEventModalOpen(true);
   };
 
-  const callEventReview = async (eventId, status, feedback) => {
+  const handleEventApprove = async (eventId, notes) => {
     setActionLoading(true);
     try {
-      await apiClient.patch(`/api/admin/events/${eventId}/review`, { status, feedback });
-      setEvents((prev) =>
-        prev.map((e) => {
-          if (e.MaSK !== eventId) return e;
-          const newStatus = status === "rejected" ? "rejected" : "pending_student_affairs";
-          const khoaDuyetVal = status === "rejected" ? 0 : 1;
-          return { ...e, TrangThai: newStatus, LyDoTuChoi: feedback || null, KhoaDuyet: khoaDuyetVal };
-        })
-      );
-      setIsEventModalOpen(false);
-      setSelectedEvent(null);
+      const res = await apiClient.patch(`/api/khoa/events/${eventId}/approve`);
+      if (res.data?.success) {
+        alert("Phê duyệt sự kiện thành công!");
+        setEvents((prev) =>
+          prev.map((e) => {
+            if (e.MaSK !== eventId) return e;
+            return { ...e, TrangThai: "cho_duyet_ctsv", KhoaDuyet: 1, LyDoTuChoi: null };
+          })
+        );
+        setIsEventModalOpen(false);
+        setSelectedEvent(null);
+      }
     } catch (err) {
-      alert(err.response?.data?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
+      alert(err.response?.data?.message || err.response?.data?.error?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleEventApprove = (eventId, notes)  => callEventReview(eventId, "approved", notes);
-  const handleEventReject  = (eventId, reason) => callEventReview(eventId, "rejected", reason);
+  const handleEventReject = async (eventId, reason) => {
+    setActionLoading(true);
+    try {
+      const res = await apiClient.patch(`/api/khoa/events/${eventId}/reject`, { LyDoTuChoi: reason });
+      if (res.data?.success) {
+        alert("Từ chối sự kiện thành công!");
+        setEvents((prev) =>
+          prev.map((e) => {
+            if (e.MaSK !== eventId) return e;
+            return { ...e, TrangThai: "tu_choi", KhoaDuyet: 0, LyDoTuChoi: reason };
+          })
+        );
+        setIsEventModalOpen(false);
+        setSelectedEvent(null);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || err.response?.data?.error?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // ── Handlers (Clubs) ──────────────────────────────────────────────
   const callRegReview = async (regId, status, feedback) => {
@@ -627,10 +676,8 @@ export default function FacultyManagementPage() {
                     {filteredEvents.map((event) => (
                       <div
                         key={event.MaSK}
-                        onClick={() => event.TrangThai === "pending_faculty" && handleSelectEvent(event)}
-                        className={`grid grid-cols-6 gap-4 px-6 py-4 border-b border-slate-200 hover:bg-teal-50/30 transition-colors ${
-                          event.TrangThai === "pending_faculty" ? "cursor-pointer" : ""
-                        }`}
+                        onClick={() => handleSelectEvent(event)}
+                        className="grid grid-cols-6 gap-4 px-6 py-4 border-b border-slate-200 hover:bg-teal-50/30 transition-colors cursor-pointer"
                       >
                         <div className="font-semibold text-slate-800 truncate">{event.TenSK}</div>
                         <div className="text-sm text-slate-600">{fmt(event.ThoiGianBatDau)}</div>
@@ -643,7 +690,7 @@ export default function FacultyManagementPage() {
                           } ${STATUS_CONFIG[event.TrangThai]?.text || "text-slate-700"}`}>
                             {STATUS_CONFIG[event.TrangThai]?.label}
                           </span>
-                          {event.TrangThai === "pending_faculty" && <FiChevronRight className="w-4 h-4 text-slate-400" />}
+                          <FiChevronRight className="w-4 h-4 text-slate-400" />
                         </div>
                       </div>
                     ))}

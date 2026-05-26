@@ -46,6 +46,13 @@ const STATUS_CONFIG = {
     badgeBg: "bg-blue-100",
     text: "text-blue-700",
   },
+  cho_duyet_ctsv: {
+    label: "Chờ CTSV duyệt",
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    badgeBg: "bg-blue-100",
+    text: "text-blue-700",
+  },
   approved: {
     label: "Đã phê duyệt",
     bg: "bg-emerald-50",
@@ -53,7 +60,21 @@ const STATUS_CONFIG = {
     badgeBg: "bg-emerald-100",
     text: "text-emerald-700",
   },
+  da_duyet: {
+    label: "Đã phê duyệt",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    badgeBg: "bg-emerald-100",
+    text: "text-emerald-700",
+  },
   rejected: {
+    label: "Bị từ chối",
+    bg: "bg-rose-50",
+    border: "border-rose-200",
+    badgeBg: "bg-rose-100",
+    text: "text-rose-700",
+  },
+  tu_choi: {
     label: "Bị từ chối",
     bg: "bg-rose-50",
     border: "border-rose-200",
@@ -232,7 +253,7 @@ const FinalApprovalModal = ({
             </div>
           )}
 
-          {event.TrangThai === "pending_student_affairs" && (
+          {(event.TrangThai === "pending_student_affairs" || event.TrangThai === "cho_duyet_ctsv") ? (
             <div>
               <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
                 <FiMessageSquare className="inline w-4 h-4 mr-2" />Ý kiến chỉ
@@ -247,6 +268,19 @@ const FinalApprovalModal = ({
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
               />
             </div>
+          ) : (
+            (event.LyDoTuChoi || event.YKienCTSV) && (
+              <div>
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">
+                  <FiMessageSquare className="inline w-4 h-4 mr-2" />Lý do từ chối / Ý kiến chỉ đạo
+                </h3>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {event.LyDoTuChoi || event.YKienCTSV}
+                  </p>
+                </div>
+              </div>
+            )
           )}
         </div>
 
@@ -258,7 +292,7 @@ const FinalApprovalModal = ({
           >
             Đóng
           </button>
-          {event.TrangThai === "pending_student_affairs" && (
+          {(event.TrangThai === "pending_student_affairs" || event.TrangThai === "cho_duyet_ctsv") && (
             <>
               <button
                 onClick={handleReject}
@@ -593,18 +627,10 @@ export default function StudentAffairsPage() {
     try {
       setLoading(true);
       if (activeTab === "events") {
-        const statuses = ["pending_student_affairs", "approved", "rejected"];
-        const responses = await Promise.all(
-          statuses.map((s) =>
-            apiClient.get("/api/admin/events", {
-              params: { limit: 100, status: s },
-            }),
-          ),
-        );
-        const all = responses.flatMap((r) => r.data?.data?.events || []);
-        const map = new Map();
-        all.forEach((e) => map.set(e.MaSK, e));
-        setEvents([...map.values()]);
+        // Use CTSV-specific endpoint to fetch events pending CTSV approval
+        const res = await apiClient.get("/api/ctsv/events");
+        const all = res.data?.data || [];
+        setEvents(all);
       } else {
         const res = await apiClient.get("/api/clubs/admin/registrations");
         if (res.data.success) {
@@ -612,7 +638,7 @@ export default function StudentAffairsPage() {
         }
       }
     } catch (err) {
-      console.error("Error fetching admin data:", err);
+      console.error("Error fetching CTSV data:", err);
     } finally {
       setLoading(false);
     }
@@ -623,42 +649,28 @@ export default function StudentAffairsPage() {
   }, [fetchData]);
 
   // ── Stats (Events) ─────────────────────────────────────────────
+  // Status mapping: backend uses Vietnamese values
   const eventPendingCount = events.filter(
-    (e) =>
-      e.TrangThai === "pending_student_affairs" &&
-      e.KhoaDuyet &&
-      !e.PhongCTSVDuyet,
+    (e) => e.TrangThai === "cho_duyet_ctsv"
   ).length;
   const eventApprovedCount = events.filter(
-    (e) =>
-      (e.TrangThai === "approved" ||
-        e.TrangThai === "sap_dien_ra" ||
-        e.TrangThai === "dang_dien_ra") &&
-      e.KhoaDuyet &&
-      e.PhongCTSVDuyet,
+    (e) => e.TrangThai === "da_duyet" || e.TrangThai === "sap_dien_ra" || e.TrangThai === "dang_dien_ra"
   ).length;
   const eventRejectedCount = events.filter(
-    (e) => e.TrangThai === "rejected",
+    (e) => e.TrangThai === "tu_choi"
   ).length;
 
   const filteredEvents = events.filter((e) => {
     if (activeFilter === "pending_student_affairs") {
-      return (
-        e.TrangThai === "pending_student_affairs" &&
-        e.KhoaDuyet &&
-        !e.PhongCTSVDuyet
-      );
+      return e.TrangThai === "cho_duyet_ctsv";
     }
     if (activeFilter === "approved") {
-      return (
-        (e.TrangThai === "approved" ||
-          e.TrangThai === "sap_dien_ra" ||
-          e.TrangThai === "dang_dien_ra") &&
-        e.KhoaDuyet &&
-        e.PhongCTSVDuyet
-      );
+      return e.TrangThai === "da_duyet" || e.TrangThai === "sap_dien_ra" || e.TrangThai === "dang_dien_ra";
     }
-    return e.TrangThai === "rejected";
+    if (activeFilter === "rejected") {
+      return e.TrangThai === "tu_choi";
+    }
+    return e.TrangThai === activeFilter;
   });
 
   // ── Stats (Clubs) ──────────────────────────────────────────────
@@ -686,15 +698,19 @@ export default function StudentAffairsPage() {
   const handleEventApprove = async (maSK, opinion) => {
     try {
       setLoading(true);
-      await apiClient.patch(`/api/admin/events/${maSK}/review`, {
-        status: "approved",
-        feedback: opinion,
-      });
-      alert("Cấp phép hoạt động sự kiện thành công!");
-      setIsEventModalOpen(false);
-      fetchData();
+      const res = await apiClient.patch(`/api/ctsv/events/${maSK}/approve`);
+      if (res.data?.success) {
+        alert("Cấp phép hoạt động sự kiện thành công!");
+        setEvents((prev) =>
+          prev.map((e) => {
+            if (e.MaSK !== maSK) return e;
+            return { ...e, TrangThai: "da_duyet", PhongCTSVDuyet: 1, LyDoTuChoi: null };
+          })
+        );
+        setIsEventModalOpen(false);
+      }
     } catch (err) {
-      alert("Lỗi: " + (err.response?.data?.message || err.message));
+      alert("Lỗi: " + (err.response?.data?.message || err.response?.data?.error?.message || err.message));
     } finally {
       setLoading(false);
     }
@@ -703,15 +719,19 @@ export default function StudentAffairsPage() {
   const handleEventReject = async (maSK, opinion) => {
     try {
       setLoading(true);
-      await apiClient.patch(`/api/admin/events/${maSK}/review`, {
-        status: "rejected",
-        feedback: opinion,
-      });
-      alert("Từ chối sự kiện thành công!");
-      setIsEventModalOpen(false);
-      fetchData();
+      const res = await apiClient.patch(`/api/ctsv/events/${maSK}/reject`, { LyDoTuChoi: opinion });
+      if (res.data?.success) {
+        alert("Từ chối sự kiện thành công!");
+        setEvents((prev) =>
+          prev.map((e) => {
+            if (e.MaSK !== maSK) return e;
+            return { ...e, TrangThai: "tu_choi", PhongCTSVDuyet: 0, LyDoTuChoi: opinion };
+          })
+        );
+        setIsEventModalOpen(false);
+      }
     } catch (err) {
-      alert("Lỗi: " + (err.response?.data?.message || err.message));
+      alert("Lỗi: " + (err.response?.data?.message || err.response?.data?.error?.message || err.message));
     } finally {
       setLoading(false);
     }

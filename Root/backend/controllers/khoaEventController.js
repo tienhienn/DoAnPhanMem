@@ -19,7 +19,7 @@ const getEventsForFaculty = async (req, res, next) => {
   try {
     const { TrangThai } = req.query;
     const pool = await getPool();
-    const maND = req.user.maND;
+    const maND = req.user.maND || req.user.maSV;
 
     // 1. Lấy đơn vị quản lý của cán bộ
     const maDVQL = await getDVQLOfCanBo(pool, maND);
@@ -69,7 +69,7 @@ const approveEventByFaculty = async (req, res, next) => {
   try {
     const { id } = req.params;
     const pool = await getPool();
-    const maND = req.user.maND;
+    const maND = req.user.maND || req.user.maSV;
 
     const maDVQL = await getDVQLOfCanBo(pool, maND);
     if (!maDVQL) {
@@ -132,7 +132,7 @@ const rejectEventByFaculty = async (req, res, next) => {
     const { id } = req.params;
     const { LyDoTuChoi } = req.body;
     const pool = await getPool();
-    const maND = req.user.maND;
+    const maND = req.user.maND || req.user.maSV;
 
     if (!LyDoTuChoi) {
       return res

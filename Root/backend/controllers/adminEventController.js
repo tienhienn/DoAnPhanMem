@@ -11,7 +11,9 @@ const { generateEventId } = require("../utils/idGenerator");
 // =====================================
 exports.getEvents = async (req, res, next) => {
   try {
-    const { maND: userId, role, clubId } = req.user;
+    // Tương thích cả JWT cũ (maSV) lẫn JWT mới (maND)
+    const userId = req.user.maND || req.user.maSV;
+    const { role, clubId } = req.user;
     const { page = 1, limit = 10, status, search } = req.query;
 
     const offset = (page - 1) * limit;
@@ -133,7 +135,8 @@ exports.getEvents = async (req, res, next) => {
 // =====================================
 exports.createEvent = async (req, res, next) => {
   try {
-    const { maND: userId, role, clubId } = req.user;
+    const userId = req.user.maND || req.user.maSV;
+    const { role, clubId } = req.user;
 
     // Chỉ BCN mới có quyền tạo sự kiện
     if (role !== "BCN" || !clubId) {
@@ -250,7 +253,8 @@ exports.createEvent = async (req, res, next) => {
 // =====================================
 exports.updateEvent = async (req, res, next) => {
   try {
-    const { maND: userId, role, clubId } = req.user;
+    const userId = req.user.maND || req.user.maSV;
+    const { role, clubId } = req.user;
     const { id } = req.params;
 
     // Chỉ BCN mới có quyền sửa sự kiện
@@ -397,7 +401,8 @@ exports.updateEvent = async (req, res, next) => {
 // =====================================
 exports.deleteEvent = async (req, res, next) => {
   try {
-    const { maND: userId, role, clubId } = req.user;
+    const userId = req.user.maND || req.user.maSV;
+    const { role, clubId } = req.user;
     const { id } = req.params;
 
     // Chỉ BCN mới có quyền xóa sự kiện
@@ -468,7 +473,8 @@ exports.deleteEvent = async (req, res, next) => {
 // =====================================
 exports.reviewEvent = async (req, res, next) => {
   try {
-    const { maND: userId, role, clubId } = req.user;
+    const userId = req.user.maND || req.user.maSV;
+    const { role, clubId } = req.user;
     const { id } = req.params;
     const { status, feedback } = req.body;
 
@@ -602,7 +608,8 @@ if (phongCtsvDuyetVal !== null) {
 exports.getEventDetail = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { maND: userId, role, clubId } = req.user;
+    const userId = req.user.maND || req.user.maSV;
+    const { role, clubId } = req.user;
 
     const pool = await getPool();
 

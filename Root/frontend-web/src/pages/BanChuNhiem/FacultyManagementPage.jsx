@@ -316,7 +316,7 @@ const ApprovalModal = ({
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                   <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
-                    Điểm rèn luyện
+                    Điểm hoạt động
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
                     {event.DiemRenLuyen || 0} điểm

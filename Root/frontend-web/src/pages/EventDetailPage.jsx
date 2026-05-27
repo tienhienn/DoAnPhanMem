@@ -266,12 +266,12 @@ export default function EventDetailPage() {
               value={diaDiem}
             />
 
-            {/* Điểm rèn luyện */}
+            {/* Điểm hoạt động */}
             {diemRenLuyen !== undefined && diemRenLuyen !== null && (
               <InfoRow
                 icon={<StarIcon />}
-                label="Điểm rèn luyện"
-                value={`+${diemRenLuyen} điểm rèn luyện`}
+                label="Điểm hoạt động"
+                value={`+${diemRenLuyen} điểm hoạt động`}
               />
             )}
 

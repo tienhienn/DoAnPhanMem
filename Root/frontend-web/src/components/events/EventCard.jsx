@@ -169,7 +169,7 @@ export default function EventCard({ event, registrationStatus, onClick }) {
             )}
             {event.diemRenLuyen && (
               <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                ⭐ +{event.diemRenLuyen} ĐRL
+                ⭐ +{event.diemRenLuyen} ĐHĐ
               </span>
             )}
           </div>

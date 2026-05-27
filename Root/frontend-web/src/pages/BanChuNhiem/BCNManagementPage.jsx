@@ -311,7 +311,7 @@ const EventFormModal = ({ isOpen, event, onClose, onSave, loading }) => {
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-2">
                 <FiAward className="inline mr-2" />
-                Điểm rèn luyện
+                Điểm hoạt động
               </label>
               <input
                 type="number"
@@ -562,7 +562,7 @@ const EventDetailModal = ({ isOpen, event, onClose }) => {
                   ? `${event.SoNguoiToiDa} thành viên`
                   : "N/A",
               },
-              { label: "Điểm rèn luyện", value: `${event.DiemRenLuyen} điểm` },
+              { label: "Điểm hoạt động", value: `${event.DiemRenLuyen} điểm` },
               {
                 label: "Chi phí dự kiến",
                 value: `${event.ChiPhiDuKien?.toLocaleString("vi-VN") || 0} VNĐ`,

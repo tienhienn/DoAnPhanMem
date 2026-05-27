@@ -110,7 +110,7 @@ export default function ProfilePage() {
               <span className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full"><Book className="w-4 h-4 text-gray-500" /> Lớp {profile.tenLop || 'Chưa cập nhật'}</span>
               <span className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full"><Shield className="w-4 h-4 text-gray-500" /> {profile.tenKhoa || 'Chưa cập nhật'}</span>
               {profile.diemRenLuyen !== null && (
-                <span className="flex items-center gap-1 bg-amber-100 text-amber-700 px-3 py-1 rounded-full"><Award className="w-4 h-4" /> ĐRL: {profile.diemRenLuyen}</span>
+                <span className="flex items-center gap-1 bg-amber-100 text-amber-700 px-3 py-1 rounded-full"><Award className="w-4 h-4" /> Điểm hoạt động: {profile.diemRenLuyen}</span>
               )}
             </div>
           </div>

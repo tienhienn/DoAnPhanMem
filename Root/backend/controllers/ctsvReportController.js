@@ -30,7 +30,7 @@ const approveSubmission = async (req, res, next) => {
     // Kiểm tra hồ sơ
     const docRes = await pool
       .request()
-      .input("MaHoSo", sql.VarChar(13), id)
+      .input("MaHoSo", sql.VarChar, id)
       .query(
         `SELECT loaiHoSo, maCLB, TrangThai FROM HOSO WHERE MaHoSo = @MaHoSo`,
       );
@@ -60,8 +60,8 @@ const approveSubmission = async (req, res, next) => {
 
       // 1. Cập nhật trạng thái Hồ sơ
       await request
-        .input("MaHoSo", sql.VarChar(13), id)
-        .input("NguoiDuyet", sql.VarChar(13), req.user.maND).query(`
+        .input("MaHoSo", sql.VarChar, id)
+        .input("NguoiDuyet", sql.VarChar, req.user.maND).query(`
           UPDATE HOSO 
           SET TrangThai = 'approved', NgayDuyet = GETDATE(), maNguoiDuyet = @NguoiDuyet, LyDoTuChoi = NULL 
           WHERE MaHoSo = @MaHoSo
@@ -70,7 +70,7 @@ const approveSubmission = async (req, res, next) => {
       // 2. Nếu là Đơn giải thể -> Tắt hoạt động CLB
       if (doc.loaiHoSo === "Đơn giải thể") {
         await request
-          .input("MaCLB", sql.VarChar(13), doc.maCLB)
+          .input("MaCLB", sql.VarChar, doc.maCLB)
           .query(
             `UPDATE CAULACBO SET TrangThai = N'Ngừng hoạt động' WHERE MaCLB = @MaCLB`,
           );
@@ -105,8 +105,8 @@ const rejectSubmission = async (req, res, next) => {
     const pool = await getPool();
     await pool
       .request()
-      .input("MaHoSo", sql.VarChar(13), id)
-      .input("NguoiDuyet", sql.VarChar(13), req.user.maND)
+      .input("MaHoSo", sql.VarChar, id)
+      .input("NguoiDuyet", sql.VarChar, req.user.maND)
       .input("LyDo", sql.NVarChar(300), LyDoTuChoi).query(`
         UPDATE HOSO 
         SET TrangThai = 'tu_choi', NgayDuyet = GETDATE(), maNguoiDuyet = @NguoiDuyet, LyDoTuChoi = @LyDo 

@@ -49,7 +49,7 @@ const approveEventByCTSV = async (req, res, next) => {
 
     const checkResult = await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .query(`SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK`);
 
     if (checkResult.recordset.length === 0) {
@@ -71,7 +71,7 @@ const approveEventByCTSV = async (req, res, next) => {
     // CTSV duyệt -> Chuyển thành Đã duyệt (Cấp phép) và đánh dấu PhongCTSVDuyet = 1
     await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .query(`UPDATE SU_KIEN SET PhongCTSVDuyet = 1, TrangThai = 'da_duyet', LyDoTuChoi = NULL WHERE MaSK = @MaSK`);
 
     res
@@ -103,7 +103,7 @@ const rejectEventByCTSV = async (req, res, next) => {
 
     const checkResult = await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .query(`SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK`);
 
     if (checkResult.recordset.length === 0) {
@@ -114,7 +114,7 @@ const rejectEventByCTSV = async (req, res, next) => {
 
     await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .input("LyDoTuChoi", sql.NVarChar(sql.MAX), LyDoTuChoi.trim())
       .query(
         `UPDATE SU_KIEN SET PhongCTSVDuyet = 0, TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi WHERE MaSK = @MaSK`,

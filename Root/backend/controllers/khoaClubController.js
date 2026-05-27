@@ -32,7 +32,7 @@ exports.getClubs = async (req, res, next) => {
     // Lấy maDVQL của cán bộ đang đăng nhập
     const cbResult = await pool
       .request()
-      .input("maND", sql.VarChar(13), maND)
+      .input("maND", sql.VarChar, maND)
       .query(`SELECT maDVQL FROM CANBO WHERE maCanBo = @maND`);
 
     if (cbResult.recordset.length === 0) {
@@ -42,7 +42,7 @@ exports.getClubs = async (req, res, next) => {
     }
 
     const maDVQL = cbResult.recordset[0].maDVQL;
-    request.input("maDVQL", sql.VarChar(13), maDVQL);
+    request.input("maDVQL", sql.VarChar, maDVQL);
 
     let query = `
       SELECT
@@ -99,7 +99,7 @@ exports.getClubDetail = async (req, res, next) => {
     const pool = await getPool();
 
     // Thông tin CLB
-    const clubResult = await pool.request().input("maCLB", sql.VarChar(13), id)
+    const clubResult = await pool.request().input("maCLB", sql.VarChar, id)
       .query(`
         SELECT
           c.MaCLB, c.TenCLB, c.MoTa, c.LinhVuc,
@@ -125,7 +125,7 @@ exports.getClubDetail = async (req, res, next) => {
     }
 
     // Danh sách Ban chủ nhiệm
-    const bcnResult = await pool.request().input("maCLB2", sql.VarChar(13), id)
+    const bcnResult = await pool.request().input("maCLB2", sql.VarChar, id)
       .query(`
         SELECT
           tv.MaTV, tv.VaiTroCLB, tv.NgayThamGia,
@@ -141,7 +141,7 @@ exports.getClubDetail = async (req, res, next) => {
     // Sự kiện gần đây (5 cái mới nhất)
     const eventResult = await pool
       .request()
-      .input("maCLB3", sql.VarChar(13), id).query(`
+      .input("maCLB3", sql.VarChar, id).query(`
         SELECT TOP 5
           MaSK, TenSK, ThoiGianBatDau, TrangThai
         FROM SU_KIEN
@@ -198,7 +198,7 @@ exports.updateClubStatus = async (req, res, next) => {
     // Kiểm tra CLB tồn tại
     const checkResult = await pool
       .request()
-      .input("maCLB", sql.VarChar(13), id)
+      .input("maCLB", sql.VarChar, id)
       .query(
         `SELECT MaCLB, TenCLB, TrangThai FROM CAULACBO WHERE MaCLB = @maCLB`,
       );
@@ -216,7 +216,7 @@ exports.updateClubStatus = async (req, res, next) => {
     // Cập nhật trạng thái
     await pool
       .request()
-      .input("maCLB2", sql.VarChar(13), id)
+      .input("maCLB2", sql.VarChar, id)
       .input("status", sql.NVarChar(50), status)
       .query(`UPDATE CAULACBO SET TrangThai = @status WHERE MaCLB = @maCLB2`);
 

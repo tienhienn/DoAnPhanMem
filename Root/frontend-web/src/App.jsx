@@ -27,6 +27,7 @@ import StudentAffairsPage from "./pages/BanChuNhiem/StudentAffairsPage";
 import MemberManagementPage from "./pages/BanChuNhiem/MemberManagementPage";
 import FinanceAndLogisticsPage from "./pages/BanChuNhiem/FinanceAndLogisticsPage";
 import PeriodicReportsPage from "./pages/BanChuNhiem/PeriodicReportsPage";
+import QRAttendancePage from "./pages/BanChuNhiem/QRAttendancePage";
 import ProfilePage from "./pages/ProfilePage";
 import ClubsPage from "./pages/ClubsPage";
 import ClubDetailPage from "./pages/ClubDetailPage";
@@ -83,6 +84,10 @@ export default function App() {
                   <Route
                     path="/bcn-management"
                     element={<BCNManagementPage />}
+                  />
+                  <Route
+                    path="/qr-attendance"
+                    element={<QRAttendancePage />}
                   />
                   <Route
                     path="/member-management"

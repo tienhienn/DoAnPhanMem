@@ -72,16 +72,21 @@ export function AuthProvider({ children }) {
     if (savedToken) {
       const payload = parseJwt(savedToken);
       if (payload && payload.exp * 1000 > Date.now()) {
+        const managementClubId = localStorage.getItem("managementClubId");
+        const defaultRole = payload.role || "SV";
         setUser({
           maND: payload.maND || payload.maSV,
           maSV: payload.maSV || payload.maND,
           hoTen: payload.hoTen,
           email: payload.email,
-          role: payload.role || "SV",
+          role: managementClubId ? "BCN" : defaultRole,
+          originalRole: managementClubId ? defaultRole : undefined,
+          clubId: managementClubId || undefined,
         });
         setToken(savedToken);
       } else {
         localStorage.removeItem("token");
+        localStorage.removeItem("managementClubId");
       }
     }
     setIsLoading(false);
@@ -129,6 +134,7 @@ export function AuthProvider({ children }) {
    */
   function logout() {
     localStorage.removeItem("token");
+    localStorage.removeItem("managementClubId");
     setToken(null);
     setUser(null);
     navigate("/login");
@@ -142,6 +148,7 @@ export function AuthProvider({ children }) {
         role: "BCN",
         clubId: clubId,
       }));
+      localStorage.setItem("managementClubId", clubId);
     }
   }
 
@@ -154,6 +161,7 @@ export function AuthProvider({ children }) {
         delete updated.clubId;
         return updated;
       });
+      localStorage.removeItem("managementClubId");
       navigate("/clubs");
     }
   }

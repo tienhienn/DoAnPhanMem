@@ -2,7 +2,7 @@ const { getPool, sql } = require("../db");
 
 // Helper: Lấy CLB của người dùng hiện tại (BCN)
 const getClubOfUser = async (pool, maND) => {
-  const result = await pool.request().input("MaND", sql.VARCHAR(13), maND)
+  const result = await pool.request().input("MaND", sql.VarChar, maND)
     .query(`
       SELECT MaCLB FROM THANH_VIEN 
       WHERE MaND = @MaND AND TrangThai = N'Hoạt động'
@@ -20,7 +20,7 @@ const getKhoas = async (pool) => {
 
 // Helper: Lấy danh sách Lớp theo Khoa
 const getLopsByKhoa = async (pool, maKhoa) => {
-  const result = await pool.request().input("MaKhoa", sql.VARCHAR(13), maKhoa)
+  const result = await pool.request().input("MaKhoa", sql.VarChar, maKhoa)
     .query(`
       SELECT maLop as id, tenLop as name FROM Lop 
       WHERE maKhoa = @MaKhoa ORDER BY tenLop
@@ -31,8 +31,8 @@ const getLopsByKhoa = async (pool, maKhoa) => {
 // Helper: Lấy danh sách Sinh viên theo Lớp (chỉ những sinh viên chưa là thành viên của CLB)
 const getSinhVienByLop = async (pool, maLop, maCLB) => {
   const result = await pool.request()
-    .input("MaLop", sql.VARCHAR(13), maLop)
-    .input("MaCLB", sql.VARCHAR(13), maCLB)
+    .input("MaLop", sql.VarChar, maLop)
+    .input("MaCLB", sql.VarChar, maCLB)
     .query(`
       SELECT DISTINCT
         SV.maSV as id, TK.hoTen as name, TK.MaND as mssv
@@ -72,7 +72,7 @@ const getAllMembers = async (req, res, next) => {
           error: { message: "Bạn không có quyền quản lý CLB này" },
         });
 
-    const result = await pool.request().input("MaCLB", sql.VARCHAR(13), MaCLB)
+    const result = await pool.request().input("MaCLB", sql.VarChar, MaCLB)
       .query(`
         -- Lấy thành viên đang hoạt động và đã rời
         SELECT 
@@ -113,7 +113,7 @@ const addMember = async (req, res, next) => {
     // Kiểm tra sinh viên có tồn tại trong hệ thống (TAI_KHOAN) không
     const userCheck = await pool
       .request()
-      .input("MaND", sql.VARCHAR(13), mssv)
+      .input("MaND", sql.VarChar, mssv)
       .query(`SELECT MaND FROM TAI_KHOAN WHERE MaND = @MaND`);
     if (userCheck.recordset.length === 0) {
       return res
@@ -127,8 +127,8 @@ const addMember = async (req, res, next) => {
     // Kiểm tra xem đã trong CLB chưa
     const memberCheck = await pool
       .request()
-      .input("MaND", sql.VARCHAR(13), mssv)
-      .input("MaCLB", sql.VARCHAR(13), MaCLB)
+      .input("MaND", sql.VarChar, mssv)
+      .input("MaCLB", sql.VarChar, MaCLB)
       .query(
         `SELECT TrangThai FROM THANH_VIEN WHERE MaND = @MaND AND MaCLB = @MaCLB`,
       );
@@ -145,8 +145,8 @@ const addMember = async (req, res, next) => {
         // Đã từng rời CLB -> Cập nhật lại thành Hoạt động
         await pool
           .request()
-          .input("MaND", sql.VARCHAR(13), mssv)
-          .input("MaCLB", sql.VARCHAR(13), MaCLB)
+          .input("MaND", sql.VarChar, mssv)
+          .input("MaCLB", sql.VarChar, MaCLB)
           .input("VaiTro", sql.NVARCHAR(50), role)
           .query(
             `UPDATE THANH_VIEN SET TrangThai = N'Hoạt động', VaiTroCLB = @VaiTro, NgayThamGia = GETDATE(), NgayRoi = NULL WHERE MaND = @MaND AND MaCLB = @MaCLB`,
@@ -164,9 +164,9 @@ const addMember = async (req, res, next) => {
     const MaTV = await generateMaTV(pool);
     await pool
       .request()
-      .input("MaTV", sql.VARCHAR(13), MaTV)
-      .input("MaCLB", sql.VARCHAR(13), MaCLB)
-      .input("MaND", sql.VARCHAR(13), mssv)
+      .input("MaTV", sql.VarChar, MaTV)
+      .input("MaCLB", sql.VarChar, MaCLB)
+      .input("MaND", sql.VarChar, mssv)
       .input("VaiTro", sql.NVARCHAR(50), role)
       .input("NgayThamGia", sql.Date, new Date())
       .input("TrangThai", sql.NVARCHAR(50), "Hoạt động").query(`
@@ -190,7 +190,7 @@ const updateRole = async (req, res, next) => {
     const pool = await getPool();
     await pool
       .request()
-      .input("MaTV", sql.VARCHAR(13), id)
+      .input("MaTV", sql.VarChar, id)
       .input("VaiTro", sql.NVARCHAR(50), role)
       .query(`UPDATE THANH_VIEN SET VaiTroCLB = @VaiTro WHERE MaTV = @MaTV`);
     res
@@ -208,7 +208,7 @@ const removeMember = async (req, res, next) => {
     const pool = await getPool();
     await pool
       .request()
-      .input("MaTV", sql.VARCHAR(13), id)
+      .input("MaTV", sql.VarChar, id)
       .query(
         `UPDATE THANH_VIEN SET TrangThai = N'Đã rời', NgayRoi = GETDATE() WHERE MaTV = @MaTV`,
       );
@@ -230,7 +230,7 @@ const approveRequest = async (req, res, next) => {
     // Lấy MSSV từ đơn
     const reqData = await pool
       .request()
-      .input("MaYC", sql.VARCHAR(13), requestId)
+      .input("MaYC", sql.VarChar, requestId)
       .query(`SELECT MaSV FROM YEU_CAU_THAM_GIA_CLB WHERE MaYC = @MaYC`);
     if (reqData.recordset.length === 0)
       return res
@@ -243,11 +243,11 @@ const approveRequest = async (req, res, next) => {
     // Chuyển vào THANH_VIEN và cập nhật Đơn
     await pool
       .request()
-      .input("MaTV", sql.VARCHAR(13), MaTV)
-      .input("MaCLB", sql.VARCHAR(13), MaCLB)
-      .input("MaND", sql.VARCHAR(13), MaND)
-      .input("NguoiDuyet", sql.VARCHAR(13), req.user.maND)
-      .input("MaYC", sql.VARCHAR(13), requestId).query(`
+      .input("MaTV", sql.VarChar, MaTV)
+      .input("MaCLB", sql.VarChar, MaCLB)
+      .input("MaND", sql.VarChar, MaND)
+      .input("NguoiDuyet", sql.VarChar, req.user.maND)
+      .input("MaYC", sql.VarChar, requestId).query(`
         INSERT INTO THANH_VIEN (MaTV, MaCLB, MaND, VaiTroCLB, NgayThamGia, TrangThai)
         VALUES (@MaTV, @MaCLB, @MaND, N'Thành viên', GETDATE(), N'Hoạt động');
 
@@ -267,8 +267,8 @@ const rejectRequest = async (req, res, next) => {
     const pool = await getPool();
     await pool
       .request()
-      .input("MaYC", sql.VARCHAR(13), requestId)
-      .input("NguoiDuyet", sql.VARCHAR(13), req.user.maND)
+      .input("MaYC", sql.VarChar, requestId)
+      .input("NguoiDuyet", sql.VarChar, req.user.maND)
       .query(
         `UPDATE YEU_CAU_THAM_GIA_CLB SET TrangThai = 'tu_choi', NgayDuyet = GETDATE(), NguoiDuyetID = @NguoiDuyet WHERE MaYC = @MaYC`,
       );

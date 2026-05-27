@@ -7,6 +7,9 @@ export default defineConfig({
   server: {
     open: true,
   },
+  optimizeDeps: {
+    include: ["jsqr"],
+  },
   test: {
     environment: "jsdom",
     globals: true,

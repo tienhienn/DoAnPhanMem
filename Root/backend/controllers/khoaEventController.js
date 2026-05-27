@@ -2,7 +2,7 @@ const { getPool, sql } = require("../db");
 
 // ─── Helper: Lấy maDVQL của Cán bộ Khoa ──────────────────────────────
 const getDVQLOfCanBo = async (pool, maND) => {
-  const result = await pool.request().input("MaND", sql.NVarChar(13), maND)
+  const result = await pool.request().input("MaND", sql.NVarChar, maND)
     .query(`
       SELECT maDVQL 
       FROM CANBO 
@@ -39,7 +39,7 @@ const getEventsForFaculty = async (req, res, next) => {
       WHERE CLB.maDVQL = @MaDVQL
     `;
     const request = pool.request();
-    request.input("MaDVQL", sql.NVarChar(13), maDVQL);
+    request.input("MaDVQL", sql.NVarChar, maDVQL);
 
     // 3. Lọc theo trạng thái (nếu có)
     if (TrangThai) {
@@ -81,8 +81,8 @@ const approveEventByFaculty = async (req, res, next) => {
     // Kiểm tra quyền sở hữu của Khoa với sự kiện này
     const checkResult = await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .input("MaDVQL", sql.NVarChar(13), maDVQL).query(`
+      .input("MaSK", sql.NVarChar, id)
+      .input("MaDVQL", sql.NVarChar, maDVQL).query(`
         SELECT SK.TrangThai 
         FROM SU_KIEN SK
         INNER JOIN CAULACBO CLB ON SK.MaCLB = CLB.MaCLB
@@ -110,7 +110,7 @@ const approveEventByFaculty = async (req, res, next) => {
     // Đẩy trạng thái lên cho CTSV duyệt và đánh dấu Khoa đã duyệt
     await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .query(
         `UPDATE SU_KIEN SET KhoaDuyet = 1, TrangThai = 'cho_duyet_ctsv', LyDoTuChoi = NULL WHERE MaSK = @MaSK`,
       );
@@ -149,8 +149,8 @@ const rejectEventByFaculty = async (req, res, next) => {
 
     const checkResult = await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .input("MaDVQL", sql.NVarChar(13), maDVQL).query(`
+      .input("MaSK", sql.NVarChar, id)
+      .input("MaDVQL", sql.NVarChar, maDVQL).query(`
         SELECT SK.TrangThai 
         FROM SU_KIEN SK
         INNER JOIN CAULACBO CLB ON SK.MaCLB = CLB.MaCLB
@@ -169,7 +169,7 @@ const rejectEventByFaculty = async (req, res, next) => {
     // Cập nhật trạng thái thành từ chối và lưu lý do
     await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .input("LyDoTuChoi", sql.NVarChar(sql.MAX), LyDoTuChoi.trim())
       .query(
         `UPDATE SU_KIEN SET KhoaDuyet = 0, TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi WHERE MaSK = @MaSK`,

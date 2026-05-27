@@ -7,8 +7,15 @@ const {
   updateEvent,
   deleteEvent,
   submitEventForApproval,
+  markAttendance,
 } = require("../controllers/bcnEventController");
 const { auth } = require("../middleware/auth");
+
+/**
+ * Điểm danh sinh viên qua QR / ID
+ * POST /api/bcn/events/attendance
+ */
+router.post("/attendance", auth, markAttendance);
 
 /**
  * Lấy danh sách sự kiện của CLB

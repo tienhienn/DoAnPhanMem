@@ -120,8 +120,8 @@ const getEventDetail = async (req, res, next) => {
 
     const result = await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .input("MaCLB", sql.NVarChar(13), MaCLB).query(`
+      .input("MaSK", sql.NVarChar, id)
+      .input("MaCLB", sql.NVarChar, MaCLB).query(`
         SELECT
           MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
           DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai,
@@ -141,7 +141,7 @@ const getEventDetail = async (req, res, next) => {
       });
     }
 
-    const countResult = await pool.request().input("MaSK", sql.NVarChar(13), id)
+    const countResult = await pool.request().input("MaSK", sql.NVarChar, id)
       .query(`
         SELECT COUNT(*) AS soNguoiDaDangKy
         FROM DANGKY_SUKIEN
@@ -231,8 +231,8 @@ const createEvent = async (req, res, next) => {
 
     await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), MaSK)
-      .input("MaCLB", sql.NVarChar(13), MaCLB)
+      .input("MaSK", sql.NVarChar, MaSK)
+      .input("MaCLB", sql.NVarChar, MaCLB)
       .input("TenSK", sql.NVarChar(150), TenSK.trim())
       .input("MoTa", sql.NVarChar(sql.MAX), MoTa || null)
       .input("ThoiGianBatDau", sql.DateTime, dateBatDau)
@@ -345,8 +345,8 @@ const updateEvent = async (req, res, next) => {
 
     const checkResult = await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .input("MaCLB", sql.NVarChar(13), MaCLB)
+      .input("MaSK", sql.NVarChar, id)
+      .input("MaCLB", sql.NVarChar, MaCLB)
       .query(
         `SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK AND MaCLB = @MaCLB`,
       );
@@ -375,7 +375,7 @@ const updateEvent = async (req, res, next) => {
 
     await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .input("TenSK", sql.NVarChar(150), TenSK.trim())
       .input("MoTa", sql.NVarChar(sql.MAX), MoTa || null)
       .input("ThoiGianBatDau", sql.DateTime, dateBatDau)
@@ -442,8 +442,8 @@ const deleteEvent = async (req, res, next) => {
 
     const checkResult = await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .input("MaCLB", sql.NVarChar(13), MaCLB)
+      .input("MaSK", sql.NVarChar, id)
+      .input("MaCLB", sql.NVarChar, MaCLB)
       .query(
         `SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK AND MaCLB = @MaCLB`,
       );
@@ -471,7 +471,7 @@ const deleteEvent = async (req, res, next) => {
 
     await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .query(`DELETE FROM SU_KIEN WHERE MaSK = @MaSK`);
 
     res.status(200).json({
@@ -507,8 +507,8 @@ const submitEventForApproval = async (req, res, next) => {
 
     const checkResult = await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
-      .input("MaCLB", sql.NVarChar(13), MaCLB)
+      .input("MaSK", sql.NVarChar, id)
+      .input("MaCLB", sql.NVarChar, MaCLB)
       .query(
         `SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK AND MaCLB = @MaCLB`,
       );
@@ -533,7 +533,7 @@ const submitEventForApproval = async (req, res, next) => {
 
     await pool
       .request()
-      .input("MaSK", sql.NVarChar(13), id)
+      .input("MaSK", sql.NVarChar, id)
       .query(
         `UPDATE SU_KIEN SET TrangThai = 'cho_duyet_khoa' WHERE MaSK = @MaSK`,
       );
@@ -698,7 +698,7 @@ const submitEventForApproval = async (req, res, next) => {
 //         SET TrangThai = 'tu_choi', LyDoTuChoi = @LyDoTuChoi
 //         WHERE MaSK = @MaSK
 //       `);
-
+//
 //     res.status(200).json({
 //       success: true,
 //       message: "Từ chối sự kiện thành công",
@@ -708,6 +708,149 @@ const submitEventForApproval = async (req, res, next) => {
 //   }
 // };
 
+const markAttendance = async (req, res, next) => {
+  try {
+    const { qrValue, maND: bodyMaND, maSK: bodyMaSK } = req.body;
+    const pool = await getPool();
+    const maND_bcn = req.user.maND;
+
+    // 1. Lấy MaCLB của BCN
+    const MaCLB = req.user.clubId || await getClubOfUser(pool, maND_bcn);
+    if (!MaCLB) {
+      return res.status(403).json({
+        success: false,
+        error: { message: "Bạn không có quyền quản lý BCN của câu lạc bộ nào" },
+      });
+    }
+
+    // 2. Parse qrValue hoặc dùng body parameters
+    let maND, maSK;
+    if (qrValue) {
+      const parts = qrValue.trim().split('-');
+      if (parts.length === 4 && parts[0] === 'UTE' && parts[1] === 'UDN') {
+        maND = parts[2];
+        maSK = parts[3];
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: { message: "Mã QR không đúng định dạng của hệ thống UTE-UDN" },
+        });
+      }
+    } else {
+      maND = bodyMaND;
+      maSK = bodyMaSK;
+    }
+
+    if (!maND || !maSK) {
+      return res.status(400).json({
+        success: false,
+        error: { message: "Thiếu thông tin mã sinh viên hoặc mã sự kiện" },
+      });
+    }
+
+    // 3. Kiểm tra sự kiện thuộc CLB của BCN
+    const eventRes = await pool
+      .request()
+      .input("MaSK", sql.NVarChar, maSK)
+      .input("MaCLB", sql.NVarChar, MaCLB)
+      .query(`
+        SELECT MaSK, TenSK FROM SU_KIEN 
+        WHERE MaSK = @MaSK AND MaCLB = @MaCLB
+      `);
+
+    if (eventRes.recordset.length === 0) {
+      return res.status(403).json({
+        success: false,
+        error: { message: "Sự kiện này không thuộc câu lạc bộ của bạn quản lý" },
+      });
+    }
+
+    const tenSK = eventRes.recordset[0].TenSK;
+
+    // 4. Lấy thông tin sinh viên
+    const studentRes = await pool
+      .request()
+      .input("MaND", sql.NVarChar, maND)
+      .query(`
+        SELECT hoTen FROM TAI_KHOAN WHERE MaND = @MaND
+      `);
+
+    if (studentRes.recordset.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: { message: `Không tìm thấy tài khoản sinh viên với mã ${maND}` },
+      });
+    }
+
+    const hoTen = studentRes.recordset[0].hoTen;
+
+    // 5. Kiểm tra đăng ký của sinh viên
+    const regRes = await pool
+      .request()
+      .input("MaSK", sql.NVarChar, maSK)
+      .input("MaND", sql.NVarChar, maND)
+      .query(`
+        SELECT TrangThai FROM DANGKY_SUKIEN 
+        WHERE MaSK = @MaSK AND MaND = @MaND
+      `);
+
+    if (regRes.recordset.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: { message: `Sinh viên ${hoTen} (${maND}) chưa đăng ký tham gia sự kiện này` },
+      });
+    }
+
+    const currentStatus = regRes.recordset[0].TrangThai;
+
+    if (currentStatus === "da_diem_danh") {
+      return res.status(200).json({
+        success: true,
+        message: `Sinh viên ${hoTen} (${maND}) đã được điểm danh trước đó`,
+        data: {
+          maND,
+          hoTen,
+          maSK,
+          tenSK,
+          alreadyAttended: true,
+        },
+      });
+    }
+
+    if (currentStatus !== "da_duyet") {
+      return res.status(400).json({
+        success: false,
+        error: { message: `Đăng ký của sinh viên đang ở trạng thái "${currentStatus}", không thể điểm danh.` },
+      });
+    }
+
+    // 6. Cập nhật thành da_diem_danh
+    await pool
+      .request()
+      .input("MaSK", sql.NVarChar, maSK)
+      .input("MaND", sql.NVarChar, maND)
+      .query(`
+        UPDATE DANGKY_SUKIEN 
+        SET TrangThai = 'da_diem_danh' 
+        WHERE MaSK = @MaSK AND MaND = @MaND
+      `);
+
+    return res.status(200).json({
+      success: true,
+      message: `Điểm danh thành công cho sinh viên ${hoTen} (${maND})!`,
+      data: {
+        maND,
+        hoTen,
+        maSK,
+        tenSK,
+        alreadyAttended: false,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getEventsByClub,
   getEventDetail,
@@ -715,4 +858,5 @@ module.exports = {
   updateEvent,
   deleteEvent,
   submitEventForApproval,
+  markAttendance,
 };

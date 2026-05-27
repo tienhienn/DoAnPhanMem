@@ -277,6 +277,31 @@ function CheckIcon({ className }) {
   );
 }
 
+function QrCodeIcon({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+      <line x1="7" y1="17" x2="7" y2="17.01" />
+      <line x1="17" y1="17" x2="17" y2="17.01" />
+      <line x1="17" y1="7" x2="17" y2="7.01" />
+      <line x1="7" y1="7" x2="7" y2="7.01" />
+    </svg>
+  );
+}
+
 /** Label hiển thị role trong navbar */
 const ROLE_LABELS = {
   SV: "Sinh viên",
@@ -305,6 +330,11 @@ function getNavItems(role) {
       path: "/bcn-management",
       icon: ManageIcon,
     };
+    const attendance = {
+      label: "Điểm danh",
+      path: "/qr-attendance",
+      icon: QrCodeIcon,
+    };
     const members = {
       label: "Quản lý nhân sự",
       path: "/member-management",
@@ -325,7 +355,7 @@ function getNavItems(role) {
       path: "/periodic-reports",
       icon: FileTextIcon,
     };
-    return [manage, members, tasks, finance, reports];
+    return [manage, attendance, members, tasks, finance, reports];
   }
 
   if (role === "KHOA") {

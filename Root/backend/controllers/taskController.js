@@ -16,7 +16,7 @@ const getTasksByEvent = async (req, res, next) => {
     const { eventId } = req.params;
     const pool = await getPool();
 
-    const result = await pool.request().input("MaSK", sql.NVarChar(13), eventId)
+    const result = await pool.request().input("MaSK", sql.NVarChar, eventId)
       .query(`
         SELECT 
           NV.MaNV as id, NV.TenNV as title, NV.MoTa as description, 
@@ -65,8 +65,8 @@ const getClubMembersForAssign = async (req, res, next) => {
     const currentUserId = req.user.maND; // Lấy ID của BCN hiện tại
 
     const result = await pool.request()
-      .input("MaCLB", sql.NVarChar(13), clubId)
-      .input("MaND", sql.NVarChar(13), currentUserId)
+      .input("MaCLB", sql.NVarChar, clubId)
+      .input("MaND", sql.NVarChar, currentUserId)
       .query(`
         SELECT TV.MaTV as id, TK.hoTen as name, TV.VaiTroCLB as role, TK.anhDaiDien as avatar
         FROM THANH_VIEN TV
@@ -119,13 +119,13 @@ const createTask = async (req, res, next) => {
 
     await pool
       .request()
-      .input("MaNV", sql.NVarChar(13), MaNV)
-      .input("MaCLB", sql.NVarChar(13), MaCLB)
-      .input("MaSK", sql.NVarChar(13), MaSK)
+      .input("MaNV", sql.NVarChar, MaNV)
+      .input("MaCLB", sql.NVarChar, MaCLB)
+      .input("MaSK", sql.NVarChar, MaSK)
       .input("TenNV", sql.NVarChar(200), title)
       .input("MoTa", sql.NVarChar(sql.MAX), description || null)
-      .input("MaTV_PhuTrach", sql.NVarChar(13), assigneeId)
-      .input("NguoiGiaoID", sql.NVarChar(13), nguoiGiaoID)
+      .input("MaTV_PhuTrach", sql.NVarChar, assigneeId)
+      .input("NguoiGiaoID", sql.NVarChar, nguoiGiaoID)
       .input("HanChot", sql.DateTime, new Date(deadline))
       .input("TrangThai", sql.NVarChar(50), "todo")
       .input("FileDinhKem", sql.NVarChar(255), attachmentLink) // LƯU ĐƯỜNG DẪN VÀO DB
@@ -158,7 +158,7 @@ const reviewTask = async (req, res, next) => {
 
     await pool
       .request()
-      .input("MaNV", sql.NVarChar(13), id)
+      .input("MaNV", sql.NVarChar, id)
       .input("TrangThai", sql.NVarChar(50), status)
       .input("PhanHoiCuaBCN", sql.NVarChar(sql.MAX), feedback || null).query(`
         UPDATE NHIEM_VU 
@@ -181,7 +181,7 @@ const deleteTask = async (req, res, next) => {
     const pool = await getPool();
     await pool
       .request()
-      .input("MaNV", sql.NVarChar(13), id)
+      .input("MaNV", sql.NVarChar, id)
       .query(`DELETE FROM NHIEM_VU WHERE MaNV = @MaNV`);
     res.status(200).json({ success: true, message: "Đã xóa nhiệm vụ" });
   } catch (err) {
@@ -200,7 +200,7 @@ const getStudentTasks = async (req, res, next) => {
     // Tìm MaTV (mã thành viên) của sinh viên hiện tại
     const tvResult = await pool
       .request()
-      .input("MaND", sql.NVarChar(13), studentId)
+      .input("MaND", sql.NVarChar, studentId)
       .query(`SELECT MaTV FROM THANH_VIEN WHERE MaND = @MaND`);
 
     if (tvResult.recordset.length === 0) {
@@ -216,7 +216,7 @@ const getStudentTasks = async (req, res, next) => {
     const maTV = tvResult.recordset[0].MaTV;
 
     // Lấy danh sách nhiệm vụ được giao cho sinh viên này
-    const result = await pool.request().input("MaTV", sql.NVarChar(13), maTV)
+    const result = await pool.request().input("MaTV", sql.NVarChar, maTV)
       .query(`
         SELECT 
           NV.MaNV as id, NV.TenNV as title, NV.MoTa as description, 
@@ -290,7 +290,7 @@ const submitTaskReport = async (req, res, next) => {
     // Update NHIEM_VU table
     await pool
       .request()
-      .input("MaNV", sql.NVarChar(13), id)
+      .input("MaNV", sql.NVarChar, id)
       .input("FileBaoCao", sql.NVarChar(255), submissionLink)
       .input("GhiChuBaoCao", sql.NVarChar(sql.MAX), submissionNote)
       .input("NgayNopBaoCao", sql.DateTime, new Date())

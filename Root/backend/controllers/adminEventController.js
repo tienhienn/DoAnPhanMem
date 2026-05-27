@@ -37,7 +37,7 @@ exports.getEvents = async (req, res, next) => {
       query += ` AND MaCLB = @clubId`;
     } else if (role === "KHOA") {
       // Khoa: Chỉ lấy sự kiện thuộc các CLB do Khoa quản lý
-      const dvqlResult = await pool.request().input("maND", sql.NVarChar(13), userId).query(`
+      const dvqlResult = await pool.request().input("maND", sql.NVarChar, userId).query(`
         SELECT maDVQL FROM CANBO WHERE maCanBo = @maND AND trangThai = 1
       `);
       maDVQL = dvqlResult.recordset[0]?.maDVQL;
@@ -74,7 +74,7 @@ exports.getEvents = async (req, res, next) => {
 
     // Thêm parameters
     if (role === "BCN" && clubId) {
-      request.input("clubId", sql.Char(13), clubId);
+      request.input("clubId", sql.VarChar, clubId);
     }
     if (role === "KHOA" && maDVQL) {
       request.input("maDVQL", sql.NVarChar(50), maDVQL);
@@ -95,7 +95,7 @@ exports.getEvents = async (req, res, next) => {
     // Lấy tổng số bản ghi
     const countRequest = pool.request();
     if (role === "BCN" && clubId) {
-      countRequest.input("clubId", sql.Char(13), clubId);
+      countRequest.input("clubId", sql.VarChar, clubId);
     }
     if (role === "KHOA" && maDVQL) {
       countRequest.input("maDVQL", sql.NVarChar(50), maDVQL);
@@ -206,8 +206,8 @@ exports.createEvent = async (req, res, next) => {
         `;
 
     request
-      .input("maSK", sql.Char(13), maSK)
-      .input("maCLB", sql.Char(13), clubId)
+      .input("maSK", sql.VarChar, maSK)
+      .input("maCLB", sql.VarChar, clubId)
       .input("tenSK", sql.NVarChar(150), name)
       .input("moTa", sql.NVarChar(sql.MAX), description || null)
       .input("thoiGianBatDau", sql.DateTime, start)
@@ -272,7 +272,7 @@ exports.updateEvent = async (req, res, next) => {
     const getQuery = `SELECT * FROM SU_KIEN WHERE MaSK = @maSK`;
     const getResult = await pool
       .request()
-      .input("maSK", sql.Char(13), id)
+      .input("maSK", sql.VarChar, id)
       .query(getQuery);
 
     if (getResult.recordset.length === 0) {
@@ -356,7 +356,7 @@ exports.updateEvent = async (req, res, next) => {
 
     const request = pool.request();
     request
-      .input("maSK", sql.Char(13), id)
+      .input("maSK", sql.VarChar, id)
       .input("tenSK", sql.NVarChar(150), name)
       .input("moTa", sql.NVarChar(sql.MAX), description || null)
       .input("thoiGianBatDau", sql.DateTime, start)
@@ -420,7 +420,7 @@ exports.deleteEvent = async (req, res, next) => {
     const getQuery = `SELECT * FROM SU_KIEN WHERE MaSK = @maSK`;
     const getResult = await pool
       .request()
-      .input("maSK", sql.Char(13), id)
+      .input("maSK", sql.VarChar, id)
       .query(getQuery);
 
     if (getResult.recordset.length === 0) {
@@ -453,7 +453,7 @@ exports.deleteEvent = async (req, res, next) => {
 
     // Xóa sự kiện
     const deleteQuery = `DELETE FROM SU_KIEN WHERE MaSK = @maSK`;
-    await pool.request().input("maSK", sql.Char(13), id).query(deleteQuery);
+    await pool.request().input("maSK", sql.VarChar, id).query(deleteQuery);
 
     return res.status(200).json({
       success: true,
@@ -504,7 +504,7 @@ exports.reviewEvent = async (req, res, next) => {
     const getQuery = `SELECT * FROM SU_KIEN WHERE MaSK = @maSK`;
     const getResult = await pool
       .request()
-      .input("maSK", sql.Char(13), id)
+      .input("maSK", sql.VarChar, id)
       .query(getQuery);
 
     if (getResult.recordset.length === 0) {
@@ -574,7 +574,7 @@ updateQuery += ` WHERE MaSK = @maSK`;
 
 const request = pool.request();
 request
-  .input("maSK",      sql.Char(13),         id)
+  .input("maSK",      sql.VarChar,         id)
   .input("newStatus", sql.NVarChar(50),      newStatus)  // ← dùng newStatus thay vì status
   .input("feedback",  sql.NVarChar(sql.MAX), feedback || null);
 
@@ -627,7 +627,7 @@ exports.getEventDetail = async (req, res, next) => {
 
     const result = await pool
       .request()
-      .input("maSK", sql.Char(13), id)
+      .input("maSK", sql.VarChar, id)
       .query(query);
 
     if (result.recordset.length === 0) {

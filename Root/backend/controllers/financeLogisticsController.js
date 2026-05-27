@@ -2,7 +2,7 @@ const { getPool, sql } = require("../db");
 
 // Helper: Lấy MaCLB của tài khoản BCN hiện tại
 const getClubOfUser = async (pool, maND) => {
-  const result = await pool.request().input("MaND", sql.VarChar(13), maND)
+  const result = await pool.request().input("MaND", sql.VarChar, maND)
     .query(`
       SELECT MaCLB FROM THANH_VIEN 
       WHERE MaND = @MaND AND VaiTroCLB IN (N'Chủ nhiệm', N'Phó chủ nhiệm', N'Trưởng ban') AND TrangThai = N'Hoạt động'
@@ -38,7 +38,7 @@ const getResources = async (req, res, next) => {
 
     const eventsRes = await pool
       .request()
-      .input("MaCLB", sql.VarChar(13), MaCLB)
+      .input("MaCLB", sql.VarChar, MaCLB)
       .query(
         "SELECT MaSK, TenSK FROM SU_KIEN WHERE MaCLB = @MaCLB ORDER BY NgayTao DESC",
       );
@@ -65,7 +65,7 @@ const getTransactions = async (req, res, next) => {
     const pool = await getPool();
     const MaCLB = await getClubOfUser(pool, req.user.maND);
 
-    const result = await pool.request().input("MaCLB", sql.VarChar(13), MaCLB)
+    const result = await pool.request().input("MaCLB", sql.VarChar, MaCLB)
       .query(`
       SELECT MaTC, TenTaiChinh, Nam, TongThu, TongChi, NgayBatDau, TrangThai, NgayTao
       FROM TAI_CHINH
@@ -92,8 +92,8 @@ const createTransaction = async (req, res, next) => {
 
     await pool
       .request()
-      .input("MaTC", sql.VarChar(13), MaTC)
-      .input("MaCLB", sql.VarChar(13), MaCLB)
+      .input("MaTC", sql.VarChar, MaTC)
+      .input("MaCLB", sql.VarChar, MaCLB)
       .input("TenTaiChinh", sql.NVarChar(100), content)
       .input("Nam", sql.Int, year)
       .input("TongThu", sql.Decimal(18, 2), tongThu)
@@ -114,7 +114,7 @@ const getBorrowings = async (req, res, next) => {
     const pool = await getPool();
     const MaCLB = await getClubOfUser(pool, req.user.maND);
 
-    const result = await pool.request().input("MaCLB", sql.VarChar(13), MaCLB)
+    const result = await pool.request().input("MaCLB", sql.VarChar, MaCLB)
       .query(`
       SELECT 
         PM.MaPhieu, PM.NgayTaoPhieu, PM.NgayTraDuKien, PM.trangThaiPhieu,
@@ -148,10 +148,10 @@ const createBorrowing = async (req, res, next) => {
       const request = new sql.Request(transaction);
 
       await request
-        .input("MaPhieu", sql.VarChar(13), MaPhieu)
-        .input("MaCLB", sql.VarChar(13), MaCLB)
-        .input("MaSK", sql.VarChar(13), eventId || null)
-        .input("NguoiMuon", sql.VarChar(13), req.user.maND)
+        .input("MaPhieu", sql.VarChar, MaPhieu)
+        .input("MaCLB", sql.VarChar, MaCLB)
+        .input("MaSK", sql.VarChar, eventId || null)
+        .input("NguoiMuon", sql.VarChar, req.user.maND)
         .input("NgayTao", sql.Date, new Date(borrowDate))
         .input("NgayTra", sql.Date, new Date(returnDate)).query(`
           INSERT INTO PHIEU_MUON_TRA (MaPhieu, MaCLB, MaSK, NguoiMuonID, NgayTaoPhieu, NgayTraDuKien, trangThaiPhieu)
@@ -159,7 +159,7 @@ const createBorrowing = async (req, res, next) => {
         `);
 
       await request
-        .input("MaTS", sql.VarChar(13), assetId)
+        .input("MaTS", sql.VarChar, assetId)
         .input("SoLuong", sql.Int, quantity || 1).query(`
           INSERT INTO CHI_TIET_PHIEU_MUON (MaPhieu, MaTS, SoLuongMuon, tinhTrang)
           VALUES (@MaPhieu, @MaTS, @SoLuong, N'Tốt')
@@ -183,7 +183,7 @@ const returnEquipment = async (req, res, next) => {
   try {
     const { id } = req.params;
     const pool = await getPool();
-    await pool.request().input("MaPhieu", sql.VarChar(13), id).query(`
+    await pool.request().input("MaPhieu", sql.VarChar, id).query(`
       UPDATE PHIEU_MUON_TRA SET trangThaiPhieu = N'Đã trả' WHERE MaPhieu = @MaPhieu
     `);
     res

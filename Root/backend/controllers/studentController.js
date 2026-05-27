@@ -56,11 +56,16 @@ async function getMyNotifications(req, res, next) {
       .query(`
         SELECT 
           tb.MaTB, tb.TieuDe, tb.NoiDung, tb.NgayGui, tb.LoaiTB,
-          clb.TenCLB, clb.Logo as ClubLogo,
-          ISNULL(tbnd.DaDoc, 0) as DaDoc
+          COALESCE(clb.TenCLB, kh.tenKhoa, sk.TenSK, tk.hoTen, N'Hệ thống') as TenCLB,
+          clb.Logo as ClubLogo,
+          ISNULL(tbnd.DaDoc, 0) as DaDoc,
+          tb.MaKhoa, tb.MaSuKien, tb.MaCLB, tb.idNguoiNhan, tb.idNguoiGui
         FROM THONG_BAO_NGUOIDUNG tbnd
         JOIN THONG_BAO tb ON tbnd.MaTB = tb.MaTB
         LEFT JOIN CAULACBO clb ON tb.MaCLB = clb.MaCLB
+        LEFT JOIN Khoa kh ON tb.MaKhoa = kh.maKhoa
+        LEFT JOIN SU_KIEN sk ON tb.MaSuKien = sk.MaSK
+        LEFT JOIN TAI_KHOAN tk ON tb.idNguoiGui = tk.MaND
         WHERE tbnd.MaND = @maND
         ORDER BY tb.NgayGui DESC
       `);

@@ -41,7 +41,7 @@ CREATE TABLE VAI_TRO (
 );
 
 CREATE TABLE TAI_KHOAN (
-    MaND VARCHAR(13) PRIMARY KEY,
+    MaND VARCHAR(20) PRIMARY KEY,
     hoTen NVARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     matKhau VARCHAR(255) NOT NULL,       -- bcrypt hash
@@ -69,7 +69,7 @@ CREATE TABLE Lop (
 );
 
 CREATE TABLE NGUOIDUNG_VAITRO (
-    MaND VARCHAR(13),
+    MaND VARCHAR(20),
     VaiTroID VARCHAR(13),
     GhiChu NVARCHAR(255),
     PRIMARY KEY (MaND, VaiTroID),
@@ -80,7 +80,7 @@ CREATE TABLE NGUOIDUNG_VAITRO (
 );
 
 CREATE TABLE SINHVIEN (
-    maSV VARCHAR(13) PRIMARY KEY,
+    maSV VARCHAR(20) PRIMARY KEY,
     maLop VARCHAR(13),
     diemRenLuyen INT DEFAULT 0,
     CONSTRAINT FK_SV_TaiKhoan FOREIGN KEY (maSV) REFERENCES TAI_KHOAN(MaND) 
@@ -90,7 +90,7 @@ CREATE TABLE SINHVIEN (
 );
 
 CREATE TABLE CANBO (
-    maCanBo VARCHAR(13) PRIMARY KEY,
+    maCanBo VARCHAR(20) PRIMARY KEY,
     maDVQL VARCHAR(13),
     chucVu NVARCHAR(50),
     trangThai BIT DEFAULT 1,
@@ -151,7 +151,7 @@ CREATE TABLE TAI_CHINH (
 CREATE TABLE THANH_VIEN (
     MaTV VARCHAR(13) PRIMARY KEY,
     MaCLB VARCHAR(13),
-    MaND VARCHAR(13),
+    MaND VARCHAR(20),
     VaiTroCLB NVARCHAR(50),
     NgayThamGia DATE,
     NgayRoi DATE,
@@ -189,7 +189,7 @@ CREATE TABLE SU_KIEN (
 
 CREATE TABLE DANGKY_MO_CLB (
     MaDKMo VARCHAR(13) PRIMARY KEY,
-    MaND VARCHAR(13) NOT NULL,               -- Sinh viên nộp đơn (Chủ nhiệm tương lai)
+    MaND VARCHAR(20) NOT NULL,               -- Sinh viên nộp đơn (Chủ nhiệm tương lai)
     MaDVQL VARCHAR(13) NOT NULL,             -- Khoa/Đơn vị quản lý duyệt vòng 1
     TenCLB NVARCHAR(150) NOT NULL,
     LinhVuc NVARCHAR(50),
@@ -231,7 +231,7 @@ CREATE TABLE NHIEM_VU (
     TenNV NVARCHAR(200) NOT NULL,
     MoTa NVARCHAR(MAX),
     MaTV_PhuTrach VARCHAR(13),
-    NguoiGiaoID VARCHAR(13),
+    NguoiGiaoID VARCHAR(20),
     TienDo INT DEFAULT 0,
     NgayBatDau DATE,
     HanChot DATETIME,
@@ -266,12 +266,12 @@ CREATE TABLE PHAN_CONG_NHIEMVU (
 CREATE TABLE YEU_CAU_THAM_GIA_CLB (
     MaYC VARCHAR(13) PRIMARY KEY,
     MaCLB VARCHAR(13),
-    MaSV VARCHAR(13),
+    MaSV VARCHAR(20),
     LyDoThamGia NVARCHAR(MAX),
     NgayNop DATETIME DEFAULT GETDATE(),
     TrangThai NVARCHAR(50) DEFAULT 'cho_duyet',
     NgayDuyet DATETIME,
-    NguoiDuyetID VARCHAR(13),
+    NguoiDuyetID VARCHAR(20),
     LyDoTuChoi NVARCHAR(MAX),
     CONSTRAINT FK_YCTG_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT FK_YCTG_SV FOREIGN KEY (MaSV) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION,
@@ -280,9 +280,9 @@ CREATE TABLE YEU_CAU_THAM_GIA_CLB (
 
 CREATE TABLE DANGKY_SUKIEN (
     MaSK VARCHAR(13),
-    MaND VARCHAR(13),
+    MaND VARCHAR(20),
     NgayDangKy DATETIME DEFAULT GETDATE(),
-    NguoiDuyetID VARCHAR(13),
+    NguoiDuyetID VARCHAR(20),
     LyDoDangKy NVARCHAR(300),
     NgayDuyet DATETIME,
     TrangThai NVARCHAR(50),
@@ -295,21 +295,26 @@ CREATE TABLE DANGKY_SUKIEN (
 
 CREATE TABLE THONG_BAO (
     MaTB VARCHAR(13) PRIMARY KEY,
-    MaCLB VARCHAR(13),
+    MaKhoa VARCHAR(13) NULL,
+    MaSuKien VARCHAR(13) NULL,
+    MaCLB VARCHAR(13) NULL,
+    idNguoiNhan VARCHAR(20) NULL,
+    idNguoiGui VARCHAR(20) NULL,
     TieuDe NVARCHAR(200) NOT NULL,
     NoiDung NVARCHAR(MAX),
-    NguoiGuiID VARCHAR(13),
-    SoNguoiNhan INT,
     LoaiTB NVARCHAR(50),
     NgayGui DATETIME DEFAULT GETDATE(),
     TrangThai NVARCHAR(50),
-    CONSTRAINT FK_TB_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT FK_TB_TaiKhoan FOREIGN KEY (NguoiGuiID) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
+    CONSTRAINT FK_TB_Khoa FOREIGN KEY (MaKhoa) REFERENCES Khoa(maKhoa) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_TB_SuKien FOREIGN KEY (MaSuKien) REFERENCES SU_KIEN(MaSK) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_TB_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_TB_NguoiNhan FOREIGN KEY (idNguoiNhan) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_TB_NguoiGui FOREIGN KEY (idNguoiGui) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
 CREATE TABLE THONG_BAO_NGUOIDUNG (
     MaTB VARCHAR(13) NOT NULL,
-    MaND VARCHAR(13) NOT NULL,
+    MaND VARCHAR(20) NOT NULL,
     DaDoc BIT DEFAULT 0,
     NgayDoc DATETIME,
     PRIMARY KEY (MaTB, MaND),
@@ -321,8 +326,8 @@ CREATE TABLE THONG_BAO_NGUOIDUNG (
 CREATE TABLE HOSO (
     MaHoSo VARCHAR(13) PRIMARY KEY,
     maCLB VARCHAR(13),
-    maNguoiGui VARCHAR(13),
-    maNguoiDuyet VARCHAR(13),
+    maNguoiGui VARCHAR(20),
+    maNguoiDuyet VARCHAR(20),
     loaiHoSo NVARCHAR(50),
     TieuDe NVARCHAR(200) NOT NULL,
     NoiDung NVARCHAR(MAX),
@@ -338,13 +343,13 @@ CREATE TABLE HOSO (
 
 CREATE TABLE KHEN_THUONG_KY_LUAT (
     MaKTKL VARCHAR(13) PRIMARY KEY,
-    MaND VARCHAR(13),
+    MaND VARCHAR(20),
     MaCLB VARCHAR(13),
     Loai NVARCHAR(50),
     HinhThuc NVARCHAR(100),
     DiemThayDoi FLOAT,
     LyDo NVARCHAR(MAX),
-    NguoiQuyetDinhID VARCHAR(13),
+    NguoiQuyetDinhID VARCHAR(20),
     NgayQuyetDinh DATETIME,
     NgayHieuLuc DATE,
     FileMinhChung NVARCHAR(255),
@@ -358,7 +363,7 @@ CREATE TABLE PHIEU_MUON_TRA (
     MaPhieu VARCHAR(13) PRIMARY KEY,
     MaCLB VARCHAR(13),
     MaSK VARCHAR(13),
-    NguoiMuonID VARCHAR(13),
+    NguoiMuonID VARCHAR(20),
     NgayTaoPhieu DATE DEFAULT GETDATE(),
     NgayTraDuKien DATE,
     trangThaiPhieu NVARCHAR(50),
@@ -418,26 +423,26 @@ GO
 -- 5.4 Lớp (Đã cập nhật theo tên Khoa)
 -- ---------------------------------------------
 INSERT INTO Lop (maLop, maKhoa, tenLop, nienKhoa, siSo, trangThai) VALUES
-('LOP00000001', 'KHOA0000001', N'21TCLC_CNS1', N'2021-2025', 35, N'Đang học'),
-('LOP00000002', 'KHOA0000001', N'21TCLC_CNS2', N'2021-2025', 33, N'Đang học'),
-('LOP00000003', 'KHOA0000002', N'21TCLC_DDT1', N'2021-2025', 36, N'Đang học'),
-('LOP00000004', 'KHOA0000003', N'22TCLC_CK1',  N'2022-2026', 34, N'Đang học'),
-('LOP00000005', 'KHOA0000004', N'22TCLC_HOA1', N'2022-2026', 32, N'Đang học');
+('LOP00000001', 'KHOA0000001', N'23T1', N'2021-2025', 35, N'Đang học'),
+('LOP00000002', 'KHOA0000001', N'23T2', N'2021-2025', 33, N'Đang học'),
+('LOP00000003', 'KHOA0000002', N'23ĐDT1', N'2021-2025', 36, N'Đang học'),
+('LOP00000004', 'KHOA0000003', N'23CK1',  N'2022-2026', 34, N'Đang học'),
+('LOP00000005', 'KHOA0000004', N'23H1', N'2022-2026', 32, N'Đang học');
 GO
 
 -- ---------------------------------------------
 -- 5.5 Tài khoản (matKhau = bcrypt("password"))
 -- ---------------------------------------------
 INSERT INTO TAI_KHOAN (MaND, hoTen, email, matKhau, soDienThoai, ngaySinh, gioiTinh, trangThai) VALUES
-('SV210000001', N'Nguyễn Văn An',      'an.nv@sv.ute.udn.vn',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234561', '2003-05-15', N'Nam',  1),
-('SV210000002', N'Trần Thị Bình',      'binh.tt@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234562', '2003-08-22', N'Nữ',   1),
-('SV210000003', N'Lê Hoàng Cường',     'cuong.lh@sv.ute.udn.vn',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234563', '2003-11-10', N'Nam',  1),
-('SV210000004', N'Phạm Thị Dung',      'dung.pt@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234564', '2003-02-28', N'Nữ',   1),
-('SV220000005', N'Hoàng Minh Đức',     'duc.hm@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234565', '2004-07-03', N'Nam',  1),
-('SV220000006', N'Võ Thị Hoa',         'hoa.vt@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234566', '2004-09-17', N'Nữ',   1),
-('SV220000007', N'Đặng Quốc Hùng',     'hung.dq@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234567', '2004-01-25', N'Nam',  1),
-('SV220000008', N'Bùi Thị Lan',        'lan.bt@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234568', '2004-04-12', N'Nữ',   1),
-('SV210000009', N'Trần Văn Khóa',      'khoa.tv@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234569', '2003-06-20', N'Nam',  0),
+('23115053122115', N'Nguyễn Văn An',      '23115053122115@sv.ute.udn.vn',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234561', '2003-05-15', N'Nam',  1),
+('23115053122116', N'Trần Thị Bình',      '23115053122116@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234562', '2003-08-22', N'Nữ',   1),
+('23115053122117', N'Lê Hoàng Cường',     '23115053122117@sv.ute.udn.vn',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234563', '2003-11-10', N'Nam',  1),
+('23115053122118', N'Phạm Thị Dung',      '23115053122118@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234564', '2003-02-28', N'Nữ',   1),
+('23115053122119', N'Hoàng Minh Đức',     '23115053122119@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234565', '2004-07-03', N'Nam',  1),
+('23115053122120', N'Võ Thị Hoa',         '23115053122120@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234566', '2004-09-17', N'Nữ',   1),
+('23115053122121', N'Đặng Quốc Hùng',     '23115053122121@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234567', '2004-01-25', N'Nam',  1),
+('23115053122122', N'Bùi Thị Lan',        '23115053122122@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234568', '2004-04-12', N'Nữ',   1),
+('23115053122123', N'Trần Văn Khóa',      '23115053122123@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234569', '2003-06-20', N'Nam',  0),
 ('CB000000001', N'Nguyễn Thị Quản',    'quan.nt@ute.udn.vn',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234570', '1990-03-10', N'Nữ',   1),
 ('CB000000002', N'Hoàng Thị Mỹ Lệ',       'le.htm@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234571', '1988-11-05', N'Nam',  1),
 ('CB000000003', N'Nguyễn Hữu Thọ',     'tho.nh@ute.udn.vn',        '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0896998961', '1960-11-05', N'Nam',  1);
@@ -447,15 +452,15 @@ GO
 -- 5.6 Sinh viên
 -- ---------------------------------------------
 INSERT INTO SINHVIEN (maSV, maLop, diemRenLuyen) VALUES
-('SV210000001', 'LOP00000001', 85),
-('SV210000002', 'LOP00000001', 78),
-('SV210000003', 'LOP00000002', 90),
-('SV210000004', 'LOP00000002', 72),
-('SV220000005', 'LOP00000003', 88),
-('SV220000006', 'LOP00000004', 65),
-('SV220000007', 'LOP00000004', 92),
-('SV220000008', 'LOP00000005', 70),
-('SV210000009', 'LOP00000001', 50);
+('23115053122115', 'LOP00000001', 85),
+('23115053122116', 'LOP00000001', 78),
+('23115053122117', 'LOP00000002', 90),
+('23115053122118', 'LOP00000002', 72),
+('23115053122119', 'LOP00000003', 88),
+('23115053122120', 'LOP00000004', 65),
+('23115053122121', 'LOP00000004', 92),
+('23115053122122', 'LOP00000005', 70),
+('23115053122123', 'LOP00000001', 50);
 GO
 
 -- ---------------------------------------------
@@ -471,15 +476,15 @@ GO
 -- 5.8 Vai trò người dùng
 -- ---------------------------------------------
 INSERT INTO NGUOIDUNG_VAITRO (MaND, VaiTroID, GhiChu) VALUES
-('SV210000001', 'VT000000001', N'Sinh viên thường'),
-('SV210000002', 'VT000000001', N'Sinh viên thường'),
-('SV210000003', 'VT000000001', N'Sinh viên thường'),
-('SV210000004', 'VT000000001', N'Sinh viên thường'),
-('SV220000005', 'VT000000001', N'Sinh viên thường'),
-('SV220000006', 'VT000000001', N'Sinh viên thường'),
-('SV220000007', 'VT000000001', N'Sinh viên thường'),
-('SV220000008', 'VT000000001', N'Sinh viên thường'),
-('SV210000009', 'VT000000001', N'Tài khoản bị khóa'),
+('23115053122115', 'VT000000001', N'Sinh viên thường'),
+('23115053122116', 'VT000000001', N'Sinh viên thường'),
+('23115053122117', 'VT000000001', N'Sinh viên thường'),
+('23115053122118', 'VT000000001', N'Sinh viên thường'),
+('23115053122119', 'VT000000001', N'Sinh viên thường'),
+('23115053122120', 'VT000000001', N'Sinh viên thường'),
+('23115053122121', 'VT000000001', N'Sinh viên thường'),
+('23115053122122', 'VT000000001', N'Sinh viên thường'),
+('23115053122123', 'VT000000001', N'Tài khoản bị khóa'),
 ('CB000000001', 'VT000000003', N'Cán bộ Đoàn'),
 ('CB000000002', 'VT000000003', N'Cán bộ Khoa CNS'),
 ('CB000000003', 'VT000000004', N'Cán bộ CTSV');
@@ -511,14 +516,14 @@ GO
 -- 5.10 Thành viên CLB
 -- ---------------------------------------------
 INSERT INTO THANH_VIEN (MaTV, MaCLB, MaND, VaiTroCLB, NgayThamGia, TrangThai) VALUES
-('TV000000001', 'CLB00000001', 'SV210000001', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
-('TV000000002', 'CLB00000001', 'SV210000002', N'Thành viên',   '2021-10-01', N'Hoạt động'),
-('TV000000003', 'CLB00000001', 'SV210000003', N'Thành viên',   '2022-01-15', N'Hoạt động'),
-('TV000000004', 'CLB00000002', 'SV210000004', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
-('TV000000005', 'CLB00000002', 'SV220000005', N'Thành viên',   '2022-09-05', N'Hoạt động'),
-('TV000000006', 'CLB00000003', 'SV220000006', N'Chủ nhiệm',    '2022-09-01', N'Hoạt động'),
-('TV000000007', 'CLB00000003', 'SV220000007', N'Thành viên',   '2022-09-01', N'Hoạt động'),
-('TV000000008', 'CLB00000004', 'SV220000008', N'Thành viên',   '2022-10-10', N'Hoạt động');
+('TV000000001', 'CLB00000001', '23115053122115', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
+('TV000000002', 'CLB00000001', '23115053122116', N'Thành viên',   '2021-10-01', N'Hoạt động'),
+('TV000000003', 'CLB00000001', '23115053122117', N'Thành viên',   '2022-01-15', N'Hoạt động'),
+('TV000000004', 'CLB00000002', '23115053122118', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
+('TV000000005', 'CLB00000002', '23115053122119', N'Thành viên',   '2022-09-05', N'Hoạt động'),
+('TV000000006', 'CLB00000003', '23115053122120', N'Chủ nhiệm',    '2022-09-01', N'Hoạt động'),
+('TV000000007', 'CLB00000003', '23115053122121', N'Thành viên',   '2022-09-01', N'Hoạt động'),
+('TV000000008', 'CLB00000004', '23115053122122', N'Thành viên',   '2022-10-10', N'Hoạt động');
 GO
 
 -- ---------------------------------------------
@@ -539,23 +544,23 @@ GO
 -- 5.12 Đăng ký sự kiện mẫu
 -- ---------------------------------------------
 INSERT INTO DANGKY_SUKIEN (MaSK, MaND, NgayDangKy, NguoiDuyetID, NgayDuyet, TrangThai, LyDoDangKy) VALUES
-('SK000000001', 'SV210000001', '2026-05-20 09:00', 'CB000000001', '2026-05-20 10:00', N'da_duyet',      N'Muốn học ReactJS'),
-('SK000000002', 'SV210000001', '2026-05-21 10:00', 'CB000000001', '2026-05-21 11:00', N'da_duyet',      N'Muốn tham gia hackathon'),
-('SK000000001', 'SV210000002', '2026-05-20 11:00', 'CB000000001', '2026-05-20 12:00', N'da_duyet',      N'Quan tâm đến ReactJS'),
-('SK000000001', 'SV210000003', '2026-05-22 08:30', NULL,          NULL,               N'cho_duyet',     N'Muốn học lập trình web'),
-('SK000000003', 'SV210000004', '2026-05-23 14:00', 'CB000000001', '2026-05-23 15:00', N'da_duyet',      N'Muốn luyện tiếng Anh'),
-('SK000000003', 'SV220000005', '2026-05-24 09:00', NULL,          NULL,               N'da_huy',        N'Đăng ký thử'),
-('SK000000004', 'SV220000006', '2026-05-25 10:00', 'CB000000001', '2026-05-25 11:00', N'da_duyet',      N'Thích bóng đá'),
-('SK000000006', 'SV220000007', '2026-04-30 08:00', 'CB000000001', '2026-04-30 09:00', N'da_diem_danh',  N'Muốn học Git'),
-('SK000000008', 'SV210000001', '2026-05-01 08:00', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', 'SV210000002', '2026-05-01 08:05', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', 'SV210000003', '2026-05-01 08:10', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', 'SV210000004', '2026-05-01 08:15', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', 'SV220000005', '2026-05-01 08:20', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', 'SV220000006', '2026-05-01 08:25', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', 'SV220000007', '2026-05-01 08:30', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', 'SV220000008', '2026-05-01 08:35', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', 'SV210000009', '2026-05-01 08:40', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000001', '23115053122115', '2026-05-20 09:00', 'CB000000001', '2026-05-20 10:00', N'da_duyet',      N'Muốn học ReactJS'),
+('SK000000002', '23115053122115', '2026-05-21 10:00', 'CB000000001', '2026-05-21 11:00', N'da_duyet',      N'Muốn tham gia hackathon'),
+('SK000000001', '23115053122116', '2026-05-20 11:00', 'CB000000001', '2026-05-20 12:00', N'da_duyet',      N'Quan tâm đến ReactJS'),
+('SK000000001', '23115053122117', '2026-05-22 08:30', NULL,          NULL,               N'cho_duyet',     N'Muốn học lập trình web'),
+('SK000000003', '23115053122118', '2026-05-23 14:00', 'CB000000001', '2026-05-23 15:00', N'da_duyet',      N'Muốn luyện tiếng Anh'),
+('SK000000003', '23115053122119', '2026-05-24 09:00', NULL,          NULL,               N'da_huy',        N'Đăng ký thử'),
+('SK000000004', '23115053122120', '2026-05-25 10:00', 'CB000000001', '2026-05-25 11:00', N'da_duyet',      N'Thích bóng đá'),
+('SK000000006', '23115053122121', '2026-04-30 08:00', 'CB000000001', '2026-04-30 09:00', N'da_diem_danh',  N'Muốn học Git'),
+('SK000000008', '23115053122115', '2026-05-01 08:00', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', '23115053122116', '2026-05-01 08:05', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', '23115053122117', '2026-05-01 08:10', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', '23115053122118', '2026-05-01 08:15', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', '23115053122119', '2026-05-01 08:20', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', '23115053122120', '2026-05-01 08:25', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', '23115053122121', '2026-05-01 08:30', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', '23115053122122', '2026-05-01 08:35', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
+('SK000000008', '23115053122123', '2026-05-01 08:40', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
 ('SK000000008', 'CB000000001', '2026-05-01 08:45', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
 ('SK000000008', 'CB000000002', '2026-05-01 08:50', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI');
 GO
@@ -563,47 +568,47 @@ GO
 -- ---------------------------------------------
 -- 5.13 Thông báo và liên kết người nhận
 -- ---------------------------------------------
-INSERT INTO THONG_BAO (MaTB, MaCLB, TieuDe, NoiDung, NguoiGuiID, SoNguoiNhan, LoaiTB, NgayGui, TrangThai) VALUES
-('TB000000001', 'CLB00000001', N'Nộp quỹ CLB tháng 5/2026', N'Chào các thành viên, vui lòng nộp quỹ.', 'SV210000001', 3, N'Tài chính', '2026-05-18 09:00', N'da_gui'),
-('TB000000002', 'CLB00000001', N'Chuẩn bị cho Workshop ReactJS', N'Các thành viên tham gia hỗ trợ Workshop.', 'SV210000001', 3, N'Sự kiện', '2026-05-19 14:30', N'da_gui'),
-('TB000000003', 'CLB00000002', N'Thông báo lịch sinh hoạt tháng 6', N'English Speaking Club tháng 6 sẽ diễn ra...', 'SV210000004', 2, N'Sinh hoạt', '2026-05-20 08:00', N'da_gui');
+INSERT INTO THONG_BAO (MaTB, MaKhoa, MaSuKien, MaCLB, idNguoiNhan, idNguoiGui, TieuDe, NoiDung, LoaiTB, NgayGui, TrangThai) VALUES
+('TB000000001', NULL, NULL, 'CLB00000001', NULL, '23115053122115', N'Nộp quỹ CLB tháng 5/2026', N'Chào các thành viên, vui lòng nộp quỹ.', N'Tài chính', '2026-05-18 09:00', N'da_gui'),
+('TB000000002', NULL, NULL, 'CLB00000001', NULL, '23115053122115', N'Chuẩn bị cho Workshop ReactJS', N'Các thành viên tham gia hỗ trợ Workshop.', N'Sự kiện', '2026-05-19 14:30', N'da_gui'),
+('TB000000003', NULL, NULL, 'CLB00000002', NULL, '23115053122118', N'Thông báo lịch sinh hoạt tháng 6', N'English Speaking Club tháng 6 sẽ diễn ra...', N'Sinh hoạt', '2026-05-20 08:00', N'da_gui');
 GO
 
 INSERT INTO THONG_BAO_NGUOIDUNG (MaTB, MaND, DaDoc, NgayDoc) VALUES
-('TB000000001', 'SV210000001', 0, NULL),
-('TB000000002', 'SV210000001', 0, NULL),
-('TB000000003', 'SV210000001', 1, '2026-05-21 09:15'),
-('TB000000001', 'SV210000003', 0, NULL),
-('TB000000002', 'SV210000003', 1, '2026-05-20 10:00');
+('TB000000001', '23115053122115', 0, NULL),
+('TB000000002', '23115053122115', 0, NULL),
+('TB000000003', '23115053122115', 1, '2026-05-21 09:15'),
+('TB000000001', '23115053122117', 0, NULL),
+('TB000000002', '23115053122117', 1, '2026-05-20 10:00');
 GO
 
 INSERT INTO HOSO (MaHoSo, maCLB, maNguoiGui, maNguoiDuyet, loaiHoSo, TieuDe, NoiDung, FileDinhKem, TrangThai, NgayGui, NgayDuyet, LyDoTuChoi) VALUES
 -- 1. Báo cáo đã được CTSV duyệt (Của CLB Lập trình)
-('HS000000001', 'CLB00000001', 'SV210000001', 'CB000000003', N'Báo cáo Tháng', 
+('HS000000001', 'CLB00000001', '23115053122115', 'CB000000003', N'Báo cáo Tháng', 
  N'Báo cáo hoạt động tháng 4/2026', 
  N'Tổng hợp các hoạt động của CLB trong tháng 4 bao gồm: Lên kế hoạch sự kiện Hackathon và tổ chức trainning nội bộ.', 
  '/uploads/bao-cao-thang-4.pdf', 'approved', '2026-05-02 09:00', '2026-05-05 14:00', NULL),
 
 -- 2. Báo cáo vừa nộp, đang chờ CTSV duyệt (Của CLB Lập trình)
-('HS000000002', 'CLB00000001', 'SV210000001', NULL, N'Báo cáo Tháng', 
+('HS000000002', 'CLB00000001', '23115053122115', NULL, N'Báo cáo Tháng', 
  N'Báo cáo hoạt động tháng 5/2026', 
  N'Báo cáo các sự kiện đã tổ chức thành công trong tháng 5 như Workshop ReactJS và các thu chi liên quan.', 
  '/uploads/bao-cao-thang-5.pdf', 'submitted', '2026-05-25 10:30', NULL, NULL),
 
 -- 3. Báo cáo đang viết dở (Bản nháp - Của CLB Lập trình)
-('HS000000003', 'CLB00000001', 'SV210000001', NULL, N'Tổng kết Học kỳ', 
+('HS000000003', 'CLB00000001', '23115053122115', NULL, N'Tổng kết Học kỳ', 
  N'Báo cáo tổng kết học kỳ II năm học 2025-2026', 
  N'Đang tổng hợp số liệu thành viên và các thành tích đạt được trong học kỳ vừa qua...', 
  NULL, 'draft', '2026-05-25 15:00', NULL, NULL),
 
 -- 4. Đơn giải thể (Của CLB Tiếng Anh)
-('HS000000004', 'CLB00000002', 'SV210000004', NULL, N'Đơn giải thể', 
+('HS000000004', 'CLB00000002', '23115053122118', NULL, N'Đơn giải thể', 
  N'Đơn xin giải thể CLB Tiếng Anh UTE', 
  N'Kính gửi Phòng CTSV, do hiện tại Ban chủ nhiệm không còn đủ nhân sự nòng cốt để duy trì các hoạt động định kỳ, chúng em xin phép nộp đơn xin tạm ngừng hoạt động và giải thể CLB.', 
  '/uploads/don-giai-the.pdf', 'submitted', '2026-05-20 08:00', NULL, NULL),
 
 -- 5. Báo cáo bị từ chối (Yêu cầu làm lại - Của CLB Thể Thao)
-('HS000000005', 'CLB00000003', 'SV220000006', 'CB000000003', N'Tổng kết Nhiệm kỳ', 
+('HS000000005', 'CLB00000003', '23115053122120', 'CB000000003', N'Tổng kết Nhiệm kỳ', 
  N'Báo cáo tổng kết nhiệm kỳ 2024-2025', 
  N'Tổng kết các giải đấu đã tổ chức.', 
  '/uploads/bao-cao-nhiem-ky.pdf', 'tu_choi', '2026-01-10 09:00', '2026-01-12 10:00', N'Báo cáo thiếu phần kê khai tài chính, yêu cầu bổ sung và nộp lại.');
@@ -634,10 +639,10 @@ GO
 -- 5.16 Phiếu mượn trả cơ sở vật chất
 -- =============================================
 INSERT INTO PHIEU_MUON_TRA (MaPhieu, MaCLB, MaSK, NguoiMuonID, NgayTaoPhieu, NgayTraDuKien, trangThaiPhieu) VALUES
-('PM000000001', 'CLB00000001', 'SK000000001', 'SV210000001', '2026-05-09', '2026-05-10', N'Đã trả'),
-('PM000000002', 'CLB00000001', 'SK000000002', 'SV210000002', '2026-05-19', '2026-05-22', N'Đang mượn'), 
-('PM000000003', 'CLB00000001', NULL, 'SV210000003', '2026-05-10', '2026-05-12', N'Đang mượn'), 
-('PM000000004', 'CLB00000002', 'SK000000003', 'SV210000004', '2026-05-14', '2026-05-16', N'Đã trả');
+('PM000000001', 'CLB00000001', 'SK000000001', '23115053122115', '2026-05-09', '2026-05-10', N'Đã trả'),
+('PM000000002', 'CLB00000001', 'SK000000002', '23115053122116', '2026-05-19', '2026-05-22', N'Đang mượn'), 
+('PM000000003', 'CLB00000001', NULL, '23115053122117', '2026-05-10', '2026-05-12', N'Đang mượn'), 
+('PM000000004', 'CLB00000002', 'SK000000003', '23115053122118', '2026-05-14', '2026-05-16', N'Đã trả');
 GO
 
 -- =============================================

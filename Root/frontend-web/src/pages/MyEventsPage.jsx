@@ -155,12 +155,21 @@ function EventItem({ event, onViewDetail, onViewQR }) {
   const thoiGianBatDau = event.thoiGianBatDau;
   const trangThaiDangKy = event.trangThaiDangKy;
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onViewDetail();
+    }
+  };
+
   return (
     <li>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onViewDetail}
-        className="w-full text-left bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-indigo-100 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        onKeyDown={handleKeyDown}
+        className="w-full text-left bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-indigo-100 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer"
         aria-label={`Xem chi tiết sự kiện ${tenSK}`}
       >
         <div className="flex items-stretch gap-0">
@@ -214,7 +223,7 @@ function EventItem({ event, onViewDetail, onViewQR }) {
             </div>
           </div>
         </div>
-      </button>
+      </div>
     </li>
   );
 }

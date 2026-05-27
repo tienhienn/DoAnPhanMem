@@ -18,11 +18,13 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: xử lý 401 - xóa token và redirect về login
+// Response interceptor: xử lý 401 hoặc 404 ở endpoint /api/students/me (phiên đăng nhập hết hạn hoặc bị xóa)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const isProfileUrl = error.config?.url?.includes('/api/students/me');
+    if (status === 401 || (status === 404 && isProfileUrl)) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

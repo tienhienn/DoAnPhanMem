@@ -6,7 +6,7 @@ const sql = require("mssql");
  */
 async function getDVQLOfCanBo(pool, maND) {
   const result = await pool.request()
-    .input("MaND", sql.VarChar(13), maND)
+    .input("MaND", sql.VarChar, maND)
     .query(`
       SELECT maDVQL 
       FROM CANBO 
@@ -96,9 +96,9 @@ async function registerClub(req, res, next) {
       : "Nộp hồ sơ đăng ký thành lập CLB thành công! Vui lòng chờ Khoa/Đơn vị quản lý phê duyệt.";
 
     await pool.request()
-      .input("maDKMo", sql.VarChar(13), maDKMo)
-      .input("maND", sql.VarChar(13), maND)
-      .input("maDVQL", sql.VarChar(13), maDVQL)
+      .input("maDKMo", sql.VarChar, maDKMo)
+      .input("maND", sql.VarChar, maND)
+      .input("maDVQL", sql.VarChar, maDVQL)
       .input("tenCLB", sql.NVarChar(150), tenCLB)
       .input("linhVuc", sql.NVarChar(50), linhVuc)
       .input("noiDungHoSo", sql.NVarChar(sql.MAX), jsonStr)
@@ -129,7 +129,7 @@ async function getMyRegistrations(req, res, next) {
     const pool = await getPool();
 
     const result = await pool.request()
-      .input("maND", sql.VarChar(13), maND)
+      .input("maND", sql.VarChar, maND)
       .query(`
         SELECT dk.*, dv.tenDVQL 
         FROM DANGKY_MO_CLB dk
@@ -183,7 +183,7 @@ async function getRegistrations(req, res, next) {
         ORDER BY dk.NgayTao DESC
       `;
       const result = await pool.request()
-        .input("maDVQL", sql.VarChar(13), maDVQL)
+        .input("maDVQL", sql.VarChar, maDVQL)
         .query(query);
 
       const list = result.recordset.map(row => {
@@ -254,7 +254,7 @@ async function reviewRegistration(req, res, next) {
 
     // Lấy thông tin đơn đăng ký hiện tại
     const dkResult = await pool.request()
-      .input("id", sql.VarChar(13), id)
+      .input("id", sql.VarChar, id)
       .query(`
         SELECT * FROM DANGKY_MO_CLB WHERE MaDKMo = @id
       `);
@@ -286,7 +286,7 @@ async function reviewRegistration(req, res, next) {
 
       if (status === "approved") {
         await pool.request()
-          .input("id", sql.VarChar(13), id)
+          .input("id", sql.VarChar, id)
           .query(`
             UPDATE DANGKY_MO_CLB 
             SET KhoaDuyet = 1, TrangThai = N'pending_student_affairs', LyDoTuChoi = NULL
@@ -298,7 +298,7 @@ async function reviewRegistration(req, res, next) {
         });
       } else {
         await pool.request()
-          .input("id", sql.VarChar(13), id)
+          .input("id", sql.VarChar, id)
           .input("feedback", sql.NVarChar(sql.MAX), feedback || "")
           .query(`
             UPDATE DANGKY_MO_CLB 
@@ -325,7 +325,7 @@ async function reviewRegistration(req, res, next) {
 
         // 1. Cập nhật đơn đăng ký
         await transaction.request()
-          .input("id", sql.VarChar(13), id)
+          .input("id", sql.VarChar, id)
           .query(`
             UPDATE DANGKY_MO_CLB 
             SET PhongCTSVDuyet = 1, TrangThai = N'approved', LyDoTuChoi = NULL
@@ -356,8 +356,8 @@ async function reviewRegistration(req, res, next) {
         }
 
         await transaction.request()
-          .input("maCLB", sql.VarChar(13), maCLB)
-          .input("maDVQL", sql.VarChar(13), registration.MaDVQL)
+          .input("maCLB", sql.VarChar, maCLB)
+          .input("maDVQL", sql.VarChar, registration.MaDVQL)
           .input("tenCLB", sql.NVarChar(100), registration.TenCLB)
           .input("moTa", sql.NVarChar(sql.MAX), moTaCLB)
           .input("linhVuc", sql.NVarChar(50), registration.LinhVuc)
@@ -382,9 +382,9 @@ async function reviewRegistration(req, res, next) {
         // MaTV = TV + 10 ký tự ngẫu nhiên
         const maTV = "TV" + Date.now().toString().slice(-10) + Math.floor(Math.random() * 10);
         await transaction.request()
-          .input("maTV", sql.VarChar(13), maTV)
-          .input("maCLB", sql.VarChar(13), maCLB)
-          .input("maND", sql.VarChar(13), registration.MaND)
+          .input("maTV", sql.VarChar, maTV)
+          .input("maCLB", sql.VarChar, maCLB)
+          .input("maND", sql.VarChar, registration.MaND)
           .query(`
             INSERT INTO THANH_VIEN (MaTV, MaCLB, MaND, VaiTroCLB, NgayThamGia, TrangThai, DiemDongGop)
             VALUES (@maTV, @maCLB, @maND, N'Chủ nhiệm', CAST(GETDATE() AS DATE), N'Hoạt động', 0)
@@ -399,7 +399,7 @@ async function reviewRegistration(req, res, next) {
       } else {
         // Từ chối đơn
         await pool.request()
-          .input("id", sql.VarChar(13), id)
+          .input("id", sql.VarChar, id)
           .input("feedback", sql.NVarChar(sql.MAX), feedback || "")
           .query(`
             UPDATE DANGKY_MO_CLB 

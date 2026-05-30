@@ -369,7 +369,12 @@ function getNavItems(role) {
       path: "/khoa/clubs",
       icon: UsersGroupIcon,
     };
-    return [events, manage, clubs];
+    const dashboard = {
+      label: "Tổng quan",
+      path: "/khoa/dashboard",
+      icon: ManageIcon,
+    };
+    return [events, dashboard, manage, clubs];
   }
 
   if (role === "CTSV") {

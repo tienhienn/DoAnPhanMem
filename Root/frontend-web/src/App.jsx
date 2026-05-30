@@ -34,6 +34,7 @@ import ClubDetailPage from "./pages/ClubDetailPage";
 import EventTaskManagement from "./pages/BanChuNhiem/EventTaskManagement";
 import ClubManagementPage from "./pages/Khoa/ClubManagementPage";
 import CTSVReportsPage from "./pages/CTSV/CTSVReportManagementPage";
+import KhoaDashboardPage from "./pages/Khoa/KhoaDashboardPage";
 
 /**
  * App - Root component
@@ -114,6 +115,8 @@ export default function App() {
                     element={<FacultyManagementPage />}
                   />
                   <Route path="/khoa/clubs" element={<ClubManagementPage />} />
+                  
+                  <Route path="/khoa/dashboard" element={<KhoaDashboardPage />} />
                 </Route>
 
                 {/* Chỉ Phòng CTSV */}

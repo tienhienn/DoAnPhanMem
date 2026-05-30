@@ -19,6 +19,7 @@ const memberRoutes = require("./routes/members");
 const khoaClubsRouter = require("./routes/khoaClubs");
 
 const financeLogisticsRoutes = require("./routes/financeLogistics");
+const khoaDashboardRouter = require("./routes/khoaDashboard");
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use("/api/khoa/clubs", khoaClubsRouter);
 app.use("/api/bcn/reports", require("./routes/reports"));
 app.use("/api/bcn/finance-logistics", financeLogisticsRoutes);
 app.use("/api/ctsv/reports", require("./routes/ctsvReports"));
+app.use("/api/khoa/dashboard", khoaDashboardRouter);
 
 // Cấp quyền truy cập công khai vào thư mục uploads (sử dụng absolute path)
 const uploadDir = path.join(__dirname, "uploads");

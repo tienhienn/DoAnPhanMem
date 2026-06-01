@@ -58,6 +58,7 @@ app.use("/api/clubs", clubRoutes);
 app.use("/api/bcn/events", bcnEventsRoutes);
 app.use("/api/khoa/events", khoaEventsRoutes);
 app.use("/api/ctsv/events", ctsvEventsRoutes);
+app.use("/api/ctsv/clubs", require("./routes/ctsvClubs"));
 app.use("/api/tasks", taskRoutes);
 app.use("/api/bcn/members", memberRoutes);
 app.use("/api/khoa/clubs", khoaClubsRouter);

@@ -126,8 +126,146 @@ const rejectEventByCTSV = async (req, res, next) => {
   }
 };
 
+/**
+ * Danh sách sự kiện đã được cấp phép (cho màn hình theo dõi CTSV)
+ * GET /api/ctsv/events/approved
+ */
+const getApprovedEventsForCTSV = async (req, res, next) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query(`
+      SELECT
+        sk.MaSK,
+        sk.TenSK,
+        sk.MoTa,
+        sk.ThoiGianBatDau,
+        sk.ThoiGianKetThuc,
+        sk.DiaDiem,
+        sk.SoNguoiToiDa,
+        sk.TrangThai,
+        sk.UrlAnh,
+        sk.DiemRenLuyen,
+        clb.MaCLB,
+        clb.TenCLB,
+        (
+          SELECT COUNT(*) FROM DANGKY_SUKIEN dk
+          WHERE dk.MaSK = sk.MaSK
+            AND dk.TrangThai IN ('da_duyet', 'da_diem_danh', 'cho_duyet')
+        ) AS soNguoiDaDangKy
+      FROM SU_KIEN sk
+      INNER JOIN CAULACBO clb ON sk.MaCLB = clb.MaCLB
+      WHERE sk.KhoaDuyet = 1
+        AND sk.PhongCTSVDuyet = 1
+      ORDER BY sk.ThoiGianBatDau DESC
+    `);
+
+    res.status(200).json({
+      success: true,
+      data: result.recordset || [],
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Chi tiết sự kiện (CTSV — không lọc theo ngày kết thúc)
+ * GET /api/ctsv/events/:id/detail
+ */
+const getEventDetailForCTSV = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const pool = await getPool();
+    const result = await pool
+      .request()
+      .input("MaSK", sql.NVarChar, id)
+      .query(`
+        SELECT
+          sk.MaSK,
+          sk.TenSK,
+          sk.MoTa,
+          sk.ThoiGianBatDau,
+          sk.ThoiGianKetThuc,
+          sk.DiaDiem,
+          sk.SoNguoiToiDa,
+          sk.TrangThai,
+          sk.UrlAnh,
+          sk.DiemRenLuyen,
+          clb.MaCLB,
+          clb.TenCLB,
+          (
+            SELECT COUNT(*) FROM DANGKY_SUKIEN dk
+            WHERE dk.MaSK = sk.MaSK
+              AND dk.TrangThai IN ('da_duyet', 'da_diem_danh', 'cho_duyet')
+          ) AS soNguoiDaDangKy
+        FROM SU_KIEN sk
+        INNER JOIN CAULACBO clb ON sk.MaCLB = clb.MaCLB
+        WHERE sk.MaSK = @MaSK
+          AND sk.KhoaDuyet = 1
+          AND sk.PhongCTSVDuyet = 1
+      `);
+
+    if (!result.recordset.length) {
+      return res.status(404).json({
+        success: false,
+        error: { message: "Sự kiện không tồn tại hoặc chưa được cấp phép" },
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: result.recordset[0],
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Danh sách sinh viên đăng ký sự kiện
+ * GET /api/ctsv/events/:id/participants
+ */
+const getEventParticipants = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const pool = await getPool();
+    const result = await pool
+      .request()
+      .input("MaSK", sql.NVarChar, id)
+      .query(`
+        SELECT
+          RTRIM(tk.MaND)          AS maSV,
+          tk.hoTen,
+          tk.email,
+          tk.soDienThoai,
+          l.tenLop,
+          k.tenKhoa,
+          dk.NgayDangKy,
+          dk.TrangThai
+        FROM DANGKY_SUKIEN dk
+        INNER JOIN TAI_KHOAN tk ON dk.MaND = tk.MaND
+        LEFT JOIN SINHVIEN sv ON tk.MaND = sv.maSV
+        LEFT JOIN Lop l ON sv.maLop = l.maLop
+        LEFT JOIN Khoa k ON l.maKhoa = k.maKhoa
+        WHERE dk.MaSK = @MaSK
+          AND dk.TrangThai != 'da_huy'
+        ORDER BY dk.NgayDangKy DESC
+      `);
+
+    res.status(200).json({
+      success: true,
+      data: result.recordset || [],
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getEventsForCTSV,
+  getApprovedEventsForCTSV,
+  getEventDetailForCTSV,
+  getEventParticipants,
   approveEventByCTSV,
   rejectEventByCTSV,
 };

@@ -1,0 +1,184 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "E:\\DoAnPhanMem\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\DoAnPhanMem\\Root\\backend\\.env.example||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Root\\backend\\.env.example||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\DoAnPhanMem\\Root\\frontend-web\\src\\context\\AuthContext.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Root\\frontend-web\\src\\context\\AuthContext.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\DoAnPhanMem\\Root\\frontend-web\\src\\components\\events\\EventCard.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Root\\frontend-web\\src\\components\\events\\EventCard.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\DoAnPhanMem\\Root\\frontend-web\\src\\pages\\EventDetailPage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Root\\frontend-web\\src\\pages\\EventDetailPage.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\DoAnPhanMem\\Root\\backend\\controllers\\eventController.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Root\\backend\\controllers\\eventController.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\DoAnPhanMem\\Root\\backend\\routes\\events.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Root\\backend\\routes\\events.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|E:\\DoAnPhanMem\\Root\\backend\\controllers\\adminEventController.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Root\\backend\\controllers\\adminEventController.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 12,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{e8b06f52-6d01-11d2-aa7d-00c04f990343}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "adminEventController.js",
+              "DocumentMoniker": "E:\\DoAnPhanMem\\Root\\backend\\controllers\\adminEventController.js",
+              "RelativeDocumentMoniker": "Root\\backend\\controllers\\adminEventController.js",
+              "ToolTip": "E:\\DoAnPhanMem\\Root\\backend\\controllers\\adminEventController.js",
+              "RelativeToolTip": "Root\\backend\\controllers\\adminEventController.js",
+              "ViewState": "AgIAAO0AAAAAAAAAAMBVwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-05-26T07:19:49.085Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "eventController.js",
+              "DocumentMoniker": "E:\\DoAnPhanMem\\Root\\backend\\controllers\\eventController.js",
+              "RelativeDocumentMoniker": "Root\\backend\\controllers\\eventController.js",
+              "ToolTip": "E:\\DoAnPhanMem\\Root\\backend\\controllers\\eventController.js",
+              "RelativeToolTip": "Root\\backend\\controllers\\eventController.js",
+              "ViewState": "AgIAAMkAAAAAAAAAAPBzwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-05-22T08:54:21.582Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "EventDetailPage.jsx",
+              "DocumentMoniker": "E:\\DoAnPhanMem\\Root\\frontend-web\\src\\pages\\EventDetailPage.jsx",
+              "RelativeDocumentMoniker": "Root\\frontend-web\\src\\pages\\EventDetailPage.jsx",
+              "ToolTip": "E:\\DoAnPhanMem\\Root\\frontend-web\\src\\pages\\EventDetailPage.jsx",
+              "RelativeToolTip": "Root\\frontend-web\\src\\pages\\EventDetailPage.jsx",
+              "ViewState": "AgIAAH0AAAAAAAAAACBywAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-05-22T08:46:06.422Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "EventCard.jsx",
+              "DocumentMoniker": "E:\\DoAnPhanMem\\Root\\frontend-web\\src\\components\\events\\EventCard.jsx",
+              "RelativeDocumentMoniker": "Root\\frontend-web\\src\\components\\events\\EventCard.jsx",
+              "ToolTip": "E:\\DoAnPhanMem\\Root\\frontend-web\\src\\components\\events\\EventCard.jsx",
+              "RelativeToolTip": "Root\\frontend-web\\src\\components\\events\\EventCard.jsx",
+              "ViewState": "AgIAAKgAAAAAAAAAAABdwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-05-22T08:36:32.289Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": ".env.example",
+              "DocumentMoniker": "E:\\DoAnPhanMem\\Root\\backend\\.env.example",
+              "RelativeDocumentMoniker": "Root\\backend\\.env.example",
+              "ToolTip": "E:\\DoAnPhanMem\\Root\\backend\\.env.example",
+              "RelativeToolTip": "Root\\backend\\.env.example",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2026-05-14T10:54:27.75Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "events.js",
+              "DocumentMoniker": "E:\\DoAnPhanMem\\Root\\backend\\routes\\events.js",
+              "RelativeDocumentMoniker": "Root\\backend\\routes\\events.js",
+              "ToolTip": "E:\\DoAnPhanMem\\Root\\backend\\routes\\events.js",
+              "RelativeToolTip": "Root\\backend\\routes\\events.js",
+              "ViewState": "AgIAAAwAAAAAAAAAAMBVwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-05-22T08:55:18.804Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AuthContext.jsx",
+              "DocumentMoniker": "E:\\DoAnPhanMem\\Root\\frontend-web\\src\\context\\AuthContext.jsx",
+              "RelativeDocumentMoniker": "Root\\frontend-web\\src\\context\\AuthContext.jsx",
+              "ToolTip": "E:\\DoAnPhanMem\\Root\\frontend-web\\src\\context\\AuthContext.jsx",
+              "RelativeToolTip": "Root\\frontend-web\\src\\context\\AuthContext.jsx",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAACkAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-05-13T15:02:30.502Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 822,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

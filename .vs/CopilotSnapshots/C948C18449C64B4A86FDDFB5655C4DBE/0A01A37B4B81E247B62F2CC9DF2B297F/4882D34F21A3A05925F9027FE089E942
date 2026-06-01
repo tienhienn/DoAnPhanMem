@@ -1,0 +1,112 @@
+﻿import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import apiClient from "../../utils/apiClient";
+import * as XLSX from "xlsx";
+import Toast from "../../components/ui/Toast";
+
+export default function CTSVEventsPage() {
+  const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await apiClient.get('/api/admin/events');
+        if (!cancelled) setEvents(res.data.data?.events || []);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setToast({ message: 'Không thể tải danh sách sự kiện', type: 'error' });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleExport = async (maSK, tenSK) => {
+    try {
+      const res = await apiClient.get(`/api/events/${maSK}/participants`);
+      const participants = res.data.data || [];
+      if (!participants.length) {
+        setToast({ message: 'Chưa có ai đăng ký sự kiện', type: 'error' });
+        return;
+      }
+
+      const excelData = participants.map((p, idx) => ({
+        STT: idx + 1,
+        MaSV: p.maSV?.trim(),
+        HoTen: p.hoTen,
+        Email: p.email,
+        SoDienThoai: p.soDienThoai || '',
+        NgayDangKy: new Date(p.NgayDangKy).toLocaleString('vi-VN'),
+        TrangThai: p.TrangThai
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'DanhSach');
+      XLSX.writeFile(wb, `DS_DangKy_${maSK}_${tenSK}.xlsx`);
+      setToast({ message: 'Đã xuất báo cáo thành công', type: 'success' });
+    } catch (err) {
+      console.error(err);
+      setToast({ message: 'Lỗi khi xuất báo cáo', type: 'error' });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-slate-800 mb-4">Quản lý Sự kiện - Phòng CTSV</h1>
+
+        {loading ? (
+          <div className="p-12 text-center text-indigo-600 font-bold">ĐANG TẢI DỮ LIỆU...</div>
+        ) : events.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-xl border border-slate-200">Không có sự kiện chờ duyệt</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map(ev => (
+              <div key={ev.MaSK} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer" onClick={() => setSelected(ev)}>
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-bold text-slate-800 text-lg line-clamp-2">{ev.TenSK}</h3>
+                  <span className="text-xs font-black text-amber-600 px-2 py-0.5 bg-amber-50 rounded">{(ev.TrangThai||'').trim()}</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-4">ID: {ev.MaSK}</p>
+                <p className="text-sm text-slate-600">📍 {ev.DiaDiem}</p>
+                <p className="text-sm text-slate-600">🕒 {new Date(ev.ThoiGianBatDau).toLocaleString('vi-VN')}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal for selected event with two buttons */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-8 shadow-2xl">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">{selected.TenSK}</h2>
+                <p className="text-xs text-slate-400">ID: {selected.MaSK}</p>
+              </div>
+              <button className="text-slate-400 font-bold" onClick={() => setSelected(null)}>Đóng</button>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-lg mb-6">{selected.MoTa || 'Không có mô tả'}</div>
+
+            <div className="flex gap-4">
+              <button onClick={() => { setSelected(null); navigate(`/events/${selected.MaSK}/statistics`); }} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">Chi tiết sự kiện</button>
+              <button onClick={() => handleExport(selected.MaSK.trim(), (selected.TenSK||'').replace(/[^a-zA-Z0-9\u00C0-\u017F ]/g, ''))} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold">Xuất báo cáo</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    </div>
+  );
+}

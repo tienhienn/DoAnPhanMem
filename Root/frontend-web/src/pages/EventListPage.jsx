@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import apiClient from "../utils/apiClient";
 import EventCard from "../components/events/EventCard";
 import SearchBar from "../components/events/SearchBar";
@@ -13,6 +14,7 @@ import EventFilter from "../components/events/EventFilter";
 
 export default function EventListPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -168,7 +170,14 @@ export default function EventListPage() {
                     diemRenLuyen: event.diemRenLuyen,
                   }}
                   registrationStatus="unregistered"
-                  onClick={() => navigate(`/events/${event.maSK.trim()}`)}
+                  onClick={() => {
+                    const eventId = event.maSK.trim();
+                    if (user?.role === "CTSV") {
+                      navigate(`/ctsv/events/${eventId}`);
+                    } else {
+                      navigate(`/events/${eventId}`);
+                    }
+                  }}
                 />
               ))}
             </div>

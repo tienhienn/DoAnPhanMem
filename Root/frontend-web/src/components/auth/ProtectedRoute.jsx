@@ -28,7 +28,6 @@ export default function ProtectedRoute({ roles }) {
 
   // Kiểm tra role nếu được chỉ định
   if (roles && roles.length > 0 && !roles.includes(user?.role)) {
-    // Đã đăng nhập nhưng không đủ quyền → về trang chủ của role đó
     return <Navigate to="/" replace />;
   }
 

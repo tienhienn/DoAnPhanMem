@@ -17,6 +17,10 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Layout from "./components/layout/Layout";
 import LoginPage from "./pages/LoginPage";
 import EventListPage from "./pages/EventListPage";
+import CTSVEventOverviewPage from "./pages/CTSV/CTSVEventOverviewPage";
+import CTSVEventStatisticsPage from "./pages/CTSV/CTSVEventStatisticsPage";
+import CTSVClubOverviewPage from "./pages/CTSV/CTSVClubOverviewPage";
+import CTSVClubStatisticsPage from "./pages/CTSV/CTSVClubStatisticsPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import QRScreen from "./pages/QRScreen";
 import MyEventsPage from "./pages/MyEventsPage";
@@ -121,6 +125,22 @@ export default function App() {
 
                 {/* Chỉ Phòng CTSV */}
                 <Route element={<ProtectedRoute roles={["CTSV"]} />}>
+                  <Route
+                    path="/ctsv/events/:id"
+                    element={<CTSVEventOverviewPage />}
+                  />
+                  <Route
+                    path="/ctsv/events/:id/statistics"
+                    element={<CTSVEventStatisticsPage />}
+                  />
+                  <Route
+                    path="/ctsv/clubs/:id"
+                    element={<CTSVClubOverviewPage />}
+                  />
+                  <Route
+                    path="/ctsv/clubs/:id/statistics"
+                    element={<CTSVClubStatisticsPage />}
+                  />
                   <Route
                     path="/student-affairs"
                     element={<StudentAffairsPage />}

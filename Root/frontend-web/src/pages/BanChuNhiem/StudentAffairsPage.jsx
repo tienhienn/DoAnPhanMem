@@ -20,6 +20,7 @@ import {
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import apiClient from "../../utils/apiClient";
+import CTSVEstablishedClubsPanel from "../CTSV/CTSVEstablishedClubsPanel";
 
 // ============================================
 // STATUS CONFIG
@@ -612,6 +613,8 @@ export default function StudentAffairsPage() {
   const [activeTab, setActiveTab] = useState("events"); // "events" | "clubs"
   const [events, setEvents] = useState([]);
   const [registrations, setRegistrations] = useState([]);
+  const [establishedClubs, setEstablishedClubs] = useState([]);
+  const [clubsLoading, setClubsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Modals
@@ -622,6 +625,18 @@ export default function StudentAffairsPage() {
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
 
   const [activeFilter, setActiveFilter] = useState("pending_student_affairs");
+
+  const fetchEstablishedClubs = useCallback(async () => {
+    try {
+      setClubsLoading(true);
+      const res = await apiClient.get("/api/ctsv/clubs/established");
+      setEstablishedClubs(res.data.data ?? []);
+    } catch (err) {
+      console.error("Error fetching established clubs:", err);
+    } finally {
+      setClubsLoading(false);
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -647,6 +662,10 @@ export default function StudentAffairsPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    fetchEstablishedClubs();
+  }, [fetchEstablishedClubs]);
 
   // ── Stats (Events) ─────────────────────────────────────────────
   // Status mapping: backend uses Vietnamese values
@@ -750,6 +769,7 @@ export default function StudentAffairsPage() {
       );
       setIsRegModalOpen(false);
       fetchData();
+      fetchEstablishedClubs();
     } catch (err) {
       alert("Lỗi: " + (err.response?.data?.message || err.message));
     } finally {
@@ -803,7 +823,10 @@ export default function StudentAffairsPage() {
                 <FiDownload className="w-4 h-4" /> Xuất báo cáo
               </button>
               <button
-                onClick={fetchData}
+                onClick={() => {
+                  fetchData();
+                  fetchEstablishedClubs();
+                }}
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition-all disabled:opacity-50"
               >
@@ -998,6 +1021,13 @@ export default function StudentAffairsPage() {
               </>
             )}
           </div>
+
+          {/* Danh sách CLB đã thành lập — luôn hiển thị ở cuối trang */}
+          <CTSVEstablishedClubsPanel
+            clubs={establishedClubs}
+            loading={clubsLoading}
+            onRefresh={fetchEstablishedClubs}
+          />
         </div>
       </div>
 

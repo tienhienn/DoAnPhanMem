@@ -2,18 +2,28 @@ const express = require("express");
 const router = express.Router();
 const {
   getEventsForCTSV,
+  getApprovedEventsForCTSV,
+  getEventDetailForCTSV,
+  getEventParticipants,
   approveEventByCTSV,
   rejectEventByCTSV,
 } = require("../controllers/ctsvEventController");
-const { auth } = require("../middleware/auth");
+const { auth, authorizeRole } = require("../middleware/auth");
 
-// Lấy danh sách sự kiện cho CTSV
-router.get("/", auth, getEventsForCTSV);
+const ctsvOnly = [auth, authorizeRole(["CTSV"])];
 
-// CTSV Phê duyệt
-router.patch("/:id/approve", auth, approveEventByCTSV);
+// Lấy danh sách sự kiện cho CTSV (duyệt cấp phép)
+router.get("/", ...ctsvOnly, getEventsForCTSV);
 
-// CTSV Từ chối
-router.patch("/:id/reject", auth, rejectEventByCTSV);
+// Sự kiện đã cấp phép — màn danh sách theo dõi
+router.get("/approved", ...ctsvOnly, getApprovedEventsForCTSV);
+
+// Chi tiết & danh sách đăng ký (phải đặt trước /:id/approve)
+router.get("/:id/detail", ...ctsvOnly, getEventDetailForCTSV);
+router.get("/:id/participants", ...ctsvOnly, getEventParticipants);
+
+// CTSV Phê duyệt / Từ chối
+router.patch("/:id/approve", ...ctsvOnly, approveEventByCTSV);
+router.patch("/:id/reject", ...ctsvOnly, rejectEventByCTSV);
 
 module.exports = router;

@@ -1,0 +1,141 @@
+﻿/**
+ * App - Root component
+ * Thiết lập React Router, AuthProvider và AppProvider cho toàn bộ ứng dụng.
+ *
+ * Phân quyền route:
+ * - /                    → SV, BCN, KHOA, CTSV (tất cả đã đăng nhập)
+ * - /events/:id          → tất cả
+ * - /events/:id/qr       → tất cả
+ * - /my-events           → SV (sinh viên)
+ * - /event-management    → BCN, KHOA, CTSV
+ */
+
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { AppProvider } from "./context/AppContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Layout from "./components/layout/Layout";
+import LoginPage from "./pages/LoginPage";
+import EventListPage from "./pages/EventListPage";
+import EventDetailPage from "./pages/EventDetailPage";
+import QRScreen from "./pages/QRScreen";
+import MyEventsPage from "./pages/MyEventsPage";
+import StudentTaskPage from "./pages/StudentTaskPage";
+import BCNManagementPage from "./pages/BanChuNhiem/BCNManagementPage";
+import FacultyManagementPage from "./pages/Khoa/FacultyManagementPage";
+import StudentAffairsPage from "./pages/BanChuNhiem/StudentAffairsPage";
+import MemberManagementPage from "./pages/BanChuNhiem/MemberManagementPage";
+import FinanceAndLogisticsPage from "./pages/BanChuNhiem/FinanceAndLogisticsPage";
+import PeriodicReportsPage from "./pages/BanChuNhiem/PeriodicReportsPage";
+import QRAttendancePage from "./pages/BanChuNhiem/QRAttendancePage";
+import ProfilePage from "./pages/ProfilePage";
+import ClubsPage from "./pages/ClubsPage";
+import ClubDetailPage from "./pages/ClubDetailPage";
+import EventTaskManagement from "./pages/BanChuNhiem/EventTaskManagement";
+import ClubManagementPage from "./pages/Khoa/ClubManagementPage";
+import CTSVReportsPage from "./pages/CTSV/CTSVReportManagementPage";
+import KhoaDashboardPage from "./pages/Khoa/KhoaDashboardPage";
+import CTSVEventsPage from "./pages/CTSV/CTSVEventsPage";
+
+/**
+ * App - Root component
+ * Thiết lập React Router, AuthProvider và AppProvider cho toàn bộ ứng dụng.
+ *
+ * Phân quyền route:
+ * - /                          → SV, BCN, KHOA, CTSV (tất cả đã đăng nhập)
+ * - /events/:id                → tất cả
+ * - /events/:id/qr             → tất cả
+ * - /my-events                 → SV (sinh viên)
+ * - /bcn-management            → BCN (ban chủ nhiệm CLB)
+ * - /faculty-management        → KHOA (cán bộ khoa)
+ * - /student-affairs           → CTSV (phòng công tác sinh viên)
+ * - /club-management           → KHOA (cán bộ khoa)
+ */
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppProvider>
+          <Routes>
+            {/* Public */}
+            <Route path="/login" element={<LoginPage />} />
+
+            {/* Protected — tất cả role đã đăng nhập */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/" element={<EventListPage />} />
+                <Route path="/events/:id" element={<EventDetailPage />} />
+                <Route path="/events/:id/qr" element={<QRScreen />} />
+
+                {/* Chỉ sinh viên hoặc BCN */}
+                <Route element={<ProtectedRoute roles={["SV", "BCN"]} />}>
+                  <Route path="/my-events" element={<MyEventsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/clubs" element={<ClubsPage />} />
+                  <Route path="/clubs/:id" element={<ClubDetailPage />} />
+                </Route>
+
+                {/* Chỉ Sinh viên */}
+                <Route element={<ProtectedRoute roles={["SV"]} />}>
+                  <Route path="/my-tasks" element={<StudentTaskPage />} />
+                </Route>
+
+                {/* Chỉ Ban chủ nhiệm CLB */}
+                <Route element={<ProtectedRoute roles={["BCN"]} />}>
+                  <Route
+                    path="/bcn-management"
+                    element={<BCNManagementPage />}
+                  />
+                  <Route
+                    path="/qr-attendance"
+                    element={<QRAttendancePage />}
+                  />
+                  <Route
+                    path="/member-management"
+                    element={<MemberManagementPage />}
+                  />
+                  <Route
+                    path="/event-tasks/:eventId"
+                    element={<EventTaskManagement />}
+                  />
+                  <Route
+                    path="/finance-logistics"
+                    element={<FinanceAndLogisticsPage />}
+                  />
+                  <Route
+                    path="/periodic-reports"
+                    element={<PeriodicReportsPage />}
+                  />
+                </Route>
+
+                {/* Chỉ Cán bộ Khoa */}
+                <Route element={<ProtectedRoute roles={["KHOA"]} />}>
+                  <Route
+                    path="/faculty-management"
+                    element={<FacultyManagementPage />}
+                  />
+                  <Route path="/khoa/clubs" element={<ClubManagementPage />} />
+                  
+                  <Route path="/khoa/dashboard" element={<KhoaDashboardPage />} />
+                </Route>
+
+                {/* Chỉ Phòng CTSV */}
+                <Route element={<ProtectedRoute roles={["CTSV"]} />}>
+                  <Route
+                    path="/student-affairs"
+                    element={<StudentAffairsPage />}
+                  />
+                  <Route path="/ctsv/reports" element={<CTSVReportsPage />} />
+                  <Route path="/ctsv/events" element={<CTSVEventsPage />} />
+                </Route>
+              </Route>
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}

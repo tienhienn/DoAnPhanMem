@@ -1,0 +1,149 @@
+﻿const { getPool, sql } = require("../db");
+const { generateEventIdAuto } = require("../utils/idGenerator");
+
+// Hàm gửi lỗi thống nhất để Frontend luôn đọc được
+const sendError = (res, status, message) => {
+  return res.status(status).json({
+    success: false,
+    error: { message }
+  });
+};
+
+// 1. Lấy danh sách sự kiện
+exports.getEvents = async (req, res, next) => {
+  try {
+    const { role, clubId } = req.user;
+    const { status } = req.query;
+    const pool = await getPool();
+    
+    let query = `SELECT * FROM SU_KIEN WHERE 1=1`;
+    const request = pool.request();
+
+    if (role === "BCN") {
+      query += ` AND RTRIM(MaCLB) = @clubId`;
+      request.input("clubId", sql.VarChar, clubId);
+    } 
+
+    if (status) {
+      query += ` AND RTRIM(TrangThai) = @status`;
+      request.input("status", sql.NVarChar, status.trim());
+    }
+
+    query += ` ORDER BY NgayTao DESC`;
+    const result = await request.query(query);
+
+    const cleanedEvents = result.recordset.map(ev => ({
+      ...ev,
+      MaSK: (ev.MaSK || "").trim(),
+      TrangThai: (ev.TrangThai || "").trim(),
+      MaCLB: (ev.MaCLB || "").trim()
+    }));
+
+    res.json({ success: true, data: { events: cleanedEvents } });
+  } catch (err) { next(err); }
+};
+
+// 2. Phê duyệt sự kiện (Quy trình 3 bước linh hoạt)
+exports.reviewEvent = async (req, res, next) => {
+  try {
+    const { role } = req.user;
+    const id = (req.params.id || "").trim();
+    const { status, feedback } = req.body; 
+
+    const pool = await getPool();
+    // Tìm sự kiện (Dùng LIKE để khớp với dữ liệu CHAR trong DB)
+    const currentRes = await pool.request()
+      .input("id", sql.VarChar, id)
+      .query("SELECT TrangThai FROM SU_KIEN WHERE MaSK LIKE @id + '%'");
+
+    if (!currentRes.recordset.length) {
+      return sendError(res, 404, `Không tìm thấy sự kiện mã: ${id}`);
+    }
+    
+    const currentStatus = (currentRes.recordset[0].TrangThai || "").trim();
+    let nextStatus = '';
+
+    if (status === 'rejected') {
+      nextStatus = 'rejected';
+    } else {
+      // LOGIC DUYỆT CHUYỂN TIẾP
+      if (role === 'KHOA') {
+        if (currentStatus === 'pending_faculty' || currentStatus === 'sap_dien_ra' || currentStatus === '') {
+          nextStatus = 'pending_student_affairs';
+        } else {
+          return sendError(res, 400, `Khoa không thể duyệt vì trạng thái hiện tại là: ${currentStatus}`);
+        }
+      } else if (role === 'CTSV' || role === 'ADMIN') {
+        if (currentStatus === 'pending_student_affairs') {
+          nextStatus = 'approved';
+        } else if (currentStatus === 'pending_faculty' || currentStatus === 'sap_dien_ra' || currentStatus === '') {
+          nextStatus = 'pending_student_affairs'; // CTSV duyệt thay bước Khoa
+        } else {
+          return sendError(res, 400, `Sự kiện đang ở trạng thái ${currentStatus}, không thể phê duyệt tiếp.`);
+        }
+      }
+    }
+
+    if (!nextStatus) return sendError(res, 400, "Hành động không hợp lệ.");
+
+    await pool.request()
+      .input("id", sql.VarChar, id)
+      .input("status", sql.NVarChar, nextStatus)
+      .input("feedback", sql.NVarChar, feedback || "")
+      .query("UPDATE SU_KIEN SET TrangThai = @status, LyDoTuChoi = @feedback WHERE MaSK LIKE @id + '%'");
+
+    res.json({ success: true, message: `Thành công chuyển sang ${nextStatus}` });
+  } catch (err) { 
+    console.error("Review Error:", err);
+    return sendError(res, 500, "Lỗi Database: " + err.message);
+  }
+};
+
+exports.createEvent = async (req, res, next) => {
+  try {
+    const { clubId, role } = req.user;
+    if (role !== "BCN") return sendError(res, 403, "Chỉ BCN mới có quyền tạo");
+    const { name, description, startTime, endTime, location, quota } = req.body;
+    const pool = await getPool();
+    const maSK = await generateEventIdAuto(pool);
+    await pool.request()
+      .input("maSK", sql.VarChar, maSK).input("maCLB", sql.VarChar, clubId)
+      .input("tenSK", sql.NVarChar, name).input("moTa", sql.NVarChar, description)
+      .input("start", sql.DateTime, new Date(startTime)).input("end", sql.DateTime, new Date(endTime))
+      .input("diaDiem", sql.NVarChar, location).input("quota", sql.Int, quota)
+      .query("INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, DiaDiem, SoNguoiToiDa, TrangThai, NgayTao) VALUES (@maSK, @maCLB, @tenSK, @moTa, @start, @end, @diaDiem, @quota, 'pending_faculty', GETDATE())");
+    res.status(201).json({ success: true });
+  } catch (err) { next(err); }
+};
+
+exports.getEventDetail = async (req, res, next) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request().input("id", sql.VarChar, req.params.id).query("SELECT * FROM SU_KIEN WHERE MaSK=@id");
+    if (result.recordset.length > 0) {
+        const ev = result.recordset[0];
+        res.json({ success: true, data: { ...ev, MaSK: (ev.MaSK || "").trim(), TrangThai: (ev.TrangThai || "").trim() } });
+    } else {
+        return sendError(res, 404, "Không tìm thấy sự kiện");
+    }
+  } catch (err) { next(err); }
+};
+
+exports.updateEvent = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+    const pool = await getPool();
+    await pool.request().input("id", sql.VarChar, id).input("ten", sql.NVarChar, name).input("moTa", sql.NVarChar, description)
+      .query("UPDATE SU_KIEN SET TenSK=@ten, MoTa=@moTa WHERE MaSK=@id");
+    res.json({ success: true });
+  } catch (err) { next(err); }
+};
+
+exports.deleteEvent = async (req, res, next) => {
+  try {
+    const pool = await getPool();
+    await pool.request().input("id", sql.VarChar, req.params.id).query("DELETE FROM SU_KIEN WHERE MaSK=@id");
+    res.json({ success: true });
+  } catch (err) { next(err); }
+};

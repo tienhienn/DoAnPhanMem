@@ -1,0 +1,239 @@
+﻿const { getPool, sql } = require("../db");
+const { generateEventIdAuto } = require("../utils/idGenerator");
+
+// Hàm gửi lỗi thống nhất để Frontend luôn đọc được
+const sendError = (res, status, message) => {
+  return res.status(status).json({
+    success: false,
+    error: { message }
+  });
+};
+
+// 1. Lấy danh sách sự kiện
+exports.getEvents = async (req, res, next) => {
+  try {
+    const { role, clubId } = req.user || {};
+    const { status, search } = req.query;
+    const pool = await getPool();
+    let query = `SELECT * FROM SU_KIEN WHERE 1=1`;
+    const request = pool.request();
+
+    // Role-based default filters
+    if (role === "BCN") {
+      query += ` AND RTRIM(MaCLB) = @clubId`;
+      request.input("clubId", sql.VarChar, clubId);
+    } else if (role === "KHOA") {
+      query += ` AND RTRIM(TrangThai) = 'pending_faculty'`;
+    } else if (role === "CTSV") {
+      query += ` AND RTRIM(TrangThai) = 'pending_student_affairs'`;
+    }
+
+    if (status) {
+      query += ` AND RTRIM(TrangThai) = @status`;
+      request.input("status", sql.NVarChar, status.trim());
+    }
+
+    if (search) {
+      query += ` AND (TenSK LIKE @search OR MaSK LIKE @search)`;
+      request.input('search', sql.NVarChar, `%${search}%`);
+    }
+
+    query += ` ORDER BY NgayTao DESC`;
+    const result = await request.query(query);
+
+    const cleanedEvents = result.recordset.map(ev => ({
+      ...ev,
+      MaSK: (ev.MaSK || "").trim(),
+      TrangThai: (ev.TrangThai || "").trim(),
+      MaCLB: (ev.MaCLB || "").trim()
+    }));
+
+    res.json({ success: true, data: { events: cleanedEvents } });
+  } catch (err) { next(err); }
+};
+
+// 2. Phê duyệt sự kiện (Quy trình 3 bước linh hoạt)
+exports.reviewEvent = async (req, res, next) => {
+  try {
+    const { role } = req.user;
+    const id = (req.params.id || "").trim();
+    const { status, feedback } = req.body; 
+
+    const pool = await getPool();
+    // Tìm sự kiện (Dùng LIKE để khớp với dữ liệu CHAR trong DB)
+    const currentRes = await pool.request()
+      .input("id", sql.VarChar, id)
+      .query("SELECT TrangThai FROM SU_KIEN WHERE MaSK LIKE @id + '%'");
+
+    if (!currentRes.recordset.length) {
+      return sendError(res, 404, `Không tìm thấy sự kiện mã: ${id}`);
+    }
+    
+    const currentStatus = (currentRes.recordset[0].TrangThai || "").trim();
+    let nextStatus = '';
+
+    if (status === 'rejected') {
+      nextStatus = 'rejected';
+    } else {
+      // LOGIC DUYỆT CHUYỂN TIẾP
+      if (role === 'KHOA') {
+        if (currentStatus === 'pending_faculty' || currentStatus === 'sap_dien_ra' || currentStatus === '') {
+          nextStatus = 'pending_student_affairs';
+        } else {
+          return sendError(res, 400, `Khoa không thể duyệt vì trạng thái hiện tại là: ${currentStatus}`);
+        }
+      } else if (role === 'CTSV' || role === 'ADMIN') {
+        if (currentStatus === 'pending_student_affairs') {
+          nextStatus = 'approved';
+        } else if (currentStatus === 'pending_faculty' || currentStatus === 'sap_dien_ra' || currentStatus === '') {
+          nextStatus = 'pending_student_affairs'; // CTSV duyệt thay bước Khoa
+        } else {
+          return sendError(res, 400, `Sự kiện đang ở trạng thái ${currentStatus}, không thể phê duyệt tiếp.`);
+        }
+      } else {
+        return sendError(res, 403, 'Chỉ KHOA/CTSV/ADMIN mới có quyền phê duyệt');
+      }
+    }
+
+    if (!nextStatus) return sendError(res, 400, "Hành động không hợp lệ.");
+
+    await pool.request()
+      .input("id", sql.VarChar, id)
+      .input("status", sql.NVarChar, nextStatus)
+      .input("feedback", sql.NVarChar, feedback || "")
+      .query("UPDATE SU_KIEN SET TrangThai = @status, LyDoTuChoi = @feedback WHERE MaSK LIKE @id + '%'");
+
+    res.json({ success: true, message: `Thành công chuyển sang ${nextStatus}` });
+  } catch (err) { 
+    console.error("Review Error:", err);
+    return sendError(res, 500, "Lỗi Database: " + err.message);
+  }
+};
+
+exports.createEvent = async (req, res, next) => {
+  try {
+    const user = req.user || {};
+    const { clubId, role } = user;
+    if (role !== "BCN") return sendError(res, 403, "Chỉ BCN mới có quyền tạo");
+
+    const {
+      name,
+      description,
+      startTime,
+      endTime,
+      location,
+      quota,
+      points,
+      costEstimate,
+      eventType,
+      action // 'draft' or 'submit'
+    } = req.body;
+
+    // Basic validation
+    if (!name || !startTime || !endTime || !location || !quota) {
+      return sendError(res, 400, "Missing required fields: name, startTime, endTime, location, quota");
+    }
+
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
+      return sendError(res, 400, "Invalid startTime/endTime");
+    }
+
+    const pool = await getPool();
+    const maSK = await generateEventIdAuto(pool);
+
+    const status = action === 'draft' ? 'draft' : 'pending_faculty';
+
+    await pool.request()
+      .input("maSK", sql.VarChar, maSK)
+      .input("maCLB", sql.VarChar, clubId)
+      .input("tenSK", sql.NVarChar, name)
+      .input("moTa", sql.NVarChar, description || "")
+      .input("start", sql.DateTime, start)
+      .input("end", sql.DateTime, end)
+      .input("diaDiem", sql.NVarChar, location)
+      .input("quota", sql.Int, quota)
+      .input("chiPhi", sql.Decimal(18,2), costEstimate || 0)
+      .input("loaiSK", sql.NVarChar, eventType || null)
+      .input("diemRen", sql.Float, points || 0)
+      .input("status", sql.NVarChar, status)
+      .query(`INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, DiemRenLuyen, TrangThai, NgayTao) VALUES (@maSK, @maCLB, @tenSK, @moTa, @start, @end, @diaDiem, @quota, @chiPhi, @loaiSK, @diemRen, @status, GETDATE())`);
+
+    return res.status(201).json({ success: true, data: { eventId: maSK, status } });
+  } catch (err) { next(err); }
+};
+
+exports.getEventDetail = async (req, res, next) => {
+  try {
+    const pool = await getPool();
+    const id = (req.params.id || "").trim();
+    const result = await pool.request().input("id", sql.VarChar, id).query("SELECT * FROM SU_KIEN WHERE MaSK=@id");
+    if (result.recordset.length > 0) {
+        const ev = result.recordset[0];
+        // BCN chỉ được xem sự kiện thuộc CLB mình
+        if (req.user && req.user.role === 'BCN' && req.user.clubId && ev.MaCLB && ev.MaCLB.trim() !== req.user.clubId) {
+          return sendError(res, 403, 'Không có quyền truy cập sự kiện này');
+        }
+        res.json({ success: true, data: { ...ev, MaSK: (ev.MaSK || "").trim(), TrangThai: (ev.TrangThai || "").trim() } });
+    } else {
+        return sendError(res, 404, "Không tìm thấy sự kiện");
+    }
+  } catch (err) { next(err); }
+};
+
+exports.updateEvent = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = req.user || {};
+    if (user.role !== 'BCN') return sendError(res, 403, 'Chỉ BCN mới có quyền cập nhật');
+
+    const { name, description, startTime, endTime, location, quota, points, costEstimate, eventType, action } = req.body;
+    const pool = await getPool();
+
+    // Kiểm tra event tồn tại và thuộc CLB của BCN
+    const evRes = await pool.request().input('id', sql.VarChar, id).query('SELECT MaSK, MaCLB, TrangThai FROM SU_KIEN WHERE MaSK=@id');
+    if (!evRes.recordset.length) return sendError(res, 404, 'Sự kiện không tồn tại');
+    const ev = evRes.recordset[0];
+    if (ev.MaCLB && ev.MaCLB.trim() !== user.clubId) return sendError(res, 403, 'Không có quyền chỉnh sửa sự kiện này');
+
+    const currentStatus = (ev.TrangThai || '').trim();
+    if (!['draft', 'rejected'].includes(currentStatus)) return sendError(res, 400, 'Chỉ có thể sửa sự kiện ở trạng thái draft hoặc rejected');
+
+    // Prepare updates
+    const newStatus = action === 'submit' ? 'pending_faculty' : 'draft';
+
+    await pool.request()
+      .input('id', sql.VarChar, id)
+      .input('ten', sql.NVarChar, name)
+      .input('moTa', sql.NVarChar, description || '')
+      .input('start', sql.DateTime, startTime ? new Date(startTime) : null)
+      .input('end', sql.DateTime, endTime ? new Date(endTime) : null)
+      .input('diaDiem', sql.NVarChar, location)
+      .input('quota', sql.Int, quota)
+      .input('chiPhi', sql.Decimal(18,2), costEstimate || 0)
+      .input('loaiSK', sql.NVarChar, eventType || null)
+      .input('diemRen', sql.Float, points || 0)
+      .input('status', sql.NVarChar, newStatus)
+      .query("UPDATE SU_KIEN SET TenSK=@ten, MoTa=@moTa, ThoiGianBatDau=ISNULL(@start, ThoiGianBatDau), ThoiGianKetThuc=ISNULL(@end, ThoiGianKetThuc), DiaDiem=@diaDiem, SoNguoiToiDa=@quota, ChiPhiDuKien=@chiPhi, LoaiSK=@loaiSK, DiemRenLuyen=@diemRen, TrangThai=@status, LyDoTuChoi=NULL WHERE MaSK=@id");
+
+    res.json({ success: true });
+  } catch (err) { next(err); }
+};
+
+exports.deleteEvent = async (req, res, next) => {
+  try {
+    const user = req.user || {};
+    if (user.role !== 'BCN') return sendError(res, 403, 'Chỉ BCN mới có quyền xóa');
+    const id = req.params.id;
+    const pool = await getPool();
+    const evRes = await pool.request().input('id', sql.VarChar, id).query('SELECT MaSK, MaCLB, TrangThai FROM SU_KIEN WHERE MaSK=@id');
+    if (!evRes.recordset.length) return sendError(res, 404, 'Sự kiện không tồn tại');
+    const ev = evRes.recordset[0];
+    if (ev.MaCLB && ev.MaCLB.trim() !== user.clubId) return sendError(res, 403, 'Không có quyền xóa sự kiện này');
+    const currentStatus = (ev.TrangThai || '').trim();
+    if (!['draft', 'rejected'].includes(currentStatus)) return sendError(res, 400, 'Chỉ có thể xóa sự kiện ở trạng thái draft hoặc rejected');
+    await pool.request().input('id', sql.VarChar, id).query('DELETE FROM SU_KIEN WHERE MaSK=@id');
+    res.json({ success: true });
+  } catch (err) { next(err); }
+};

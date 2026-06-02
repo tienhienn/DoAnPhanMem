@@ -236,7 +236,7 @@ async function getRegistrations(req, res, next) {
  * Duyệt hoặc từ chối đơn thành lập CLB
  */
 async function reviewRegistration(req, res, next) {
-  const transaction = new sql.Transaction();
+  let transaction;
   try {
     const { id } = req.params;
     const { status, feedback } = req.body; // status: 'approved' | 'rejected'
@@ -251,6 +251,7 @@ async function reviewRegistration(req, res, next) {
     }
 
     const pool = await getPool();
+    transaction = new sql.Transaction(pool);
 
     // Lấy thông tin đơn đăng ký hiện tại
     const dkResult = await pool.request()
@@ -418,8 +419,12 @@ async function reviewRegistration(req, res, next) {
       });
     }
   } catch (error) {
-    if (transaction.isOpen) {
-      await transaction.rollback();
+    if (transaction) {
+      try {
+        await transaction.rollback();
+      } catch (rollbackErr) {
+        // Ignore rollback errors if transaction was not started or already closed
+      }
     }
     next(error);
   }

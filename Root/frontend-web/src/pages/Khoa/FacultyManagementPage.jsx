@@ -499,6 +499,108 @@ const ClubApprovalModal = ({
                   {step2.gioiThieu || "—"}
                 </p>
               </div>
+              <div className="md:col-span-3">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Tôn chỉ, mục đích
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step2.tonChiMucDich || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-3">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Nguyên tắc & Quyền lợi thành viên
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step2.quyenLoiTrachNhiem || "—"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: BCN lâm thời */}
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+              <FiUsers className="text-indigo-600" /> 3. Danh sách Ban chủ nhiệm
+              lâm thời (BM-CLB-03)
+            </h3>
+            <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+              <table className="min-w-full divide-y divide-slate-200 text-sm text-left">
+                <thead className="bg-slate-50 font-semibold text-slate-600">
+                  <tr>
+                    <th className="px-4 py-2">STT</th>
+                    <th className="px-4 py-2">Họ và tên</th>
+                    <th className="px-4 py-2">Giới tính</th>
+                    <th className="px-4 py-2">Số điện thoại</th>
+                    <th className="px-4 py-2">Email</th>
+                    <th className="px-4 py-2">Chức vụ dự kiến</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {step3.bcnLamThoi?.map((m, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-2.5 font-medium">{idx + 1}</td>
+                      <td className="px-4 py-2.5 font-semibold text-slate-900">
+                        {m.hoTen}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600">
+                        {m.gioiTinh}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600">
+                        {m.sdt || "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-600">{m.email}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-bold">
+                          {m.chucVu}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Section 4: Kế hoạch */}
+          <div className="space-y-4">
+            <h3 className="text-base font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+              <FiCalendar className="text-indigo-600" /> 4. Kế hoạch hoạt động &
+              Kinh phí (BM-CLB-05)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border">
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Mục đích yêu cầu
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step4.mucDichYeuCau || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Tiến độ thực hiện
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step4.tienDo || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Nội dung chi tiết
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step4.noiDungHoatDong || "—"}
+                </p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs font-bold text-slate-500 uppercase">
+                  Kinh phí dự toán
+                </p>
+                <p className="text-sm text-slate-700 mt-1 whitespace-pre-wrap">
+                  {step4.kinhPhiHoatDong || "—"}
+                </p>
+              </div>
             </div>
           </div>
 

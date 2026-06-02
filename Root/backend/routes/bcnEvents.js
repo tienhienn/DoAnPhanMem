@@ -8,6 +8,7 @@ const {
   deleteEvent,
   submitEventForApproval,
   markAttendance,
+  getEventParticipantsForBCN,
 } = require("../controllers/bcnEventController");
 const { auth } = require("../middleware/auth");
 
@@ -16,6 +17,12 @@ const { auth } = require("../middleware/auth");
  * POST /api/bcn/events/attendance
  */
 router.post("/attendance", auth, markAttendance);
+
+/**
+ * Lấy danh sách sinh viên đăng ký sự kiện
+ * GET /api/bcn/events/:id/participants
+ */
+router.get("/:id/participants", auth, getEventParticipantsForBCN);
 
 /**
  * Lấy danh sách sự kiện của CLB

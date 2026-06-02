@@ -12,6 +12,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import EventCard from "../components/events/EventCard";
 
 export default function ClubDetailPage() {
   const { id } = useParams();
@@ -27,6 +28,8 @@ export default function ClubDetailPage() {
   const [leaveLoading, setLeaveLoading] = useState(false);
   const [userClubRole, setUserClubRole] = useState(null);
   const [leaveError, setLeaveError] = useState(null);
+  const [clubEvents, setClubEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
 
   useEffect(() => {
     fetchClubDetails();
@@ -35,16 +38,22 @@ export default function ClubDetailPage() {
   const fetchClubDetails = async () => {
     try {
       setLoading(true);
+      setEventsLoading(true);
 
-      const [clubRes, myClubsRes, requestsRes] = await Promise.all([
+      const [clubRes, myClubsRes, requestsRes, eventsRes] = await Promise.all([
         apiClient.get(`/api/clubs/${id}`),
         apiClient.get("/api/students/me/clubs"),
         apiClient.get("/api/students/me/club-requests"),
+        apiClient.get("/api/events", { params: { clubId: id } }),
       ]);
 
       const clubData = clubRes.data;
       const myClubsData = myClubsRes.data;
       const requestsData = requestsRes.data;
+
+      if (eventsRes.data.success) {
+        setClubEvents(eventsRes.data.data || []);
+      }
 
       if (clubData.success) {
         setClub(clubData.data);
@@ -74,6 +83,7 @@ export default function ClubDetailPage() {
       setError("Lỗi kết nối server");
     } finally {
       setLoading(false);
+      setEventsLoading(false);
     }
   };
 
@@ -295,6 +305,46 @@ export default function ClubDetailPage() {
                   </div>
                 </section>
               )}
+
+              {/* Club Events Section */}
+              <section className="pt-4">
+                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-indigo-500" /> Sự kiện của câu lạc bộ
+                </h2>
+                {eventsLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin w-6 h-6 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : clubEvents.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-2xl border border-gray-100 text-gray-400 text-sm font-medium">
+                    Hiện chưa có sự kiện sắp diễn ra nào.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {clubEvents.map((event) => (
+                      <EventCard
+                        key={event.maSK.trim()}
+                        event={{
+                          ...event,
+                          name: event.tenSK,
+                          clubName: event.tenCLB,
+                          startDateTime: event.thoiGianBatDau,
+                          endDateTime: event.thoiGianKetThuc,
+                          location: event.diaDiem,
+                          maxCapacity: event.soNguoiToiDa,
+                          registeredCount: event.soNguoiDaDangKy,
+                          imageUrl: event.urlAnh,
+                          diemRenLuyen: event.diemRenLuyen,
+                        }}
+                        registrationStatus="unregistered"
+                        onClick={() => {
+                          navigate(`/events/${event.maSK.trim()}`);
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
 
             <div className="space-y-6">

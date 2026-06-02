@@ -90,15 +90,24 @@ const PORT = process.env.PORT || 3000;
 // Start Server
 const startServer = async () => {
   try {
-    console.log("🔧 Initializing database...");
     let dbReady = false;
 
     if (process.env.SKIP_DB_INIT === "true") {
       console.log(
         "⚠️  SKIP_DB_INIT is true — skipping database initialization",
       );
+      try {
+        await initPool();
+        dbReady = true;
+      } catch (dbErr) {
+        console.warn(
+          "⚠️  Database connection pool initialization failed:",
+          dbErr.message || dbErr,
+        );
+      }
     } else {
       try {
+        console.log("🔧 Initializing database...");
         await initDatabase();
         await initPool();
         dbReady = true;

@@ -569,7 +569,7 @@ export default function NavBar() {
     return location.pathname.startsWith(path);
   }
 
-  const roleLabel = ROLE_LABELS[user?.role] || "Người dùng";
+  const roleLabel = user?.tenDVQL || ROLE_LABELS[user?.role] || "Người dùng";
 
   return (
     <>

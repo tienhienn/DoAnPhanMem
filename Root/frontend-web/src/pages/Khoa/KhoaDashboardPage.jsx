@@ -135,9 +135,9 @@ export default function KhoaDashboardPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800">Tổng Quan Hoạt Động</h1>
+              <h1 className="text-3xl font-bold text-slate-800">Tổng Quan Hoạt Động {user?.tenDVQL ? `- ${user.tenDVQL}` : ""}</h1>
               <p className="text-slate-600 mt-2">
-                Cán bộ Khoa: <span className="font-semibold">{user?.hoTen}</span>
+                Quản lý viên: <span className="font-semibold">{user?.hoTen}</span>
               </p>
             </div>
             <button
@@ -170,7 +170,7 @@ export default function KhoaDashboardPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatCard icon={FiCalendar} label="Sự kiện đã duyệt"     value={stats?.TongSKDaDuyet}        color="blue"    sub="Tổng từ trước đến nay" />
                 <StatCard icon={FiUsers}    label="Sinh viên tham gia"    value={stats?.TongSinhVienThamGia}  color="emerald" sub="Lượt đăng ký được duyệt" />
-                <StatCard icon={FiUsers}    label="CLB đang hoạt động"    value={stats?.TongCLBHoatDong}      color="purple"  sub="Trong toàn khoa" />
+                <StatCard icon={FiUsers}    label="CLB đang hoạt động"    value={stats?.TongCLBHoatDong}      color="purple"  sub="Trực thuộc quản lý" />
                 <StatCard icon={FiFileText} label="Báo cáo chờ duyệt"    value={stats?.BaoCaoChoDuyet}       color="amber"   sub="Cần xử lý" />
               </div>
 

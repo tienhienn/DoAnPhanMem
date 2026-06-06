@@ -387,9 +387,9 @@ export default function ClubManagementPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800">Quản Lý CLB Thuộc Khoa</h1>
+              <h1 className="text-3xl font-bold text-slate-800">Quản Lý CLB Thuộc {user?.tenDVQL || "Đơn Vị"}</h1>
               <p className="text-slate-600 mt-2">
-                Cán bộ Khoa: <span className="font-semibold">{user?.hoTen}</span>
+                Quản lý viên: <span className="font-semibold">{user?.hoTen}</span>
               </p>
             </div>
             <button

@@ -82,6 +82,7 @@ export function AuthProvider({ children }) {
           role: managementClubId ? "BCN" : defaultRole,
           originalRole: managementClubId ? defaultRole : undefined,
           clubId: managementClubId || undefined,
+          tenDVQL: payload.tenDVQL || null,
         });
         setToken(savedToken);
       } else {
@@ -112,6 +113,7 @@ export function AuthProvider({ children }) {
       hoTen,
       email: userEmail,
       role,
+      tenDVQL,
     } = response.data.data;
 
     localStorage.setItem("token", newToken);
@@ -123,6 +125,7 @@ export function AuthProvider({ children }) {
       hoTen,
       email: userEmail,
       role: role || "SV",
+      tenDVQL: tenDVQL || null,
     };
     setUser(userObj);
 

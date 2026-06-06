@@ -103,6 +103,22 @@ async function login(req, res, next) {
     const vaiTroID = roleResult.recordset[0]?.VaiTroID || 'VT000000001';
     const role = mapVaiTroToRole(vaiTroID);
 
+    // Lấy thêm thông tin Đơn vị quản lý nếu là cán bộ (KHOA hoặc CTSV)
+    let tenDVQL = null;
+    if (role === 'KHOA' || role === 'CTSV') {
+      const dvqlResult = await pool.request()
+        .input('maND', sql.VarChar, account.MaND)
+        .query(`
+          SELECT dv.tenDVQL 
+          FROM CANBO cb 
+          INNER JOIN DONVIQUANLY dv ON cb.maDVQL = dv.maDVQL 
+          WHERE cb.maCanBo = @maND
+        `);
+      if (dvqlResult.recordset.length > 0) {
+        tenDVQL = dvqlResult.recordset[0].tenDVQL;
+      }
+    }
+
     // 7. Tạo JWT token kèm role
     const token = jwt.sign(
       {
@@ -113,6 +129,7 @@ async function login(req, res, next) {
         email: account.email,
         role,
         vaiTroID,
+        tenDVQL
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
@@ -134,6 +151,7 @@ async function login(req, res, next) {
         hoTen: account.hoTen,
         email: account.email,
         role,
+        tenDVQL
       },
     });
   } catch (err) {

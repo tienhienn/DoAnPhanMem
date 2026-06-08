@@ -530,37 +530,14 @@ GO
 -- 5.11 Sự kiện
 -- ---------------------------------------------
 INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai, UrlAnh, DiemRenLuyen, KhoaDuyet, PhongCTSVDuyet) VALUES
-('SK000000001', 'CLB00000001', N'Workshop: Nhập môn ReactJS', N'Buổi workshop thực hành xây dựng ứng dụng web với ReactJS.', '2026-06-2 08:00', '2026-06-10 11:30', N'Phòng Lab 201 - Nhà A', 40, 0, N'Workshop', N'sap_dien_ra', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
+('SK000000001', 'CLB00000001', N'Workshop: Nhập môn ReactJS', N'Buổi workshop thực hành xây dựng ứng dụng web với ReactJS.', '2026-06-2 08:00', '2026-06-30 11:30', N'Phòng Lab 201 - Nhà A', 40, 0, N'Workshop', N'sap_dien_ra', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
 ('SK000000002', 'CLB00000001', N'Hackathon UTE 2026', N'Cuộc thi lập trình 24 giờ với chủ đề "Chuyển đổi số trong giáo dục".', '2026-06-20 07:00', '2026-06-21 07:00', N'Hội trường A - Tầng 1', 60, 5000000, N'Cuộc thi', N'sap_dien_ra', 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&auto=format&fit=crop&q=60', 15, 1, 1),
-('SK000000003', 'CLB00000002', N'English Speaking Club - Tháng 6', N'Buổi sinh hoạt tiếng Anh hàng tháng.', '2026-06-15 14:00', '2026-06-15 16:30', N'Phòng 305 - Nhà B', 30, 0, N'Sinh hoạt', N'sap_dien_ra', 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
+('SK000000003', 'CLB00000002', N'English Speaking Club - Tháng 6', N'Buổi sinh hoạt tiếng Anh hàng tháng.', '2026-06-20 14:00', '2026-06-21 16:30', N'Phòng 305 - Nhà B', 30, 0, N'Sinh hoạt', N'sap_dien_ra', 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
 ('SK000000004', 'CLB00000003', N'Giải bóng đá mini UTE Cup 2026', N'Giải đấu bóng đá mini dành cho sinh viên toàn trường.', '2026-07-05 07:30', '2026-07-05 17:00', N'Sân thể thao trường', 100, 200000, N'Thể thao', N'sap_dien_ra', 'https://file3.qdnd.vn/data/images/0/2023/03/23/hieu_tv/ronaldo.jpg', 10, 1, 1),
 ('SK000000005', 'CLB00000004', N'Ngày hội Tình nguyện Hè 2026', N'Hoạt động tình nguyện dọn dẹp môi trường và tặng quà.', '2026-07-15 06:00', '2026-07-15 17:00', N'Huyện Hòa Vang, Đà Nẵng', 50, 0, N'Tình nguyện', N'sap_dien_ra', 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&auto=format&fit=crop&q=60', 15, 1, 1),
 ('SK000000006', 'CLB00000001', N'Khóa học Git & GitHub cơ bản', N'Khóa học 3 buổi về quản lý mã nguồn với Git và GitHub.', '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra', 'https://files.fullstack.edu.vn/f8-prod/blog_posts/5919/63a5914b95264.png', 5, 1, 1),
 ('SK000000007', 'CLB00000002', N'Cuộc thi hùng biện tiếng Anh 2025', N'Cuộc thi hùng biện tiếng Anh cấp trường năm học 2024-2025.', '2025-12-10 08:00', '2025-12-10 17:00', N'Hội trường B', 80, 0, N'Cuộc thi', N'da_ket_thuc', 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=60', 10, 1, 1),
 ('SK000000008', 'CLB00000001', N'Seminar: AI và Machine Learning', N'Buổi seminar về ứng dụng AI trong thực tế.', '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra', 'https://base.vn/wp-content/uploads/2025/03/cong-nghe-ai.webp', 5, 1, 1);
-GO
-
--- ---------------------------------------------
--- 5.12 Đăng ký sự kiện mẫu
--- ---------------------------------------------
-INSERT INTO DANGKY_SUKIEN (MaSK, MaND, NgayDangKy, NguoiDuyetID, NgayDuyet, TrangThai, LyDoDangKy) VALUES
-('SK000000001', '23115053122115', '2026-05-20 09:00', 'CB000000001', '2026-05-20 10:00', N'da_duyet',      N'Muốn học ReactJS'),
-('SK000000002', '23115053122115', '2026-05-21 10:00', 'CB000000001', '2026-05-21 11:00', N'da_duyet',      N'Muốn tham gia hackathon'),
-('SK000000001', '23115053122116', '2026-05-20 11:00', 'CB000000001', '2026-05-20 12:00', N'da_duyet',      N'Quan tâm đến ReactJS'),
-('SK000000001', '23115053122117', '2026-05-22 08:30', NULL,          NULL,               N'cho_duyet',     N'Muốn học lập trình web'),
-('SK000000003', '23115053122118', '2026-05-23 14:00', 'CB000000001', '2026-05-23 15:00', N'da_duyet',      N'Muốn luyện tiếng Anh'),
-('SK000000003', '23115053122119', '2026-05-24 09:00', NULL,          NULL,               N'da_huy',        N'Đăng ký thử'),
-('SK000000004', '23115053122120', '2026-05-25 10:00', 'CB000000001', '2026-05-25 11:00', N'da_duyet',      N'Thích bóng đá'),
-('SK000000006', '23115053122121', '2026-04-30 08:00', 'CB000000001', '2026-04-30 09:00', N'da_diem_danh',  N'Muốn học Git'),
-('SK000000008', '23115053122115', '2026-05-01 08:00', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', '23115053122116', '2026-05-01 08:05', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', '23115053122117', '2026-05-01 08:10', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', '23115053122118', '2026-05-01 08:15', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', '23115053122119', '2026-05-01 08:20', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', '23115053122120', '2026-05-01 08:25', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', '23115053122121', '2026-05-01 08:30', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', '23115053122122', '2026-05-01 08:35', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI'),
-('SK000000008', '23115053122123', '2026-05-01 08:40', 'CB000000001', '2026-05-01 09:00', N'da_duyet', N'Quan tâm AI');
 GO
 
 -- ---------------------------------------------

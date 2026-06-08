@@ -174,7 +174,7 @@ async function registerEvent(req, res, next) {
     const skRequest = pool.request();
     skRequest.input('maSK', sql.Char, maSK);
     const skResult = await skRequest.query(`
-      SELECT MaSK, TrangThai, SoNguoiToiDa, KhoaDuyet, PhongCTSVDuyet, ThoiGianKetThuc
+      SELECT MaSK, TrangThai, SoNguoiToiDa, KhoaDuyet, PhongCTSVDuyet, ThoiGianBatDau, ThoiGianKetThuc
       FROM SU_KIEN
       WHERE MaSK = @maSK
     `);
@@ -251,6 +251,34 @@ async function registerEvent(req, res, next) {
         error: {
           code: 'ALREADY_REGISTERED',
           message: 'Bạn đã đăng ký sự kiện này',
+        },
+      });
+    }
+
+    // 4.5. Kiểm tra trùng lịch sự kiện với các sự kiện khác đã đăng ký
+    const overlapRequest = pool.request();
+    overlapRequest.input('maND', sql.Char, maND);
+    overlapRequest.input('maSK', sql.Char, maSK);
+    overlapRequest.input('thoiGianBatDau', sql.DateTime, event.ThoiGianBatDau);
+    overlapRequest.input('thoiGianKetThuc', sql.DateTime, event.ThoiGianKetThuc);
+    const overlapResult = await overlapRequest.query(`
+      SELECT sk.MaSK, sk.TenSK
+      FROM DANGKY_SUKIEN dk
+      INNER JOIN SU_KIEN sk ON dk.MaSK = sk.MaSK
+      WHERE dk.MaND = @maND
+        AND dk.TrangThai != 'da_huy'
+        AND sk.MaSK != @maSK
+        AND sk.ThoiGianBatDau < @thoiGianKetThuc
+        AND @thoiGianBatDau < sk.ThoiGianKetThuc
+    `);
+
+    if (overlapResult.recordset && overlapResult.recordset.length > 0) {
+      const overlapEvent = overlapResult.recordset[0];
+      return res.status(409).json({
+        success: false,
+        error: {
+          code: 'OVERLAPPING_EVENT',
+          message: `Sự kiện này trùng thời gian với sự kiện "${overlapEvent.TenSK}" mà bạn đã đăng ký`,
         },
       });
     }

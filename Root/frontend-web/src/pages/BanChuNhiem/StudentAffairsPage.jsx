@@ -165,15 +165,19 @@ const FinalApprovalModal = ({
   loading,
 }) => {
   const [opinion, setOpinion] = useState("");
+  const [fileXacNhan, setFileXacNhan] = useState(null);
 
   useEffect(() => {
-    if (isOpen) setOpinion("");
+    if (isOpen) {
+      setOpinion("");
+      setFileXacNhan(null);
+    }
   }, [isOpen, event?.MaSK]);
 
   if (!isOpen || !event) return null;
 
   const handleApprove = () => {
-    onApprove(event.MaSK, opinion);
+    onApprove(event.MaSK, opinion, fileXacNhan);
   };
 
   const handleReject = () => {
@@ -246,7 +250,7 @@ const FinalApprovalModal = ({
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">
                 Mô tả chi tiết
               </h3>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                   {event.MoTa}
                 </p>
@@ -254,20 +258,50 @@ const FinalApprovalModal = ({
             </div>
           )}
 
-          {(event.TrangThai === "pending_student_affairs" || event.TrangThai === "cho_duyet_ctsv") ? (
+          {event.FileDinhKem && (
             <div>
-              <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
-                <FiMessageSquare className="inline w-4 h-4 mr-2" />Ý kiến chỉ
-                đạo / Lý do từ chối
-              </label>
-              <textarea
-                value={opinion}
-                onChange={(e) => setOpinion(e.target.value)}
-                placeholder="Nhập ý kiến chỉ đạo hoặc lý do không cấp phép..."
-                rows="4"
-                disabled={loading}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
-              />
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">
+                Tài liệu đính kèm từ BCN
+              </h3>
+              <a
+                href={`${(import.meta.env.VITE_API_URL || "http://localhost:3000/api").replace("/api", "")}${event.FileDinhKem}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors mb-4"
+              >
+                <FiFileText className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-medium">Văn bản đính kèm sự kiện</span>
+              </a>
+            </div>
+          )}
+
+          {(event.TrangThai === "pending_student_affairs" || event.TrangThai === "cho_duyet_ctsv") ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
+                  <FiMessageSquare className="inline w-4 h-4 mr-2" />Ý kiến chỉ
+                  đạo / Lý do từ chối
+                </label>
+                <textarea
+                  value={opinion}
+                  onChange={(e) => setOpinion(e.target.value)}
+                  placeholder="Nhập ý kiến chỉ đạo hoặc lý do không cấp phép..."
+                  rows="4"
+                  disabled={loading}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all resize-none bg-white disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
+                  <FiFileText className="inline w-4 h-4 mr-2" />Văn bản chấp thuận (Tùy chọn tải lên khi duyệt)
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setFileXacNhan(e.target.files[0])}
+                  disabled={loading}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all bg-white disabled:opacity-50"
+                />
+              </div>
             </div>
           ) : (
             (event.LyDoTuChoi || event.YKienCTSV) && (
@@ -714,10 +748,18 @@ export default function StudentAffairsPage() {
   };
 
   // ── Handlers (Events) ──────────────────────────────────────────
-  const handleEventApprove = async (maSK, opinion) => {
+  const handleEventApprove = async (maSK, opinion, fileXacNhan) => {
     try {
       setLoading(true);
-      const res = await apiClient.patch(`/api/ctsv/events/${maSK}/approve`);
+      const fd = new FormData();
+      if (fileXacNhan) {
+        fd.append("FileCTSVXacNhan", fileXacNhan);
+      }
+      
+      const res = await apiClient.patch(`/api/ctsv/events/${maSK}/approve`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      
       if (res.data?.success) {
         alert("Cấp phép hoạt động sự kiện thành công!");
         setEvents((prev) =>

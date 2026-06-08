@@ -178,6 +178,8 @@ CREATE TABLE SU_KIEN (
     LoaiSK NVARCHAR(50),
     TrangThai NVARCHAR(50),
     UrlAnh NVARCHAR(255),
+    FileDinhKem NVARCHAR(255),
+    FileCTSVXacNhan NVARCHAR(255),
     DiemRenLuyen INT DEFAULT 5,
     KhoaDuyet BIT DEFAULT 0,
     PhongCTSVDuyet BIT DEFAULT 0,

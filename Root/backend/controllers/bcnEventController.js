@@ -69,7 +69,7 @@ const getEventsByClub = async (req, res, next) => {
         MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
         DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai,
         UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao,
-        KhoaDuyet, PhongCTSVDuyet
+        KhoaDuyet, PhongCTSVDuyet, FileDinhKem, FileCTSVXacNhan
       FROM SU_KIEN
       WHERE MaCLB = @MaCLB
     `;
@@ -126,7 +126,7 @@ const getEventDetail = async (req, res, next) => {
           MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
           DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai,
           UrlAnh, DiemRenLuyen, LyDoTuChoi, NgayTao,
-          KhoaDuyet, PhongCTSVDuyet
+          KhoaDuyet, PhongCTSVDuyet, FileDinhKem, FileCTSVXacNhan
         FROM SU_KIEN
         WHERE MaSK = @MaSK AND MaCLB = @MaCLB
       `);
@@ -173,9 +173,19 @@ const createEvent = async (req, res, next) => {
       SoNguoiToiDa,
       ChiPhiDuKien,
       LoaiSK,
-      UrlAnh,
       DiemRenLuyen,
     } = req.body;
+    let UrlAnh = req.body.UrlAnh || null;
+    let FileDinhKem = req.body.FileDinhKem || null;
+
+    if (req.files) {
+      if (req.files['UrlAnh'] && req.files['UrlAnh'].length > 0) {
+        UrlAnh = `/uploads/${req.files['UrlAnh'][0].filename}`;
+      }
+      if (req.files['FileDinhKem'] && req.files['FileDinhKem'].length > 0) {
+        FileDinhKem = `/uploads/${req.files['FileDinhKem'][0].filename}`;
+      }
+    }
 
     // Validation bắt buộc
     if (!TenSK || !ThoiGianBatDau || !ThoiGianKetThuc) {
@@ -251,16 +261,17 @@ const createEvent = async (req, res, next) => {
       .input("LoaiSK", sql.NVarChar(50), LoaiSK || null)
       .input("TrangThai", sql.NVarChar(50), "draft")
       .input("UrlAnh", sql.NVarChar(sql.MAX), UrlAnh || null)
+      .input("FileDinhKem", sql.NVarChar(255), FileDinhKem || null)
       .input("DiemRenLuyen", sql.Int, DiemRenLuyen ? parseInt(DiemRenLuyen) : 5)
       .input("NgayTao", sql.DateTime, new Date()).query(`
         INSERT INTO SU_KIEN (
           MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc,
           DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai,
-          UrlAnh, DiemRenLuyen, NgayTao
+          UrlAnh, FileDinhKem, DiemRenLuyen, NgayTao
         ) VALUES (
           @MaSK, @MaCLB, @TenSK, @MoTa, @ThoiGianBatDau, @ThoiGianKetThuc,
           @DiaDiem, @SoNguoiToiDa, @ChiPhiDuKien, @LoaiSK, @TrangThai,
-          @UrlAnh, @DiemRenLuyen, @NgayTao
+          @UrlAnh, @FileDinhKem, @DiemRenLuyen, @NgayTao
         )
       `);
 
@@ -290,9 +301,20 @@ const updateEvent = async (req, res, next) => {
       SoNguoiToiDa,
       ChiPhiDuKien,
       LoaiSK,
-      UrlAnh,
       DiemRenLuyen,
     } = req.body;
+    
+    let UrlAnh = req.body.UrlAnh || null;
+    let FileDinhKem = req.body.FileDinhKem || null;
+
+    if (req.files) {
+      if (req.files['UrlAnh'] && req.files['UrlAnh'].length > 0) {
+        UrlAnh = `/uploads/${req.files['UrlAnh'][0].filename}`;
+      }
+      if (req.files['FileDinhKem'] && req.files['FileDinhKem'].length > 0) {
+        FileDinhKem = `/uploads/${req.files['FileDinhKem'][0].filename}`;
+      }
+    }
 
     // Validation bắt buộc
     if (!TenSK || !ThoiGianBatDau || !ThoiGianKetThuc) {
@@ -348,7 +370,7 @@ const updateEvent = async (req, res, next) => {
       .input("MaSK", sql.NVarChar, id)
       .input("MaCLB", sql.NVarChar, MaCLB)
       .query(
-        `SELECT TrangThai FROM SU_KIEN WHERE MaSK = @MaSK AND MaCLB = @MaCLB`,
+        `SELECT TrangThai, UrlAnh, FileDinhKem FROM SU_KIEN WHERE MaSK = @MaSK AND MaCLB = @MaCLB`,
       );
 
     if (checkResult.recordset.length === 0) {
@@ -373,6 +395,9 @@ const updateEvent = async (req, res, next) => {
       });
     }
 
+    if (!UrlAnh) UrlAnh = checkResult.recordset[0].UrlAnh;
+    if (!FileDinhKem && req.body.FileDinhKem !== "" && req.body.FileDinhKem !== "null") FileDinhKem = checkResult.recordset[0].FileDinhKem;
+
     await pool
       .request()
       .input("MaSK", sql.NVarChar, id)
@@ -393,6 +418,7 @@ const updateEvent = async (req, res, next) => {
       )
       .input("LoaiSK", sql.NVarChar(50), LoaiSK || null)
       .input("UrlAnh", sql.NVarChar(sql.MAX), UrlAnh || null)
+      .input("FileDinhKem", sql.NVarChar(255), FileDinhKem === "null" || FileDinhKem === "" ? null : FileDinhKem)
       .input("DiemRenLuyen", sql.Int, DiemRenLuyen ? parseInt(DiemRenLuyen) : 5)
       .query(`
         UPDATE SU_KIEN SET
@@ -405,6 +431,7 @@ const updateEvent = async (req, res, next) => {
           ChiPhiDuKien = @ChiPhiDuKien,
           LoaiSK = @LoaiSK,
           UrlAnh = @UrlAnh,
+          FileDinhKem = @FileDinhKem,
           DiemRenLuyen = @DiemRenLuyen
         WHERE MaSK = @MaSK
       `);

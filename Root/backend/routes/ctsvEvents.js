@@ -9,6 +9,7 @@ const {
   rejectEventByCTSV,
 } = require("../controllers/ctsvEventController");
 const { auth, authorizeRole } = require("../middleware/auth");
+const upload = require("../middleware/upload");
 
 const ctsvOnly = [auth, authorizeRole(["CTSV"])];
 
@@ -23,7 +24,7 @@ router.get("/:id/detail", ...ctsvOnly, getEventDetailForCTSV);
 router.get("/:id/participants", ...ctsvOnly, getEventParticipants);
 
 // CTSV Phê duyệt / Từ chối
-router.patch("/:id/approve", ...ctsvOnly, approveEventByCTSV);
+router.patch("/:id/approve", ...ctsvOnly, upload.single("FileCTSVXacNhan"), approveEventByCTSV);
 router.patch("/:id/reject", ...ctsvOnly, rejectEventByCTSV);
 
 module.exports = router;

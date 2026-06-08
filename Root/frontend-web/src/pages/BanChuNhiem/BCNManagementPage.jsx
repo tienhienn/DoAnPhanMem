@@ -21,6 +21,8 @@ import {
   FiType,
   FiClock,
   FiCheckCircle,
+  FiFileText,
+  FiDownload,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
@@ -134,7 +136,8 @@ const EventFormModal = ({ isOpen, event, onClose, onSave, loading }) => {
       SoNguoiToiDa: "",
       ChiPhiDuKien: "",
       LoaiSK: "",
-      UrlAnh: "",
+      UrlAnh: null,
+      FileDinhKem: null,
       DiemRenLuyen: 5,
     },
   );
@@ -160,7 +163,8 @@ const EventFormModal = ({ isOpen, event, onClose, onSave, loading }) => {
         SoNguoiToiDa: "",
         ChiPhiDuKien: "",
         LoaiSK: "",
-        UrlAnh: "",
+        UrlAnh: null,
+        FileDinhKem: null,
         DiemRenLuyen: 5,
       });
     }
@@ -169,16 +173,23 @@ const EventFormModal = ({ isOpen, event, onClose, onSave, loading }) => {
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        name === "SoNguoiToiDa" ||
-        name === "ChiPhiDuKien" ||
-        name === "DiemRenLuyen"
-          ? parseFloat(value) || ""
-          : value,
-    }));
+    const { name, value, type, files } = e.target;
+    if (type === "file") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: files.length > 0 ? files[0] : null,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]:
+          name === "SoNguoiToiDa" ||
+          name === "ChiPhiDuKien" ||
+          name === "DiemRenLuyen"
+            ? parseFloat(value) || ""
+            : value,
+      }));
+    }
   };
 
   const handleSaveDraft = () => {
@@ -360,19 +371,38 @@ const EventFormModal = ({ isOpen, event, onClose, onSave, loading }) => {
                 <option value="Seminar">Seminar</option>
               </select>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-800 mb-2">
+                <FiFileText className="inline mr-2" />
+                Văn bản đính kèm
+              </label>
+              <input
+                type="file"
+                name="FileDinhKem"
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              />
+              {typeof formData.FileDinhKem === 'string' && formData.FileDinhKem && (
+                <p className="text-xs text-blue-600 mt-1">Đã có văn bản. Chọn file mới để thay đổi.</p>
+              )}
+            </div>
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-2">
                 <FiImage className="inline mr-2" />
-                URL ảnh
+                Ảnh sự kiện
               </label>
               <input
-                type="url"
+                type="file"
                 name="UrlAnh"
-                value={formData.UrlAnh}
+                accept="image/*"
                 onChange={handleChange}
-                placeholder="https://..."
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
               />
+              {typeof formData.UrlAnh === 'string' && formData.UrlAnh && (
+                <p className="text-xs text-blue-600 mt-1">Đã có ảnh. Chọn file mới để thay đổi.</p>
+              )}
             </div>
           </div>
 
@@ -595,12 +625,44 @@ const EventDetailModal = ({ isOpen, event, onClose }) => {
             <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
               Mô tả chi tiết
             </p>
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
               <p className="text-sm text-slate-700 leading-relaxed">
                 {event.MoTa || "Không có mô tả"}
               </p>
             </div>
           </div>
+
+          {(event.FileDinhKem || event.FileCTSVXacNhan) && (
+            <div>
+              <p className="text-xs font-semibold text-slate-600 uppercase mb-2">
+                Tài liệu đính kèm
+              </p>
+              <div className="flex flex-col gap-2">
+                {event.FileDinhKem && (
+                  <a
+                    href={`${API_BASE_URL.replace("/api", "")}${event.FileDinhKem}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors"
+                  >
+                    <FiDownload className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm font-medium">Văn bản đính kèm sự kiện (BCN tải lên)</span>
+                  </a>
+                )}
+                {event.FileCTSVXacNhan && (
+                  <a
+                    href={`${API_BASE_URL.replace("/api", "")}${event.FileCTSVXacNhan}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                  >
+                    <FiDownload className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm font-medium">Văn bản chấp thuận (CTSV tải lên)</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
 
           {event.TrangThai === "tu_choi" && event.LyDoTuChoi && (
             <div className="bg-rose-50 border border-rose-200 rounded-xl p-4">
@@ -761,10 +823,6 @@ export default function BCNManagementPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -780,6 +838,11 @@ export default function BCNManagementPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
 
   // Định nghĩa logic lọc theo KhoaDuyet + PhongCTSVDuyet
   const getEventGroup = (e) => {
@@ -813,23 +876,30 @@ export default function BCNManagementPage() {
     setIsFormOpen(true);
   };
 
-  const handleSaveEvent = async (formData, status) => {
+  const handleSaveEvent = async (formDataState, status) => {
     try {
       setLoading(true);
-      const payload = { ...formData };
-      delete payload.MaCLB;
-      delete payload.TrangThai;
-      delete payload.MaSK;
-      delete payload.NgayTao;
-      delete payload.LyDoTuChoi;
+      const fd = new FormData();
+      Object.keys(formDataState).forEach((key) => {
+        if (["MaCLB", "TrangThai", "MaSK", "NgayTao", "LyDoTuChoi"].includes(key)) return;
+        
+        if ((key === "UrlAnh" || key === "FileDinhKem") && typeof formDataState[key] === "string") {
+          return;
+        }
+        
+        if (formDataState[key] !== null && formDataState[key] !== undefined) {
+          fd.append(key, formDataState[key]);
+        }
+      });
 
       if (editingEvent) {
         await axios.put(
           `${API_BASE_URL}/bcn/events/${editingEvent.MaSK}`,
-          payload,
+          fd,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "multipart/form-data",
             },
           },
         );
@@ -847,10 +917,11 @@ export default function BCNManagementPage() {
       } else {
         const createRes = await axios.post(
           `${API_BASE_URL}/bcn/events`,
-          payload,
+          fd,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "multipart/form-data",
             },
           },
         );

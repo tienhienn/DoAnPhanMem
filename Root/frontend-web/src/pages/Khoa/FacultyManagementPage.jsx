@@ -318,11 +318,28 @@ const EventApprovalModal = ({
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">
                 Mô tả chi tiết
               </h3>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                   {event.MoTa}
                 </p>
               </div>
+            </div>
+          )}
+
+          {event.FileDinhKem && (
+            <div>
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">
+                Tài liệu đính kèm
+              </h3>
+              <a
+                href={`${API_BASE_URL.replace("/api", "")}${event.FileDinhKem}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors mb-4"
+              >
+                <FiFileText className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-medium">Văn bản đính kèm sự kiện</span>
+              </a>
             </div>
           )}
 

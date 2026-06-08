@@ -11,6 +11,7 @@ const {
   getEventParticipantsForBCN,
 } = require("../controllers/bcnEventController");
 const { auth } = require("../middleware/auth");
+const upload = require("../middleware/upload");
 
 /**
  * Điểm danh sinh viên qua QR / ID
@@ -40,13 +41,13 @@ router.get("/:id", auth, getEventDetail);
  * Tạo sự kiện mới
  * POST /api/bcn/events
  */
-router.post("/", auth, createEvent);
+router.post("/", auth, upload.fields([{ name: 'UrlAnh', maxCount: 1 }, { name: 'FileDinhKem', maxCount: 1 }]), createEvent);
 
 /**
  * Cập nhật sự kiện
  * PUT /api/bcn/events/:id
  */
-router.put("/:id", auth, updateEvent);
+router.put("/:id", auth, upload.fields([{ name: 'UrlAnh', maxCount: 1 }, { name: 'FileDinhKem', maxCount: 1 }]), updateEvent);
 
 /**
  * Xóa sự kiện

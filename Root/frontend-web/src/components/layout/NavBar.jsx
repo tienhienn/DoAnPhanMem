@@ -326,7 +326,7 @@ function getNavItems(role) {
 
   if (role === "BCN") {
     const manage = {
-      label: "Quản lý BCN",
+      label: "Quản lý Sự kiện",
       path: "/bcn-management",
       icon: ManageIcon,
     };

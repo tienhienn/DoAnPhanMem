@@ -28,6 +28,7 @@ const StudentTaskPage = () => {
     submissionFile: null,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
 
   useEffect(() => {
     fetchStudentTasks();
@@ -206,7 +207,6 @@ const StudentTaskPage = () => {
   const stats = {
     total: tasks.length,
     todo: tasks.filter((t) => t.status === "todo").length,
-    inProgress: tasks.filter((t) => t.status === "in_progress").length,
     reviewing: tasks.filter((t) => t.status === "reviewing").length,
     done: tasks.filter((t) => t.status === "done").length,
   };
@@ -240,30 +240,36 @@ const StudentTaskPage = () => {
 
       {/* Thống kê nhanh */}
       {tasks.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div
+            onClick={() => setFilterStatus("all")}
+            className={`rounded-2xl p-6 shadow-sm border cursor-pointer transition-all ${filterStatus === "all" ? "bg-slate-100 border-slate-400 ring-2 ring-slate-200" : "bg-white border-slate-100 hover:bg-slate-50"}`}
+          >
             <p className="text-slate-600 text-sm font-medium mb-2">
               Tổng nhiệm vụ
             </p>
             <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <div
+            onClick={() => setFilterStatus("todo")}
+            className={`rounded-2xl p-6 shadow-sm border cursor-pointer transition-all ${filterStatus === "todo" ? "bg-slate-100 border-slate-400 ring-2 ring-slate-200" : "bg-white border-slate-100 hover:bg-slate-50"}`}
+          >
             <p className="text-slate-600 text-sm font-medium mb-2">Chưa làm</p>
             <p className="text-3xl font-bold text-slate-600">{stats.todo}</p>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-200 bg-blue-50/30">
-            <p className="text-blue-800 text-sm font-bold mb-2">Đang làm</p>
-            <p className="text-3xl font-bold text-blue-600">
-              {stats.inProgress}
-            </p>
-          </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-200 bg-amber-50/30">
+          <div
+            onClick={() => setFilterStatus("reviewing")}
+            className={`rounded-2xl p-6 shadow-sm border cursor-pointer transition-all ${filterStatus === "reviewing" ? "bg-amber-100 border-amber-400 ring-2 ring-amber-200" : "bg-amber-50/30 border-amber-200 hover:bg-amber-100/50"}`}
+          >
             <p className="text-amber-800 text-sm font-bold mb-2">Chờ duyệt</p>
             <p className="text-3xl font-bold text-amber-600">
               {stats.reviewing}
             </p>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-emerald-200">
+          <div
+            onClick={() => setFilterStatus("done")}
+            className={`rounded-2xl p-6 shadow-sm border cursor-pointer transition-all ${filterStatus === "done" ? "bg-emerald-100 border-emerald-400 ring-2 ring-emerald-200" : "bg-white border-emerald-200 hover:bg-emerald-50"}`}
+          >
             <p className="text-emerald-700 text-sm font-bold mb-2">
               Hoàn thành
             </p>
@@ -286,7 +292,9 @@ const StudentTaskPage = () => {
             </p>
           </div>
         ) : (
-          tasks.map((task) => {
+          tasks
+            .filter((task) => filterStatus === "all" || task.status === filterStatus)
+            .map((task) => {
             const badge = getStatusBadge(task.status);
             const overdue = isOverdue(task.deadline) && task.status !== "done";
 

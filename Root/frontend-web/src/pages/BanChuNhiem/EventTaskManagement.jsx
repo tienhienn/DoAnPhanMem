@@ -53,7 +53,7 @@ const EventTaskManagement = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const validEvents = (res.data.data || []).filter(
-        (e) => e.TrangThai !== "draft" && e.TrangThai !== "tu_choi",
+        (e) => ["da_duyet", "sap_dien_ra", "dang_dien_ra", "da_ket_thuc"].includes(e.TrangThai)
       );
       setEvents(validEvents);
       if (validEvents.length > 0) setSelectedEvent(validEvents[0]);
@@ -166,7 +166,7 @@ const EventTaskManagement = () => {
   };
 
   const submitTaskReview = async (statusEnum) => {
-    if (statusEnum === "in_progress" && !feedback.trim()) {
+    if (statusEnum === "todo" && !feedback.trim()) {
       alert("Vui lòng nhập lý do/feedback để thành viên sửa lại!");
       return;
     }
@@ -199,7 +199,6 @@ const EventTaskManagement = () => {
   const stats = {
     total: tasks.length,
     todo: tasks.filter((t) => t.status === "todo").length,
-    inProgress: tasks.filter((t) => t.status === "in_progress").length,
     reviewing: tasks.filter((t) => t.status === "reviewing").length,
     done: tasks.filter((t) => t.status === "done").length,
   };
@@ -300,7 +299,7 @@ const EventTaskManagement = () => {
       </div>
 
       {/* Thống kê nhanh - Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between">
             <div>
@@ -311,21 +310,6 @@ const EventTaskManagement = () => {
             </div>
             <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
               <AlertCircle className="w-6 h-6 text-slate-600" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-600 text-sm font-medium mb-2">
-                Đang làm
-              </p>
-              <p className="text-3xl font-bold text-blue-600">
-                {stats.inProgress}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Clock className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
@@ -820,7 +804,7 @@ const EventTaskManagement = () => {
               {selectedTask.status === "reviewing" && (
                 <>
                   <button
-                    onClick={() => submitTaskReview("in_progress")}
+                    onClick={() => submitTaskReview("todo")}
                     disabled={loading}
                     className="flex items-center gap-2 px-5 py-2.5 bg-rose-100 text-rose-700 font-semibold rounded-xl hover:bg-rose-200 disabled:opacity-50"
                   >

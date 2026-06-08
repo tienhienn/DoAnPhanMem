@@ -431,7 +431,7 @@ const EventTaskManagement = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-sm">
-                            {task.assignee?.avatar || "👤"}
+                            👤
                           </div>
                           <div>
                             <p className="font-medium text-slate-900">
@@ -680,7 +680,7 @@ const EventTaskManagement = () => {
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-lg">
-                      {selectedTask.assignee?.avatar || "👤"}
+                      👤
                     </span>
                     <span className="font-semibold text-slate-900">
                       {selectedTask.assignee?.name}

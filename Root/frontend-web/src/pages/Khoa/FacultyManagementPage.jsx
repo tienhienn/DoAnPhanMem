@@ -49,7 +49,7 @@ const STATUS_CONFIG = {
     text: "text-slate-700",
   },
   cho_duyet_khoa: {
-    label: "Chờ Khoa duyệt",
+    label: "Chờ ĐVQL duyệt",
     bg: "bg-amber-50",
     border: "border-amber-200",
     badgeBg: "bg-amber-100",
@@ -107,7 +107,7 @@ const STATUS_CONFIG = {
 
   // CLB
   pending_faculty: {
-    label: "Chờ Khoa duyệt",
+    label: "Chờ ĐVQL duyệt",
     bg: "bg-amber-50",
     border: "border-amber-200",
     badgeBg: "bg-amber-100",
@@ -166,7 +166,7 @@ const StatCard = ({ icon: Icon, label, value, color, active, onClick }) => {
 const ApprovalStepper = ({ status }) => {
   const steps = [
     { key: "draft", label: "Tạo mới", icon: "📝" },
-    { key: "cho_duyet_khoa", label: "Khoa duyệt", icon: "🏫" },
+    { key: "cho_duyet_khoa", label: "ĐVQL duyệt", icon: "🏫" },
     { key: "cho_duyet_ctsv", label: "CTSV duyệt", icon: "👥" },
     { key: "da_duyet", label: "Cấp phép", icon: "✅" },
     { key: "sap_dien_ra", label: "Sắp diễn ra", icon: "🕐" },
@@ -246,7 +246,7 @@ const EventApprovalModal = ({
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 px-8 py-6 flex items-center justify-between rounded-t-3xl z-10 text-white">
           <div>
             <h2 className="text-2xl font-bold">Phê Duyệt Sự Kiện</h2>
-            <p className="text-blue-100 text-sm mt-1">Phê duyệt cấp Khoa</p>
+            <p className="text-blue-100 text-sm mt-1">Phê duyệt cấp Đơn Vị</p>
           </div>
           <button
             onClick={onClose}
@@ -330,7 +330,7 @@ const EventApprovalModal = ({
             <div>
               <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
                 <FiMessageSquare className="inline w-4 h-4 mr-2" /> Ghi chú phê
-                duyệt của Khoa
+                duyệt của Đơn vị
               </label>
               <textarea
                 value={notes}
@@ -613,7 +613,7 @@ const ClubApprovalModal = ({
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Nhập ghi chú ý kiến chỉ đạo của Khoa..."
+                placeholder="Nhập ghi chú ý kiến chỉ đạo của đơn vị..."
                 rows="4"
                 disabled={loading}
                 className="w-full px-4 py-3 border border-slate-300 rounded-2xl outline-none"
@@ -650,7 +650,7 @@ const ClubApprovalModal = ({
                 disabled={loading}
                 className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-md flex items-center gap-2"
               >
-                <FiCheck className="w-4 h-4" /> Đồng ý thông qua Khoa
+                <FiCheck className="w-4 h-4" /> Đồng ý thông qua Đơn vị
               </button>
             </>
           )}
@@ -835,10 +835,10 @@ export default function FacultyManagementPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-800">
-                Quản Lý Phê Duyệt Cấp Khoa
+                Quản Lý Phê Duyệt Cấp Đơn Vị
               </h1>
               <p className="text-slate-600 mt-2">
-                Cán bộ Khoa:{" "}
+                Quản lý viên:{" "}
                 <span className="font-semibold">{user?.hoTen}</span>
               </p>
             </div>
@@ -888,7 +888,7 @@ export default function FacultyManagementPage() {
                 />
                 <StatCard
                   icon={FiCheck}
-                  label="Khoa đã duyệt"
+                  label="Đơn vị đã duyệt"
                   value={eventApprovedCount}
                   color="emerald"
                 />
@@ -947,7 +947,7 @@ export default function FacultyManagementPage() {
                         </div>
                         <div>
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
-                            Chờ Khoa duyệt
+                            Chờ ĐVQL duyệt
                           </span>
                         </div>
                       </div>
@@ -969,7 +969,7 @@ export default function FacultyManagementPage() {
                 <div className="flex gap-2 flex-wrap mb-6">
                   {[
                     { key: "all", label: "Tất cả" },
-                    { key: "cho_khoa", label: "Chờ Khoa duyệt" },
+                    { key: "cho_khoa", label: "Chờ ĐVQL duyệt" },
                     { key: "cho_ctsv", label: "Đã đẩy lên CTSV" },
                     { key: "da_duyet", label: "Đã cấp phép / Đã diễn ra" },
                     { key: "tu_choi", label: "Bị từ chối" },

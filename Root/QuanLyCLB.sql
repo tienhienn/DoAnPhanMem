@@ -1,0 +1,648 @@
+-- =============================================
+-- TẠO CƠ SỞ DỮ LIỆU
+-- =============================================
+-- Xóa cơ sở dữ liệu nếu đã tồn tại
+IF EXISTS (SELECT * FROM sys.databases WHERE name = 'QUANLYCLB_UTE')
+BEGIN
+    USE master;
+    ALTER DATABASE QUANLYCLB_UTE SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE QUANLYCLB_UTE;
+END
+CREATE DATABASE QUANLYCLB_UTE;
+GO
+USE QUANLYCLB_UTE;
+GO
+
+-- =============================================
+-- 1. TẠO CÁC BẢNG DANH MỤC ĐỘC LẬP (KHÔNG CÓ KHÓA NGOẠI)
+-- =============================================
+
+CREATE TABLE Khoa (
+    maKhoa VARCHAR(13) PRIMARY KEY,
+    tenKhoa NVARCHAR(100) NOT NULL,
+    tenVietTat NVARCHAR(10),
+    soDienThoai VARCHAR(15),
+    email VARCHAR(50)
+);
+
+CREATE TABLE DONVIQUANLY (
+    maDVQL VARCHAR(13) PRIMARY KEY,
+    tenDVQL NVARCHAR(255) NOT NULL,
+    emailLienHien VARCHAR(50),
+    soDienThoai VARCHAR(15)
+);
+
+CREATE TABLE VAI_TRO (
+    VaiTroID VARCHAR(13) PRIMARY KEY,
+    tenVaiTro NVARCHAR(50) NOT NULL,
+    moTa NVARCHAR(255),
+    quyen NVARCHAR(255),
+    trangThai BIT DEFAULT 1
+);
+
+CREATE TABLE TAI_KHOAN (
+    MaND VARCHAR(20) PRIMARY KEY,
+    hoTen NVARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    matKhau VARCHAR(255) NOT NULL,       -- bcrypt hash
+    soDienThoai VARCHAR(15),
+    ngaySinh DATE,
+    gioiTinh NVARCHAR(10),
+    anhDaiDien NVARCHAR(255),
+    trangThai BIT DEFAULT 1,
+    lanDangNhapCuoi DATETIME
+);
+
+-- =============================================
+-- 2. TẠO CÁC BẢNG CÓ KHÓA NGOẠI CẤP 1
+-- =============================================
+
+CREATE TABLE Lop (
+    maLop VARCHAR(13) PRIMARY KEY,
+    maKhoa VARCHAR(13),
+    tenLop NVARCHAR(50) NOT NULL,
+    nienKhoa NVARCHAR(20),
+    siSo INT,
+    trangThai NVARCHAR(20),
+    CONSTRAINT FK_Lop_Khoa FOREIGN KEY (maKhoa) REFERENCES Khoa(maKhoa) 
+        ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+CREATE TABLE NGUOIDUNG_VAITRO (
+    MaND VARCHAR(20),
+    VaiTroID VARCHAR(13),
+    GhiChu NVARCHAR(255),
+    PRIMARY KEY (MaND, VaiTroID),
+    CONSTRAINT FK_NDVT_TaiKhoan FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_NDVT_VaiTro FOREIGN KEY (VaiTroID) REFERENCES VAI_TRO(VaiTroID) 
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE SINHVIEN (
+    maSV VARCHAR(20) PRIMARY KEY,
+    maLop VARCHAR(13),
+    diemRenLuyen INT DEFAULT 0,
+    CONSTRAINT FK_SV_TaiKhoan FOREIGN KEY (maSV) REFERENCES TAI_KHOAN(MaND) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_SV_Lop FOREIGN KEY (maLop) REFERENCES Lop(maLop) 
+        ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+CREATE TABLE CANBO (
+    maCanBo VARCHAR(20) PRIMARY KEY,
+    maDVQL VARCHAR(13),
+    chucVu NVARCHAR(50),
+    trangThai BIT DEFAULT 1,
+    CONSTRAINT FK_CB_TaiKhoan FOREIGN KEY (maCanBo) REFERENCES TAI_KHOAN(MaND) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_CB_DVQL FOREIGN KEY (maDVQL) REFERENCES DONVIQUANLY(maDVQL) 
+        ON UPDATE CASCADE ON DELETE SET NULL
+);
+
+CREATE TABLE CAULACBO (
+    MaCLB VARCHAR(13) PRIMARY KEY,
+    maDVQL VARCHAR(13),
+    TenCLB NVARCHAR(100) NOT NULL,
+    MoTa NVARCHAR(MAX),
+    Logo NVARCHAR(255),
+    NgayThanhLap DATE,
+    SoThanhVienToiDa INT,
+    LinhVuc NVARCHAR(50),
+    TrangThai NVARCHAR(50),
+    TenTiengAnh NVARCHAR(150),
+    TenVietTat NVARCHAR(20),
+    Slogan NVARCHAR(200),
+    TonChiMucDich NVARCHAR(MAX),
+    PhamViHoatDong NVARCHAR(MAX),
+    QuyenLoiTrachNhiem NVARCHAR(MAX),
+    CONSTRAINT FK_CLB_DVQL FOREIGN KEY (maDVQL) REFERENCES DONVIQUANLY(maDVQL) 
+        ON UPDATE CASCADE ON DELETE NO ACTION
+);
+
+CREATE TABLE TAI_SAN (
+    MaTS VARCHAR(13) PRIMARY KEY,
+    MaDVQL VARCHAR(13),
+    TenTS NVARCHAR(255) NOT NULL,
+    SoLuongTong INT NOT NULL,
+    CONSTRAINT FK_TS_DVQL FOREIGN KEY (MaDVQL) REFERENCES DONVIQUANLY(maDVQL) 
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+-- =============================================
+-- 3. TẠO CÁC BẢNG NGHIỆP VỤ LÕI (CẤP 2)
+-- =============================================
+
+CREATE TABLE TAI_CHINH (
+    MaTC VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    TenTaiChinh NVARCHAR(100),
+    Nam INT,
+    TongThu DECIMAL(18,2) DEFAULT 0,
+    TongChi DECIMAL(18,2) DEFAULT 0,
+    NgayBatDau DATE,
+    NgayKetThuc DATE,
+    TrangThai NVARCHAR(50),
+    NgayTao DATETIME DEFAULT GETDATE(),
+    CONSTRAINT FK_TC_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) 
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE THANH_VIEN (
+    MaTV VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    MaND VARCHAR(20),
+    VaiTroCLB NVARCHAR(50),
+    NgayThamGia DATE,
+    NgayRoi DATE,
+    LyDoRoi NVARCHAR(200),
+    DiemDongGop FLOAT DEFAULT 0,
+    GhiChu NVARCHAR(255),
+    TrangThai NVARCHAR(50),
+    CONSTRAINT FK_TV_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) 
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_TV_TaiKhoan FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND) 
+        ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE SU_KIEN (
+    MaSK VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    TenSK NVARCHAR(150) NOT NULL,
+    MoTa NVARCHAR(MAX),
+    ThoiGianBatDau DATETIME,
+    ThoiGianKetThuc DATETIME,
+    DiaDiem NVARCHAR(200),
+    SoNguoiToiDa INT,
+    ChiPhiDuKien DECIMAL(18,2),
+    LoaiSK NVARCHAR(50),
+    TrangThai NVARCHAR(50),
+    UrlAnh NVARCHAR(255),
+    FileDinhKem NVARCHAR(255),
+    FileCTSVXacNhan NVARCHAR(255),
+    DiemRenLuyen INT DEFAULT 5,
+    KhoaDuyet BIT DEFAULT 0,
+    PhongCTSVDuyet BIT DEFAULT 0,
+    LyDoTuChoi NVARCHAR(MAX),
+    NgayTao DATETIME DEFAULT GETDATE(),
+    CONSTRAINT FK_SK_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) 
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE DANGKY_MO_CLB (
+    MaDKMo VARCHAR(13) PRIMARY KEY,
+    MaND VARCHAR(20) NOT NULL,               -- Sinh viên nộp đơn (Chủ nhiệm tương lai)
+    MaDVQL VARCHAR(13) NOT NULL,             -- Khoa/Đơn vị quản lý duyệt vòng 1
+    TenCLB NVARCHAR(150) NOT NULL,
+    LinhVuc NVARCHAR(50),
+    NoiDungHoSo NVARCHAR(MAX) NOT NULL,      -- Chứa toàn bộ nội dung form (JSON string)
+    
+    -- Trạng thái duyệt
+    KhoaDuyet BIT DEFAULT 0,
+    PhongCTSVDuyet BIT DEFAULT 0,
+    TrangThai NVARCHAR(50) DEFAULT N'pending_faculty', -- pending_faculty, pending_student_affairs, approved, rejected
+    LyDoTuChoi NVARCHAR(MAX),
+    NgayTao DATETIME DEFAULT GETDATE(),
+    
+    CONSTRAINT FK_DKMo_ND FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND),
+    CONSTRAINT FK_DKMo_DVQL FOREIGN KEY (MaDVQL) REFERENCES DONVIQUANLY(maDVQL)
+);
+
+
+-- =============================================
+-- 4. TẠO CÁC BẢNG CHI TIẾT & LỊCH SỬ (CẤP 3)
+-- =============================================
+
+CREATE TABLE LICHSU_THANHVIEN (
+    MaLS VARCHAR(13) PRIMARY KEY,
+    MaTV VARCHAR(13),
+    HanhDong NVARCHAR(50),
+    VaiTroCu NVARCHAR(50),
+    VaiTroMoi NVARCHAR(50),
+    LyDo NVARCHAR(200),
+    NgayThayDoi DATETIME DEFAULT GETDATE(),
+    GhiChu NVARCHAR(255),
+    CONSTRAINT FK_LSTV_TV FOREIGN KEY (MaTV) REFERENCES THANH_VIEN(MaTV) 
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE NHIEM_VU (
+    MaNV VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    MaSK VARCHAR(13),
+    TenNV NVARCHAR(200) NOT NULL,
+    MoTa NVARCHAR(MAX),
+    MaTV_PhuTrach VARCHAR(13),
+    NguoiGiaoID VARCHAR(20),
+    TienDo INT DEFAULT 0,
+    NgayBatDau DATE,
+    HanChot DATETIME,
+    TrangThai NVARCHAR(50),
+    
+    -- Các trường thành viên nộp báo cáo:
+    FileBaoCao NVARCHAR(255) NULL,
+    GhiChuBaoCao NVARCHAR(MAX) NULL,
+    PhanHoiCuaBCN NVARCHAR(MAX) NULL,
+    NgayNopBaoCao DATETIME NULL,
+    FileDinhKem NVARCHAR(255) NULL,
+
+    CONSTRAINT FK_NV_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_NV_SK FOREIGN KEY (MaSK) REFERENCES SU_KIEN(MaSK) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_NV_TVPT FOREIGN KEY (MaTV_PhuTrach) REFERENCES THANH_VIEN(MaTV) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_NV_TaiKhoan FOREIGN KEY (NguoiGiaoID) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE PHAN_CONG_NHIEMVU (
+    MaPC VARCHAR(13) PRIMARY KEY,
+    MaNV VARCHAR(13),
+    MaTV VARCHAR(13),
+    TienDoCaNhan INT DEFAULT 0,
+    NgayPhanCong DATETIME DEFAULT GETDATE(),
+    NgayHoanThanh DATETIME,
+    GhiChu NVARCHAR(MAX),
+    TrangThai NVARCHAR(50),
+    CONSTRAINT FK_PC_NV FOREIGN KEY (MaNV) REFERENCES NHIEM_VU(MaNV) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_PC_TV FOREIGN KEY (MaTV) REFERENCES THANH_VIEN(MaTV) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE YEU_CAU_THAM_GIA_CLB (
+    MaYC VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    MaSV VARCHAR(20),
+    LyDoThamGia NVARCHAR(MAX),
+    NgayNop DATETIME DEFAULT GETDATE(),
+    TrangThai NVARCHAR(50) DEFAULT 'cho_duyet',
+    NgayDuyet DATETIME,
+    NguoiDuyetID VARCHAR(20),
+    LyDoTuChoi NVARCHAR(MAX),
+    CONSTRAINT FK_YCTG_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_YCTG_SV FOREIGN KEY (MaSV) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_YCTG_NguoiDuyet FOREIGN KEY (NguoiDuyetID) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE DANGKY_SUKIEN (
+    MaSK VARCHAR(13),
+    MaND VARCHAR(20),
+    NgayDangKy DATETIME DEFAULT GETDATE(),
+    NguoiDuyetID VARCHAR(20),
+    LyDoDangKy NVARCHAR(300),
+    NgayDuyet DATETIME,
+    TrangThai NVARCHAR(50),
+    GhiChu NVARCHAR(255),
+    CONSTRAINT PK_DK_SK PRIMARY KEY (MaSK, MaND),
+    CONSTRAINT FK_DK_SK FOREIGN KEY (MaSK) REFERENCES SU_KIEN(MaSK) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_DK_TaiKhoan FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_DK_NguoiDuyet FOREIGN KEY (NguoiDuyetID) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE THONG_BAO (
+    MaTB VARCHAR(13) PRIMARY KEY,
+    MaKhoa VARCHAR(13) NULL,
+    MaSuKien VARCHAR(13) NULL,
+    MaCLB VARCHAR(13) NULL,
+    idNguoiNhan VARCHAR(20) NULL,
+    idNguoiGui VARCHAR(20) NULL,
+    TieuDe NVARCHAR(200) NOT NULL,
+    NoiDung NVARCHAR(MAX),
+    LoaiTB NVARCHAR(50),
+    NgayGui DATETIME DEFAULT GETDATE(),
+    TrangThai NVARCHAR(50),
+    CONSTRAINT FK_TB_Khoa FOREIGN KEY (MaKhoa) REFERENCES Khoa(maKhoa) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_TB_SuKien FOREIGN KEY (MaSuKien) REFERENCES SU_KIEN(MaSK) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_TB_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_TB_NguoiNhan FOREIGN KEY (idNguoiNhan) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_TB_NguoiGui FOREIGN KEY (idNguoiGui) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE THONG_BAO_NGUOIDUNG (
+    MaTB VARCHAR(13) NOT NULL,
+    MaND VARCHAR(20) NOT NULL,
+    DaDoc BIT DEFAULT 0,
+    NgayDoc DATETIME,
+    PRIMARY KEY (MaTB, MaND),
+    CONSTRAINT FK_TBND_ThongBao FOREIGN KEY (MaTB) REFERENCES THONG_BAO(MaTB) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_TBND_TaiKhoan FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+
+CREATE TABLE HOSO (
+    MaHoSo VARCHAR(13) PRIMARY KEY,
+    maCLB VARCHAR(13),
+    maNguoiGui VARCHAR(20),
+    maNguoiDuyet VARCHAR(20),
+    loaiHoSo NVARCHAR(50),
+    TieuDe NVARCHAR(200) NOT NULL,
+    NoiDung NVARCHAR(MAX),
+    FileDinhKem NVARCHAR(255),
+    TrangThai NVARCHAR(50),
+    NgayGui DATETIME DEFAULT GETDATE(),
+    NgayDuyet DATETIME,
+    LyDoTuChoi NVARCHAR(300),
+    CONSTRAINT FK_HS_CLB FOREIGN KEY (maCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_HS_NguoiGui FOREIGN KEY (maNguoiGui) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_HS_NguoiDuyet FOREIGN KEY (maNguoiDuyet) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE KHEN_THUONG_KY_LUAT (
+    MaKTKL VARCHAR(13) PRIMARY KEY,
+    MaND VARCHAR(20),
+    MaCLB VARCHAR(13),
+    Loai NVARCHAR(50),
+    HinhThuc NVARCHAR(100),
+    DiemThayDoi FLOAT,
+    LyDo NVARCHAR(MAX),
+    NguoiQuyetDinhID VARCHAR(20),
+    NgayQuyetDinh DATETIME,
+    NgayHieuLuc DATE,
+    FileMinhChung NVARCHAR(255),
+    TrangThai NVARCHAR(50),
+    CONSTRAINT FK_KTKL_TaiKhoan FOREIGN KEY (MaND) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_KTKL_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_KTKL_QuyetDinh FOREIGN KEY (NguoiQuyetDinhID) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE PHIEU_MUON_TRA (
+    MaPhieu VARCHAR(13) PRIMARY KEY,
+    MaCLB VARCHAR(13),
+    MaSK VARCHAR(13),
+    NguoiMuonID VARCHAR(20),
+    NgayTaoPhieu DATE DEFAULT GETDATE(),
+    NgayTraDuKien DATE,
+    trangThaiPhieu NVARCHAR(50),
+    CONSTRAINT FK_PMT_CLB FOREIGN KEY (MaCLB) REFERENCES CAULACBO(MaCLB) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_PMT_SK FOREIGN KEY (MaSK) REFERENCES SU_KIEN(MaSK) ON UPDATE NO ACTION ON DELETE NO ACTION,
+    CONSTRAINT FK_PMT_NguoiMuon FOREIGN KEY (NguoiMuonID) REFERENCES TAI_KHOAN(MaND) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
+CREATE TABLE CHI_TIET_PHIEU_MUON (
+    MaPhieu VARCHAR(13),
+    MaTS VARCHAR(13),
+    SoLuongMuon INT NOT NULL,
+    tinhTrang NVARCHAR(100),
+    PRIMARY KEY (MaPhieu, MaTS),
+    CONSTRAINT FK_CTPM_Phieu FOREIGN KEY (MaPhieu) REFERENCES PHIEU_MUON_TRA(MaPhieu) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT FK_CTPM_TaiSan FOREIGN KEY (MaTS) REFERENCES TAI_SAN(MaTS) ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+GO
+
+
+-- =============================================
+-- 5. DỮ LIỆU MẪU (SAMPLE DATA)
+-- =============================================
+
+-- ---------------------------------------------
+-- 5.1 Khoa (Đã cập nhật tên Khoa)
+-- ---------------------------------------------
+INSERT INTO Khoa (maKhoa, tenKhoa, tenVietTat, soDienThoai, email) VALUES
+('KHOA0000001', N'Khoa Công nghệ Số',       N'CNS',   '02363650403', 'cns@ute.udn.vn'),
+('KHOA0000002', N'Khoa Điện - Điện tử',      N'DDT',   '02363650404', 'ddt@ute.udn.vn'),
+('KHOA0000003', N'Khoa Cơ khí',              N'CK',    '02363650405', 'ck@ute.udn.vn'),
+('KHOA0000004', N'Khoa Hóa',                 N'HOA',   '02363650406', 'hoa@ute.udn.vn');
+GO
+
+-- ---------------------------------------------
+-- 5.2 Đơn vị quản lý (Đã cập nhật theo yêu cầu)
+-- ---------------------------------------------
+INSERT INTO DONVIQUANLY (maDVQL, tenDVQL, emailLienHien, soDienThoai) VALUES
+('DVQL0000001', N'Đoàn Thanh niên - Hội Sinh viên', 'doan@ute.udn.vn',  '02363650400'),
+('DVQL0000002', N'Khoa Công nghệ Số',               'cns@ute.udn.vn',   '02363650403'),
+('DVQL0000003', N'Khoa Điện - Điện tử',             'ddt@ute.udn.vn',   '02363650404'),
+('DVQL0000004', N'Khoa Cơ khí',                     'ck@ute.udn.vn',    '02363650405'),
+('DVQL0000005', N'Khoa Hóa',                        'hoa@ute.udn.vn',   '02363650406'),
+('DVQL0000006', N'Phòng Công tác Sinh viên',        'ctsv@ute.udn.vn',  '02363650401');
+GO
+
+-- ---------------------------------------------
+-- 5.3 Vai trò
+-- ---------------------------------------------
+INSERT INTO VAI_TRO (VaiTroID, tenVaiTro, moTa, quyen, trangThai) VALUES
+('VT000000001', N'Sinh viên',      N'Sinh viên thông thường', N'{đăng kí sự kiện}', 1),
+('VT000000003', N'Cán bộ khoa/đoàn', N'Cán bộ của Khoa hoặc đoàn', N'{duyệt sự kiện do CLB gửi lên; xem thống kê hoạt động khoa; quản lý thông tin CLB thuộc khoa; theo dõi sự kiện thuộc khoa}',1),
+('VT000000004', N'Phòng CTSV', N'Phòng công tác sinh viên', N'{duyệt/từ chối sự kiện cấp trường; xem thống kê toàn trường; quản lý toàn bộ hoạt động sinh viên; khóa/mở hoạt động CLB;quản lý tất cả sự kiện}',1);
+GO
+
+-- ---------------------------------------------
+-- 5.4 Lớp (Đã cập nhật theo tên Khoa)
+-- ---------------------------------------------
+INSERT INTO Lop (maLop, maKhoa, tenLop, nienKhoa, siSo, trangThai) VALUES
+('LOP00000001', 'KHOA0000001', N'23T1', N'2021-2025', 35, N'Đang học'),
+('LOP00000002', 'KHOA0000001', N'23T2', N'2021-2025', 33, N'Đang học'),
+('LOP00000003', 'KHOA0000002', N'23ĐDT1', N'2021-2025', 36, N'Đang học'),
+('LOP00000004', 'KHOA0000003', N'23CK1',  N'2022-2026', 34, N'Đang học'),
+('LOP00000005', 'KHOA0000004', N'23H1', N'2022-2026', 32, N'Đang học');
+GO
+
+-- ---------------------------------------------
+-- 5.5 Tài khoản (matKhau = bcrypt("password"))
+-- ---------------------------------------------
+INSERT INTO TAI_KHOAN (MaND, hoTen, email, matKhau, soDienThoai, ngaySinh, gioiTinh, anhDaiDien, trangThai) VALUES
+('23115053122115', N'Nguyễn Văn An',      '23115053122115@sv.ute.udn.vn',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234561', '2003-05-15', N'Nam',  N'/ảnh thẻ nam.webp', 1),
+('23115053122116', N'Trần Thị Bình',      '23115053122116@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234562', '2003-08-22', N'Nữ',   N'/ảnh thẻ nữ.jpg', 1),
+('23115053122117', N'Lê Hoàng Cường',     '23115053122117@sv.ute.udn.vn',   '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234563', '2003-11-10', N'Nam',  N'/ảnh thẻ nam.webp', 1),
+('23115053122118', N'Phạm Thị Dung',      '23115053122118@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234564', '2003-02-28', N'Nữ',   N'/ảnh thẻ nữ.jpg', 1),
+('23115053122119', N'Hoàng Minh Đức',     '23115053122119@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234565', '2004-07-03', N'Nam',  N'/ảnh thẻ nam.webp', 1),
+('23115053122120', N'Võ Thị Hoa',         '23115053122120@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234566', '2004-09-17', N'Nữ',   N'/ảnh thẻ nữ.jpg', 1),
+('23115053122121', N'Đặng Quốc Hùng',     '23115053122121@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234567', '2004-01-25', N'Nam',  N'/ảnh thẻ nam.webp', 1),
+('23115053122122', N'Bùi Thị Lan',        '23115053122122@sv.ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234568', '2004-04-12', N'Nữ',   N'/ảnh thẻ nữ.jpg', 1),
+('23115053122123', N'Trần Văn Khóa',      '23115053122123@sv.ute.udn.vn',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234569', '2003-06-20', N'Nam',  N'/ảnh thẻ nam.webp', 0),
+('CB000000001', N'Nguyễn Thị Quản',    'quan.nt@ute.udn.vn',       '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234570', '1990-03-10', N'Nữ',   N'/ảnh thẻ nữ.jpg', 1),
+('CB000000002', N'Hoàng Thị Mỹ Lệ',       'le.htm@ute.udn.vn',     '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0901234571', '1988-11-05', N'Nam',  N'/ảnh thẻ nam.webp', 1),
+('CB000000003', N'Nguyễn Hữu Thọ',     'tho.nh@ute.udn.vn',        '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '0896998961', '1960-11-05', N'Nam',  N'/ảnh thẻ nam.webp', 1);
+GO
+
+-- ---------------------------------------------
+-- 5.6 Sinh viên
+-- ---------------------------------------------
+INSERT INTO SINHVIEN (maSV, maLop, diemRenLuyen) VALUES
+('23115053122115', 'LOP00000001', 85),
+('23115053122116', 'LOP00000001', 78),
+('23115053122117', 'LOP00000002', 90),
+('23115053122118', 'LOP00000002', 72),
+('23115053122119', 'LOP00000003', 88),
+('23115053122120', 'LOP00000004', 65),
+('23115053122121', 'LOP00000004', 92),
+('23115053122122', 'LOP00000005', 70),
+('23115053122123', 'LOP00000001', 50);
+GO
+
+-- ---------------------------------------------
+-- 5.7 Cán bộ (Cập nhật ánh xạ tới Đơn vị quản lý mới)
+-- ---------------------------------------------
+INSERT INTO CANBO (maCanBo, maDVQL, chucVu, trangThai) VALUES
+('CB000000001', 'DVQL0000001', N'Bí thư Đoàn',          1),
+('CB000000002', 'DVQL0000002', N'Cán bộ khoa CNS',      1),
+('CB000000003', 'DVQL0000006', N'Chuyên viên CTSV',     1);
+GO
+
+-- ---------------------------------------------
+-- 5.8 Vai trò người dùng
+-- ---------------------------------------------
+INSERT INTO NGUOIDUNG_VAITRO (MaND, VaiTroID, GhiChu) VALUES
+('23115053122115', 'VT000000001', N'Sinh viên thường'),
+('23115053122116', 'VT000000001', N'Sinh viên thường'),
+('23115053122117', 'VT000000001', N'Sinh viên thường'),
+('23115053122118', 'VT000000001', N'Sinh viên thường'),
+('23115053122119', 'VT000000001', N'Sinh viên thường'),
+('23115053122120', 'VT000000001', N'Sinh viên thường'),
+('23115053122121', 'VT000000001', N'Sinh viên thường'),
+('23115053122122', 'VT000000001', N'Sinh viên thường'),
+('23115053122123', 'VT000000001', N'Tài khoản bị khóa'),
+('CB000000001', 'VT000000003', N'Cán bộ Đoàn'),
+('CB000000002', 'VT000000003', N'Cán bộ Khoa CNS'),
+('CB000000003', 'VT000000004', N'Cán bộ CTSV');
+GO
+
+-- ---------------------------------------------
+-- 5.9 Câu lạc bộ (Gán CLB Lập Trình cho Khoa Công Nghệ Số - DVQL0000002)
+-- ---------------------------------------------
+INSERT INTO CAULACBO (MaCLB, maDVQL, TenCLB, MoTa, NgayThanhLap, SoThanhVienToiDa, LinhVuc, TrangThai, TenTiengAnh, TenVietTat, Slogan, TonChiMucDich, PhamViHoatDong, QuyenLoiTrachNhiem) VALUES
+('CLB00000001', 'DVQL0000002', N'CLB Lập trình UTE',
+    N'Câu lạc bộ dành cho sinh viên yêu thích lập trình, tổ chức các buổi workshop, hackathon và cuộc thi coding.',
+    '2018-09-01', 100, N'Công nghệ', N'Hoạt động',
+    N'UTE Programming Club', N'UPC', N'Code for Life', N'Tạo môi trường học hỏi lập trình cho sinh viên.', N'Trong phạm vi trường UTE và các cuộc thi lập trình.', N'Học hỏi kiến thức, tham gia đầy đủ hoạt động của câu lạc bộ.'),
+('CLB00000002', 'DVQL0000001', N'CLB Tiếng Anh UTE',
+    N'Câu lạc bộ giúp sinh viên nâng cao kỹ năng tiếng Anh qua các hoạt động giao lưu, thuyết trình và tranh luận.',
+    '2017-03-15', 80,  N'Ngoại ngữ', N'Hoạt động',
+    N'UTE English Club', N'UEC', N'Speak to Connect', N'Nâng cao khả năng giao tiếp và tự tin sử dụng tiếng Anh.', N'Toàn trường UTE và các buổi giao lưu ngoại khóa.', N'Rèn luyện tiếng Anh, chuẩn bị tốt nội dung bài thuyết trình.'),
+('CLB00000003', 'DVQL0000001', N'CLB Thể thao UTE',
+    N'Câu lạc bộ tổ chức các hoạt động thể dục thể thao: bóng đá, cầu lông, bơi lội và các giải đấu nội bộ.',
+    '2016-10-20', 150, N'Thể thao',  N'Hoạt động',
+    N'UTE Sports Club', N'USC', N'Stronger Together', N'Rèn luyện sức khỏe và tinh thần thể thao cho sinh viên.', N'Tại các sân thể thao của trường UTE.', N'Tham gia tích cực và đúng giờ các buổi tập luyện định kỳ.'),
+('CLB00000004', 'DVQL0000001', N'CLB Tình nguyện UTE',
+    N'Câu lạc bộ tổ chức các hoạt động tình nguyện, từ thiện và hỗ trợ cộng đồng.',
+    '2019-05-01', 120, N'Tình nguyện', N'Hoạt động',
+    N'UTE Volunteer Club', N'UVC', N'Share the Love', N'Đóng góp sức trẻ hỗ trợ cộng đồng và người có hoàn cảnh khó khăn.', N'Trong và ngoài trường UTE, các địa bàn vùng cao.', N'Tham gia tích cực và có trách nhiệm trong các chiến dịch tình nguyện.');
+GO
+
+-- ---------------------------------------------
+-- 5.10 Thành viên CLB
+-- ---------------------------------------------
+INSERT INTO THANH_VIEN (MaTV, MaCLB, MaND, VaiTroCLB, NgayThamGia, TrangThai) VALUES
+('TV000000001', 'CLB00000001', '23115053122115', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
+('TV000000002', 'CLB00000001', '23115053122116', N'Thành viên',   '2021-10-01', N'Hoạt động'),
+('TV000000003', 'CLB00000001', '23115053122117', N'Thành viên',   '2022-01-15', N'Hoạt động'),
+('TV000000004', 'CLB00000002', '23115053122118', N'Chủ nhiệm',    '2021-10-01', N'Hoạt động'),
+('TV000000005', 'CLB00000002', '23115053122119', N'Thành viên',   '2022-09-05', N'Hoạt động'),
+('TV000000006', 'CLB00000003', '23115053122120', N'Chủ nhiệm',    '2022-09-01', N'Hoạt động'),
+('TV000000007', 'CLB00000003', '23115053122121', N'Thành viên',   '2022-09-01', N'Hoạt động'),
+('TV000000008', 'CLB00000004', '23115053122122', N'Thành viên',   '2022-10-10', N'Hoạt động');
+GO
+
+-- ---------------------------------------------
+-- 5.11 Sự kiện
+-- ---------------------------------------------
+INSERT INTO SU_KIEN (MaSK, MaCLB, TenSK, MoTa, ThoiGianBatDau, ThoiGianKetThuc, DiaDiem, SoNguoiToiDa, ChiPhiDuKien, LoaiSK, TrangThai, UrlAnh, DiemRenLuyen, KhoaDuyet, PhongCTSVDuyet) VALUES
+('SK000000001', 'CLB00000001', N'Workshop: Nhập môn ReactJS', N'Buổi workshop thực hành xây dựng ứng dụng web với ReactJS.', '2026-06-2 08:00', '2026-06-30 11:30', N'Phòng Lab 201 - Nhà A', 40, 0, N'Workshop', N'sap_dien_ra', 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
+('SK000000002', 'CLB00000001', N'Hackathon UTE 2026', N'Cuộc thi lập trình 24 giờ với chủ đề "Chuyển đổi số trong giáo dục".', '2026-06-20 07:00', '2026-06-21 07:00', N'Hội trường A - Tầng 1', 60, 5000000, N'Cuộc thi', N'sap_dien_ra', 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&auto=format&fit=crop&q=60', 15, 1, 1),
+('SK000000003', 'CLB00000002', N'English Speaking Club - Tháng 6', N'Buổi sinh hoạt tiếng Anh hàng tháng.', '2026-06-20 14:00', '2026-06-21 16:30', N'Phòng 305 - Nhà B', 30, 0, N'Sinh hoạt', N'sap_dien_ra', 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&auto=format&fit=crop&q=60', 5, 1, 1),
+('SK000000004', 'CLB00000003', N'Giải bóng đá mini UTE Cup 2026', N'Giải đấu bóng đá mini dành cho sinh viên toàn trường.', '2026-07-05 07:30', '2026-07-05 17:00', N'Sân thể thao trường', 100, 200000, N'Thể thao', N'sap_dien_ra', 'https://file3.qdnd.vn/data/images/0/2023/03/23/hieu_tv/ronaldo.jpg', 10, 1, 1),
+('SK000000005', 'CLB00000004', N'Ngày hội Tình nguyện Hè 2026', N'Hoạt động tình nguyện dọn dẹp môi trường và tặng quà.', '2026-07-15 06:00', '2026-07-15 17:00', N'Huyện Hòa Vang, Đà Nẵng', 50, 0, N'Tình nguyện', N'sap_dien_ra', 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&auto=format&fit=crop&q=60', 15, 1, 1),
+('SK000000006', 'CLB00000001', N'Khóa học Git & GitHub cơ bản', N'Khóa học 3 buổi về quản lý mã nguồn với Git và GitHub.', '2026-05-01 08:00', '2026-06-01 10:00', N'Phòng Lab 203 - Nhà A', 25, 0, N'Khóa học', N'dang_dien_ra', 'https://files.fullstack.edu.vn/f8-prod/blog_posts/5919/63a5914b95264.png', 5, 1, 1),
+('SK000000007', 'CLB00000002', N'Cuộc thi hùng biện tiếng Anh 2025', N'Cuộc thi hùng biện tiếng Anh cấp trường năm học 2024-2025.', '2025-12-10 08:00', '2025-12-10 17:00', N'Hội trường B', 80, 0, N'Cuộc thi', N'da_ket_thuc', 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&auto=format&fit=crop&q=60', 10, 1, 1),
+('SK000000008', 'CLB00000001', N'Seminar: AI và Machine Learning', N'Buổi seminar về ứng dụng AI trong thực tế.', '2026-06-25 09:00', '2026-06-25 12:00', N'Hội trường A', 20, 0, N'Seminar', N'sap_dien_ra', 'https://base.vn/wp-content/uploads/2025/03/cong-nghe-ai.webp', 5, 1, 1);
+GO
+
+-- ---------------------------------------------
+-- 5.13 Thông báo và liên kết người nhận
+-- ---------------------------------------------
+INSERT INTO THONG_BAO (MaTB, MaKhoa, MaSuKien, MaCLB, idNguoiNhan, idNguoiGui, TieuDe, NoiDung, LoaiTB, NgayGui, TrangThai) VALUES
+('TB000000001', NULL, NULL, 'CLB00000001', NULL, '23115053122115', N'Nộp quỹ CLB tháng 5/2026', N'Chào các thành viên, vui lòng nộp quỹ.', N'Tài chính', '2026-05-18 09:00', N'da_gui'),
+('TB000000002', NULL, NULL, 'CLB00000001', NULL, '23115053122115', N'Chuẩn bị cho Workshop ReactJS', N'Các thành viên tham gia hỗ trợ Workshop.', N'Sự kiện', '2026-05-19 14:30', N'da_gui'),
+('TB000000003', NULL, NULL, 'CLB00000002', NULL, '23115053122118', N'Thông báo lịch sinh hoạt tháng 6', N'English Speaking Club tháng 6 sẽ diễn ra...', N'Sinh hoạt', '2026-05-20 08:00', N'da_gui');
+GO
+
+INSERT INTO THONG_BAO_NGUOIDUNG (MaTB, MaND, DaDoc, NgayDoc) VALUES
+('TB000000001', '23115053122115', 0, NULL),
+('TB000000002', '23115053122115', 0, NULL),
+('TB000000003', '23115053122115', 1, '2026-05-21 09:15'),
+('TB000000001', '23115053122117', 0, NULL),
+('TB000000002', '23115053122117', 1, '2026-05-20 10:00');
+GO
+
+INSERT INTO HOSO (MaHoSo, maCLB, maNguoiGui, maNguoiDuyet, loaiHoSo, TieuDe, NoiDung, FileDinhKem, TrangThai, NgayGui, NgayDuyet, LyDoTuChoi) VALUES
+-- 1. Báo cáo đã được CTSV duyệt (Của CLB Lập trình)
+('HS000000001', 'CLB00000001', '23115053122115', 'CB000000003', N'Báo cáo Tháng', 
+ N'Báo cáo hoạt động tháng 4/2026', 
+ N'Tổng hợp các hoạt động của CLB trong tháng 4 bao gồm: Lên kế hoạch sự kiện Hackathon và tổ chức trainning nội bộ.', 
+ '/uploads/bao-cao-thang-4.pdf', 'approved', '2026-05-02 09:00', '2026-05-05 14:00', NULL),
+
+-- 2. Báo cáo vừa nộp, đang chờ CTSV duyệt (Của CLB Lập trình)
+('HS000000002', 'CLB00000001', '23115053122115', NULL, N'Báo cáo Tháng', 
+ N'Báo cáo hoạt động tháng 5/2026', 
+ N'Báo cáo các sự kiện đã tổ chức thành công trong tháng 5 như Workshop ReactJS và các thu chi liên quan.', 
+ '/uploads/bao-cao-thang-5.pdf', 'submitted', '2026-05-25 10:30', NULL, NULL),
+
+-- 3. Báo cáo đang viết dở (Bản nháp - Của CLB Lập trình)
+('HS000000003', 'CLB00000001', '23115053122115', NULL, N'Tổng kết Học kỳ', 
+ N'Báo cáo tổng kết học kỳ II năm học 2025-2026', 
+ N'Đang tổng hợp số liệu thành viên và các thành tích đạt được trong học kỳ vừa qua...', 
+ NULL, 'draft', '2026-05-25 15:00', NULL, NULL),
+
+-- 4. Đơn giải thể (Của CLB Tiếng Anh)
+('HS000000004', 'CLB00000002', '23115053122118', NULL, N'Đơn giải thể', 
+ N'Đơn xin giải thể CLB Tiếng Anh UTE', 
+ N'Kính gửi Phòng CTSV, do hiện tại Ban chủ nhiệm không còn đủ nhân sự nòng cốt để duy trì các hoạt động định kỳ, chúng em xin phép nộp đơn xin tạm ngừng hoạt động và giải thể CLB.', 
+ '/uploads/don-giai-the.pdf', 'submitted', '2026-05-20 08:00', NULL, NULL),
+
+-- 5. Báo cáo bị từ chối (Yêu cầu làm lại - Của CLB Thể Thao)
+('HS000000005', 'CLB00000003', '23115053122120', 'CB000000003', N'Tổng kết Nhiệm kỳ', 
+ N'Báo cáo tổng kết nhiệm kỳ 2024-2025', 
+ N'Tổng kết các giải đấu đã tổ chức.', 
+ '/uploads/bao-cao-nhiem-ky.pdf', 'tu_choi', '2026-01-10 09:00', '2026-01-12 10:00', N'Báo cáo thiếu phần kê khai tài chính, yêu cầu bổ sung và nộp lại.');
+
+ -- =============================================
+-- 5.14 Tài sản (cơ sở vật chất)
+-- =============================================
+INSERT INTO TAI_SAN (MaTS, MaDVQL, TenTS, SoLuongTong) VALUES
+('TS000000001', 'DVQL0000001', N'Máy chiếu Epson EB-2250U', 5),
+('TS000000002', 'DVQL0000001', N'Bộ loa di động kèm mic Sony', 3),
+('TS000000003', 'DVQL0000006', N'Bàn ghế nhựa sự kiện (bộ)', 100),
+('TS000000004', 'DVQL0000002', N'Cáp chuyển đổi HDMI/VGA', 10),
+('TS000000005', 'DVQL0000001', N'Bảng Flipchart', 4);
+GO
+
+-- =============================================
+-- 5.15 Quản lý Tài chính (Thu / Chi của CLB)
+-- =============================================
+INSERT INTO TAI_CHINH (MaTC, MaCLB, TenTaiChinh, Nam, TongThu, TongChi, NgayBatDau, TrangThai, NgayTao) VALUES
+('TC000000001', 'CLB00000001', N'Thu quỹ thành viên tháng 4/2026', 2026, 1500000, 0, '2026-04-05', N'Hoạt động', '2026-04-05'),
+('TC000000002', 'CLB00000001', N'Chi mua bánh kẹo, nước sinh hoạt', 2026, 0, 350000, '2026-04-10', N'Hoạt động', '2026-04-10'),
+('TC000000003', 'CLB00000001', N'Tài trợ từ Khoa CNS', 2026, 5000000, 0, '2026-05-15', N'Hoạt động', '2026-05-15'),
+('TC000000004', 'CLB00000001', N'Đặt cọc thuê hội trường', 2026, 0, 1000000, '2026-05-18', N'Hoạt động', '2026-05-18'),
+('TC000000005', 'CLB00000001', N'Chi tiền in banner', 2026, 0, 450000, '2026-05-19', N'Hoạt động', '2026-05-19');
+GO
+
+-- =============================================
+-- 5.16 Phiếu mượn trả cơ sở vật chất
+-- =============================================
+INSERT INTO PHIEU_MUON_TRA (MaPhieu, MaCLB, MaSK, NguoiMuonID, NgayTaoPhieu, NgayTraDuKien, trangThaiPhieu) VALUES
+('PM000000001', 'CLB00000001', 'SK000000001', '23115053122115', '2026-05-09', '2026-05-10', N'Đã trả'),
+('PM000000002', 'CLB00000001', 'SK000000002', '23115053122116', '2026-05-19', '2026-05-22', N'Đang mượn'), 
+('PM000000003', 'CLB00000001', NULL, '23115053122117', '2026-05-10', '2026-05-12', N'Đang mượn'), 
+('PM000000004', 'CLB00000002', 'SK000000003', '23115053122118', '2026-05-14', '2026-05-16', N'Đã trả');
+GO
+
+-- =============================================
+-- 5.17 Chi tiết phiếu mượn
+-- =============================================
+INSERT INTO CHI_TIET_PHIEU_MUON (MaPhieu, MaTS, SoLuongMuon, tinhTrang) VALUES
+('PM000000001', 'TS000000001', 1, N'Tốt'), 
+('PM000000001', 'TS000000004', 2, N'Tốt'), 
+('PM000000002', 'TS000000002', 2, N'Tốt'), 
+('PM000000002', 'TS000000003', 30, N'Tốt'), 
+('PM000000003', 'TS000000005', 1, N'Tốt'), 
+('PM000000004', 'TS000000002', 1, N'Tốt'); 
+GO
+-- =============================================
+-- KIỂM TRA LẠI DỮ LIỆU
+-- =============================================
+select * from SU_KIEN;
+select * from CANBO;
+select * from DONVIQUANLY;
+select * from CAULACBO;
+select * from TAI_KHOAN
+select * from THANH_VIEN;
+select * from NHIEM_VU
+select * from HOSO
+select * from TAI_SAN
+select * from CHI_TIET_PHIEU_MUON

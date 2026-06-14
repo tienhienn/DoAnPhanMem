@@ -1,121 +1,159 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+/**
+ * App - Root component
+ * Thiết lập React Router, AuthProvider và AppProvider cho toàn bộ ứng dụng.
+ *
+ * Phân quyền route:
+ * - /                    → SV, BCN, KHOA, CTSV (tất cả đã đăng nhập)
+ * - /events/:id          → tất cả
+ * - /events/:id/qr       → tất cả
+ * - /my-events           → SV (sinh viên)
+ * - /event-management    → BCN, KHOA, CTSV
+ */
 
-function App() {
-  const [count, setCount] = useState(0)
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { AppProvider } from "./context/AppContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Layout from "./components/layout/Layout";
+import LoginPage from "./pages/LoginPage";
+import EventListPage from "./pages/EventListPage";
+import CTSVEventOverviewPage from "./pages/CTSV/CTSVEventOverviewPage";
+import CTSVEventStatisticsPage from "./pages/CTSV/CTSVEventStatisticsPage";
+import CTSVClubOverviewPage from "./pages/CTSV/CTSVClubOverviewPage";
+import CTSVClubStatisticsPage from "./pages/CTSV/CTSVClubStatisticsPage";
+import EventDetailPage from "./pages/EventDetailPage";
+import QRScreen from "./pages/QRScreen";
+import MyEventsPage from "./pages/MyEventsPage";
+import StudentTaskPage from "./pages/StudentTaskPage";
+import BCNManagementPage from "./pages/BanChuNhiem/BCNManagementPage";
+import FacultyManagementPage from "./pages/Khoa/FacultyManagementPage";
+import StudentAffairsPage from "./pages/BanChuNhiem/StudentAffairsPage";
+import MemberManagementPage from "./pages/BanChuNhiem/MemberManagementPage";
+import FinanceAndLogisticsPage from "./pages/BanChuNhiem/FinanceAndLogisticsPage";
+import PeriodicReportsPage from "./pages/BanChuNhiem/PeriodicReportsPage";
+import QRAttendancePage from "./pages/BanChuNhiem/QRAttendancePage";
+import ProfilePage from "./pages/ProfilePage";
+import ClubsPage from "./pages/ClubsPage";
+import ClubDetailPage from "./pages/ClubDetailPage";
+import EventTaskManagement from "./pages/BanChuNhiem/EventTaskManagement";
+import ClubManagementPage from "./pages/Khoa/ClubManagementPage";
+import CTSVReportsPage from "./pages/CTSV/CTSVReportManagementPage";
+import KhoaDashboardPage from "./pages/Khoa/KhoaDashboardPage";
 
+/**
+ * App - Root component
+ * Thiết lập React Router, AuthProvider và AppProvider cho toàn bộ ứng dụng.
+ *
+ * Phân quyền route:
+ * - /                          → SV, BCN, KHOA, CTSV (tất cả đã đăng nhập)
+ * - /events/:id                → tất cả
+ * - /events/:id/qr             → tất cả
+ * - /my-events                 → SV (sinh viên)
+ * - /bcn-management            → BCN (ban chủ nhiệm CLB)
+ * - /faculty-management        → KHOA (cán bộ khoa)
+ * - /student-affairs           → CTSV (phòng công tác sinh viên)
+ * - /club-management           → KHOA (cán bộ khoa)
+ */
+
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppProvider>
+          <Routes>
+            {/* Public */}
+            <Route path="/login" element={<LoginPage />} />
 
-      <div className="ticks"></div>
+            {/* Protected — tất cả role đã đăng nhập */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/" element={<EventListPage />} />
+                <Route path="/events/:id" element={<EventDetailPage />} />
+                <Route path="/events/:id/qr" element={<QRScreen />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+                {/* Chỉ sinh viên hoặc BCN */}
+                <Route element={<ProtectedRoute roles={["SV", "BCN"]} />}>
+                  <Route path="/my-events" element={<MyEventsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/clubs" element={<ClubsPage />} />
+                  <Route path="/clubs/:id" element={<ClubDetailPage />} />
+                </Route>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+                {/* Chỉ Sinh viên */}
+                <Route element={<ProtectedRoute roles={["SV"]} />}>
+                  <Route path="/my-tasks" element={<StudentTaskPage />} />
+                </Route>
+
+                {/* Chỉ Ban chủ nhiệm CLB */}
+                <Route element={<ProtectedRoute roles={["BCN"]} />}>
+                  <Route
+                    path="/bcn-management"
+                    element={<BCNManagementPage />}
+                  />
+                  <Route
+                    path="/qr-attendance"
+                    element={<QRAttendancePage />}
+                  />
+                  <Route
+                    path="/member-management"
+                    element={<MemberManagementPage />}
+                  />
+                  <Route
+                    path="/event-tasks/:eventId"
+                    element={<EventTaskManagement />}
+                  />
+                  <Route
+                    path="/finance-logistics"
+                    element={<FinanceAndLogisticsPage />}
+                  />
+                  <Route
+                    path="/periodic-reports"
+                    element={<PeriodicReportsPage />}
+                  />
+                </Route>
+
+                {/* Chỉ Cán bộ Khoa */}
+                <Route element={<ProtectedRoute roles={["KHOA"]} />}>
+                  <Route
+                    path="/faculty-management"
+                    element={<FacultyManagementPage />}
+                  />
+                  <Route path="/khoa/clubs" element={<ClubManagementPage />} />
+                  
+                  <Route path="/khoa/dashboard" element={<KhoaDashboardPage />} />
+                </Route>
+
+                {/* Chỉ Phòng CTSV */}
+                <Route element={<ProtectedRoute roles={["CTSV"]} />}>
+                  <Route
+                    path="/ctsv/events/:id"
+                    element={<CTSVEventOverviewPage />}
+                  />
+                  <Route
+                    path="/ctsv/events/:id/statistics"
+                    element={<CTSVEventStatisticsPage />}
+                  />
+                  <Route
+                    path="/ctsv/clubs/:id"
+                    element={<CTSVClubOverviewPage />}
+                  />
+                  <Route
+                    path="/ctsv/clubs/:id/statistics"
+                    element={<CTSVClubStatisticsPage />}
+                  />
+                  <Route
+                    path="/student-affairs"
+                    element={<StudentAffairsPage />}
+                  />
+                  <Route path="/ctsv/reports" element={<CTSVReportsPage />} />
+                </Route>
+              </Route>
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AppProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
-
-export default App

@@ -2,7 +2,7 @@
  * CTSVEventStatisticsPage - Thống kê sự kiện (chỉ Phòng CTSV)
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import apiClient from "../../utils/apiClient";
 import Toast from "../../components/ui/Toast";
@@ -31,6 +31,9 @@ export default function CTSVEventStatisticsPage() {
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [filterKhoa, setFilterKhoa] = useState("all");
+  const [filterLop, setFilterLop] = useState("all");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -53,15 +56,76 @@ export default function CTSVEventStatisticsPage() {
     fetchData();
   }, [fetchData]);
 
+  const khoaOptions = useMemo(() => {
+    const counts = {};
+    participants.forEach((p) => {
+      const khoa = (p.tenKhoa || "").trim();
+      if (!khoa) return;
+      counts[khoa] = (counts[khoa] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  }, [participants]);
+
+  const lopOptions = useMemo(() => {
+    const source =
+      filterKhoa === "all"
+        ? participants
+        : participants.filter((p) => (p.tenKhoa || "").trim() === filterKhoa);
+    const counts = {};
+    source.forEach((p) => {
+      const lop = (p.tenLop || "").trim();
+      if (!lop) return;
+      counts[lop] = (counts[lop] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  }, [participants, filterKhoa]);
+
+  const filteredParticipants = useMemo(() => {
+    const kw = searchKeyword.trim().toLowerCase();
+    return participants.filter((p) => {
+      if (filterKhoa !== "all" && (p.tenKhoa || "").trim() !== filterKhoa) {
+        return false;
+      }
+      if (filterLop !== "all" && (p.tenLop || "").trim() !== filterLop) {
+        return false;
+      }
+      if (!kw) return true;
+      const maSV = (p.maSV || "").trim().toLowerCase();
+      const hoTen = (p.hoTen || "").toLowerCase();
+      const email = (p.email || "").toLowerCase();
+      return maSV.includes(kw) || hoTen.includes(kw) || email.includes(kw);
+    });
+  }, [participants, searchKeyword, filterKhoa, filterLop]);
+
+  const hasActiveFilters =
+    searchKeyword.trim() !== "" || filterKhoa !== "all" || filterLop !== "all";
+
+  const handleKhoaChange = (value) => {
+    setFilterKhoa(value);
+    setFilterLop("all");
+  };
+
+  const handleClearFilters = () => {
+    setSearchKeyword("");
+    setFilterKhoa("all");
+    setFilterLop("all");
+  };
+
   const handleExport = () => {
-    if (participants.length === 0) {
+    if (filteredParticipants.length === 0) {
       setToast({
-        message: "Sự kiện chưa có sinh viên đăng ký",
+        message: hasActiveFilters
+          ? "Không có sinh viên phù hợp với bộ lọc hiện tại"
+          : "Sự kiện chưa có sinh viên đăng ký",
         type: "error",
       });
       return;
     }
-    exportParticipantsToExcel(participants, event?.TenSK, id);
+    exportParticipantsToExcel(filteredParticipants, event?.TenSK, id);
     setToast({ message: "Xuất báo cáo thành công", type: "success" });
   };
 
@@ -145,14 +209,92 @@ export default function CTSVEventStatisticsPage() {
           />
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex flex-col gap-3">
           <button
             type="button"
             onClick={handleExport}
-            className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700"
+            className="self-start px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700"
           >
             Xuất báo cáo Excel
+            {hasActiveFilters ? " (theo bộ lọc)" : ""}
           </button>
+        </div>
+
+        {/* Bộ lọc danh sách sinh viên */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-4 space-y-3">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <svg
+                className="w-4 h-4 text-slate-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="search"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder="Tìm mã SV, họ tên, email..."
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            />
+            {searchKeyword && (
+              <button
+                type="button"
+                onClick={() => setSearchKeyword("")}
+                className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600"
+                aria-label="Xóa tìm kiếm"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:flex-wrap">
+            <FilterSelect
+              label="Khoa"
+              value={filterKhoa}
+              onChange={handleKhoaChange}
+              options={khoaOptions}
+              allLabel="Tất cả khoa"
+            />
+            <FilterSelect
+              label="Lớp"
+              value={filterLop}
+              onChange={setFilterLop}
+              options={lopOptions}
+              allLabel="Tất cả lớp"
+              disabled={filterKhoa === "all"}
+              disabledHint="Chọn khoa trước"
+            />
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Xóa bộ lọc
+              </button>
+            )}
+          </div>
+
+          <p className="text-xs text-slate-500">
+            Hiển thị{" "}
+            <span className="font-semibold text-slate-700">
+              {filteredParticipants.length}
+            </span>{" "}
+            / {participants.length} sinh viên
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -177,8 +319,14 @@ export default function CTSVEventStatisticsPage() {
                       Chưa có sinh viên đăng ký
                     </td>
                   </tr>
+                ) : filteredParticipants.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-slate-400">
+                      Không có sinh viên phù hợp với bộ lọc
+                    </td>
+                  </tr>
                 ) : (
-                  participants.map((p, idx) => (
+                  filteredParticipants.map((p, idx) => (
                     <tr key={p.maSV || idx} className="border-b border-slate-50">
                       <td className="p-3">{idx + 1}</td>
                       <td className="p-3 font-mono text-xs">{p.maSV}</td>
@@ -215,6 +363,36 @@ function StatCard({ label, value }) {
     <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
       <p className="text-xs font-medium text-slate-500">{label}</p>
       <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
+    </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+  allLabel,
+  disabled = false,
+  disabledHint,
+}) {
+  return (
+    <div className="flex flex-col gap-1 min-w-[160px] flex-1 sm:max-w-xs">
+      <label className="text-xs font-medium text-slate-500">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+      >
+        <option value="all">{disabled && disabledHint ? disabledHint : allLabel}</option>
+        {!disabled &&
+          options.map((opt) => (
+            <option key={opt.name} value={opt.name}>
+              {opt.name} ({opt.count})
+            </option>
+          ))}
+      </select>
     </div>
   );
 }
